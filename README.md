@@ -16,6 +16,8 @@ No build step, no backend — just double-click `index.html` or serve it with an
 - **Random events**: sacrifice HP for a relic at an altar, open a suspicious chest, a storyteller who removes a card for free, a wandering blacksmith who upgrades a card for free, a wishing well gamble, and a merchant trading HP for a rare card
 - **Rest sites**: heal 30% of max HP, or permanently upgrade a card (stats improve, name gets a `+`)
 - **Merchant**: buy cards/relics, or pay an increasing gold cost to remove a card from your deck (deck-thinning strategy)
+- **Post-run summary**: on victory or defeat, see a stats recap (floor reached, score, gold earned, enemies/elites defeated, deck size, cards played) and any achievements newly unlocked
+- **Personal Center**: a persistent (localStorage-backed) profile screen showing lifetime stats (total runs, wins, high score, best floor), an achievement list, and a collection log of every card/relic/enemy you've ever discovered — purely cosmetic progress tracking, it never gates what appears in a run
 
 ## File structure
 - `index.html` / `style.css` — page structure and styling
@@ -25,7 +27,8 @@ No build step, no backend — just double-click `index.html` or serve it with an
 - `js/events.js` — random non-combat event pool
 - `js/map.js` — branching map generation and reachable-node logic
 - `js/combat.js` — `CombatEngine`: pure-logic turn-based battle simulator (energy/draw/discard/exhaust piles, status effects)
-- `js/game.js` — state machine: rendering and interaction wiring for map/event/rest/shop/combat/end screens
+- `js/meta.js` — persistent meta-progression: `localStorage` load/save, achievement definitions, score calculation
+- `js/game.js` — state machine: rendering and interaction wiring for map/event/rest/shop/combat/end/profile screens
 
 ## How to test if this is fun
 1. Open the page and click "Start a New Run"
