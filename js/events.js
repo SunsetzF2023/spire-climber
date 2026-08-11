@@ -35,6 +35,7 @@ const EVENT_POOL = [
           if (Math.random() < 0.75) {
             const gold = 20 + Math.floor(Math.random() * 20);
             run.gold += gold;
+            run.stats.goldEarned += gold;
             return { text: `获得了 ${gold} 金币！`, cls: 'good' };
           }
           damagePlayerRun(run, 8);

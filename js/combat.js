@@ -135,6 +135,7 @@ class CombatEngine {
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
+    if (this.run.stats) this.run.stats.cardsPlayed = (this.run.stats.cardsPlayed || 0) + 1;
     this.checkVictory();
     return { success: true };
   }

@@ -24,6 +24,7 @@
     <h2>🗡️ 爬塔者</h2>
     <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
     <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
+    <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
   </div>
 </section>
 
@@ -126,11 +127,44 @@
 
 <!-- ============ GAME OVER / VICTORY ============ -->
 <section id="endScreen" class="screen hidden">
-  <div class="panel menu-panel">
+  <div class="panel summary-panel">
     <h2 id="endTitle">游戏结束</h2>
     <p id="endDesc" class="hint"></p>
-    <button id="endRestartBtn" class="btn btn-primary">🔁 重新开始</button>
+    <div id="endStatsGrid" class="stats-grid"></div>
+    <div id="endNewAchievements" class="hidden">
+      <h3>🏅 新解锁成就</h3>
+      <div id="endAchievementList" class="achievement-grid"></div>
+    </div>
+    <div class="rest-options">
+      <button id="endRestartBtn" class="btn btn-primary">🔁 返回主菜单</button>
+      <button id="endProfileBtn" class="btn btn-ghost">🧑‍💼 查看个人中心</button>
+    </div>
   </div>
+</section>
+
+<!-- ============ PROFILE / PERSONAL CENTER ============ -->
+<section id="profileScreen" class="screen hidden">
+  <div class="panel profile-panel">
+    <h2>🧑‍💼 个人中心 <span class="hint">跨局持久保存的成长记录</span></h2>
+    <div id="profileStatsGrid" class="stats-grid"></div>
+  </div>
+  <div class="panel">
+    <h2>🏅 成就</h2>
+    <div id="profileAchievements" class="achievement-grid"></div>
+  </div>
+  <div class="panel">
+    <h2>🎴 卡牌图鉴 <span id="profileCardProgress" class="hint"></span></h2>
+    <div id="profileCards" class="collection-grid"></div>
+  </div>
+  <div class="panel">
+    <h2>💎 遗物图鉴 <span id="profileRelicProgress" class="hint"></span></h2>
+    <div id="profileRelics" class="collection-grid"></div>
+  </div>
+  <div class="panel">
+    <h2>👹 敌人图鉴 <span id="profileEnemyProgress" class="hint"></span></h2>
+    <div id="profileEnemies" class="collection-grid"></div>
+  </div>
+  <button id="profileBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
 <div class="tooltip" id="tooltip"></div>
@@ -141,6 +175,7 @@
 <script src="js/events.js"></script>
 <script src="js/map.js"></script>
 <script src="js/combat.js"></script>
+<script src="js/meta.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

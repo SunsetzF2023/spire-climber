@@ -10,11 +10,12 @@ let run = null;
 let combat = null;
 let selectedCardUid = null;
 let currentShop = null;
+let meta = null;
 
 const el = {};
 function cacheEls() {
   [
-    'menuScreen', 'startRunBtn',
+    'menuScreen', 'startRunBtn', 'openProfileBtn',
     'mapScreen', 'mapContainer', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
@@ -23,9 +24,15 @@ function cacheEls() {
     'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn',
     'combatScreen', 'enemyRow', 'drawCount', 'discardCount', 'playerHpFill', 'playerHpText', 'playerBlockBadge', 'playerStatusRow',
     'energyBadge', 'handRow', 'endTurnBtn', 'combatLog',
-    'endScreen', 'endTitle', 'endDesc', 'endRestartBtn',
+    'endScreen', 'endTitle', 'endDesc', 'endStatsGrid', 'endNewAchievements', 'endAchievementList', 'endRestartBtn', 'endProfileBtn',
+    'profileScreen', 'profileStatsGrid', 'profileAchievements', 'profileCards', 'profileRelics', 'profileEnemies',
+    'profileCardProgress', 'profileRelicProgress', 'profileEnemyProgress', 'profileBackBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
   ].forEach(id => { el[id] = document.getElementById(id); });
+}
+
+function discover(listName, id) {
+  if (markDiscovered(meta, listName, id)) saveMeta(meta);
 }
 
 // ---------------- Run helpers (used by events.js too) ----------------
@@ -33,6 +40,7 @@ function addRelicToRun(run, relicId) {
   const relic = RELICS[relicId];
   if (relic.onPickup) relic.onPickup(run);
   run.relics.push(relicId);
+  discover('discoveredRelics', relicId);
   return relicId;
 }
 function healPlayerRun(run, amount) { run.player.hp = Math.min(run.player.maxHp, run.player.hp + amount); }
@@ -49,11 +57,14 @@ function upgradeRandomCardInDeck(run) {
   card.upgraded = true;
   return card;
 }
-function addCardToDeck(run, defId, upgraded) { run.deck.push(makeCardInstance(defId, upgraded)); }
+function addCardToDeck(run, defId, upgraded) {
+  run.deck.push(makeCardInstance(defId, upgraded));
+  discover('discoveredCards', defId);
+}
 
 // ---------------- Screen switching ----------------
 function showScreen(name) {
-  ['menuScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen']
+  ['menuScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen']
     .forEach(s => el[s].classList.toggle('hidden', s !== name));
 }
 
@@ -67,7 +78,9 @@ function newRun() {
     map: generateMap(),
     currentNodeId: null,
     removeCount: 0,
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, treasureFound: false },
   };
+  STARTER_DECK.forEach(id => discover('discoveredCards', id));
   showScreen('mapScreen');
   renderHud();
   renderMap();
@@ -85,7 +98,7 @@ function renderHud() {
 
 function checkRunDeath() {
   if (run.player.hp <= 0) {
-    showEndScreen(false, '你在旅途中倒下了……');
+    finishRun(false, '你在旅途中倒下了……');
     return true;
   }
   return false;
@@ -129,6 +142,7 @@ function renderDeck() {
 function enterNode(node) {
   node.visited = true;
   run.currentNodeId = node.id;
+  run.stats.floorReached = Math.max(run.stats.floorReached, node.floor + 1);
   renderHud();
   switch (node.type) {
     case 'monster': startCombat(spawnEnemyGroup('normal'), 'normal', node); break;
@@ -144,7 +158,7 @@ function enterNode(node) {
 function backToMapOrVictory(node) {
   if (checkRunDeath()) return;
   if (node.type === 'boss') {
-    showEndScreen(true, '你击败了深渊领主，成功登顶！');
+    finishRun(true, '你击败了深渊领主，成功登顶！');
     return;
   }
   showScreen('mapScreen');
@@ -234,6 +248,8 @@ function showEventScreenUI(node) {
 function showTreasureNode(node) {
   const gold = 15 + Math.floor(Math.random() * 20);
   run.gold += gold;
+  run.stats.goldEarned += gold;
+  run.stats.treasureFound = true;
   const relicId = pickRandomRelic(run.relics);
   addRelicToRun(run, relicId);
   showScreen('eventScreen');
@@ -386,6 +402,7 @@ function startCombat(enemyDefIds, tier, node) {
   combat = new CombatEngine(run, enemyDefIds);
   combat.rewardTier = tier;
   combat.node = node;
+  combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));
   combat.start();
   selectedCardUid = null;
   showScreen('combatScreen');
@@ -475,7 +492,7 @@ function afterCombatAction() {
     combat.resultHandled = true;
     setTimeout(() => {
       if (combat.winner === 'player') showRewardScreen();
-      else showEndScreen(false, '你在战斗中被击败了……');
+      else finishRun(false, '你在战斗中被击败了……');
     }, 400);
   }
 }
@@ -488,6 +505,9 @@ function showRewardScreen() {
     : tier === 'elite' ? 25 + Math.floor(Math.random() * 15)
     : 10 + Math.floor(Math.random() * 10);
   run.gold += goldReward;
+  run.stats.goldEarned += goldReward;
+  run.stats.enemiesDefeated += combat.enemies.length;
+  if (tier === 'elite') run.stats.elitesDefeated += 1;
   let goldText = `获得 ${goldReward} 金币`;
   if (tier === 'elite') {
     const relicId = pickRandomRelic(run.relics);
@@ -519,21 +539,109 @@ function showRewardScreen() {
 }
 
 // ---------------- End screen ----------------
-function showEndScreen(victory, desc) {
+function statBoxHtml(label, value) {
+  return `<div class="stat-box"><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>`;
+}
+
+function finishRun(victory, desc) {
   showScreen('endScreen');
+  const stats = {
+    won: victory,
+    floorReached: run.stats.floorReached,
+    goldEarned: run.stats.goldEarned,
+    enemiesDefeated: run.stats.enemiesDefeated,
+    elitesDefeated: run.stats.elitesDefeated,
+    cardsPlayed: run.stats.cardsPlayed,
+    relicsHeld: run.relics.length,
+    deckSize: run.deck.length,
+    finalHp: run.player.hp,
+    treasureFound: run.stats.treasureFound,
+  };
+  const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
+
   el.endTitle.textContent = victory ? '🏆 通关成功！' : '💀 游戏结束';
   el.endDesc.textContent = desc || '';
+  el.endStatsGrid.innerHTML = [
+    statBoxHtml('到达楼层', `${stats.floorReached}`),
+    statBoxHtml('本局得分', score),
+    statBoxHtml('获得金币', stats.goldEarned),
+    statBoxHtml('击败敌人', stats.enemiesDefeated),
+    statBoxHtml('击败精英', stats.elitesDefeated),
+    statBoxHtml('持有遗物', stats.relicsHeld),
+    statBoxHtml('卡组大小', stats.deckSize),
+    statBoxHtml('打出卡牌', stats.cardsPlayed),
+  ].join('');
+
+  if (newlyUnlocked.length > 0) {
+    el.endNewAchievements.classList.remove('hidden');
+    el.endAchievementList.innerHTML = newlyUnlocked.map(ach => `
+      <div class="achievement-badge unlocked">
+        <div class="ach-icon">${ach.icon}</div>
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.desc}</div>
+      </div>`).join('');
+  } else {
+    el.endNewAchievements.classList.add('hidden');
+    el.endAchievementList.innerHTML = '';
+  }
+
   el.endRestartBtn.onclick = () => { showScreen('menuScreen'); };
+  el.endProfileBtn.onclick = () => showProfileScreen();
+}
+
+// ---------------- Profile / Personal Center ----------------
+function showProfileScreen() {
+  showScreen('profileScreen');
+  el.profileStatsGrid.innerHTML = [
+    statBoxHtml('总局数', meta.totalRuns),
+    statBoxHtml('胜利次数', meta.wins),
+    statBoxHtml('最高得分', meta.highScore),
+    statBoxHtml('最深楼层', meta.bestFloorReached),
+    statBoxHtml('累计金币', meta.totalGoldEarned),
+    statBoxHtml('累计击杀', meta.totalEnemiesDefeated),
+  ].join('');
+
+  el.profileAchievements.innerHTML = ACHIEVEMENTS.map(ach => {
+    const unlocked = !!meta.achievements[ach.id];
+    return `<div class="achievement-badge ${unlocked ? 'unlocked' : 'locked'}">
+      <div class="ach-icon">${unlocked ? ach.icon : '🔒'}</div>
+      <div class="ach-name">${unlocked ? ach.name : '???'}</div>
+      <div class="ach-desc">${unlocked ? ach.desc : '尚未解锁'}</div>
+    </div>`;
+  }).join('');
+
+  const cardIds = Object.keys(CARDS);
+  el.profileCardProgress.textContent = `(${meta.discoveredCards.length} / ${cardIds.length})`;
+  el.profileCards.innerHTML = cardIds.map(id => {
+    const discovered = meta.discoveredCards.includes(id);
+    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? CARDS[id].name : '未发现'}">${discovered ? CARDS[id].icon : '❔'}</div>`;
+  }).join('');
+
+  const relicIds = Object.keys(RELICS);
+  el.profileRelicProgress.textContent = `(${meta.discoveredRelics.length} / ${relicIds.length})`;
+  el.profileRelics.innerHTML = relicIds.map(id => {
+    const discovered = meta.discoveredRelics.includes(id);
+    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? RELICS[id].name : '未发现'}">${discovered ? RELICS[id].icon : '❔'}</div>`;
+  }).join('');
+
+  const enemyIds = Object.keys(ENEMIES);
+  el.profileEnemyProgress.textContent = `(${meta.discoveredEnemies.length} / ${enemyIds.length})`;
+  el.profileEnemies.innerHTML = enemyIds.map(id => {
+    const discovered = meta.discoveredEnemies.includes(id);
+    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? ENEMIES[id].name : '未发现'}">${discovered ? ENEMIES[id].icon : '❔'}</div>`;
+  }).join('');
 }
 
 // ---------------- init ----------------
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
+  meta = loadMeta();
   el.startRunBtn.addEventListener('click', newRun);
+  el.openProfileBtn.addEventListener('click', () => showProfileScreen());
+  el.profileBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.endTurnBtn.addEventListener('click', () => {
     combat.endTurn();
     afterCombatAction();
   });
-  el.endRestartBtn.addEventListener('click', () => showScreen('menuScreen'));
   showScreen('menuScreen');
 });
