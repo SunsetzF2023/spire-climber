@@ -203,6 +203,28 @@ body{
   padding:8px 10px; font-size:11px; max-width:220px; z-index:200; pointer-events:none;
 }
 
+.hud-relics span{cursor:pointer;}
+.collection-item{cursor:pointer;}
+.achievement-badge{cursor:pointer;}
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center;
+  z-index:300; padding:20px;
+}
+.modal-box{
+  background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:24px 20px 20px;
+  max-width:340px; width:100%; text-align:center; position:relative;
+}
+.modal-close{
+  position:absolute; top:8px; right:10px; background:none; border:none; color:var(--dim);
+  font-size:16px; cursor:pointer; line-height:1;
+}
+.modal-close:hover{color:var(--text);}
+.modal-icon{font-size:40px;}
+.modal-name{font-size:16px; font-weight:700; margin-top:8px;}
+.modal-meta{font-size:11px; color:var(--dim); margin-top:2px;}
+.modal-desc{font-size:13px; color:var(--text); margin-top:12px; line-height:1.6;}
+
 @media (max-width:800px){
   .mapScreen, #mapScreen{grid-template-columns:1fr;}
 }

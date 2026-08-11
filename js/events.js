@@ -15,6 +15,7 @@ const EVENT_POOL = [
     options: [
       {
         label: '🩸 献祭 10 点生命，获得一件遗物',
+        disabled(run) { return run.player.hp <= 10; },
         effect(run) {
           if (run.player.hp <= 10) return { text: '生命值过低，不敢冒险！', cls: 'bad' };
           damagePlayerRun(run, 10);
@@ -87,6 +88,7 @@ const EVENT_POOL = [
     options: [
       {
         label: '💰 投入 20 金币许愿（50% 获得遗物，50% 一无所获）',
+        disabled(run) { return run.gold < 20; },
         effect(run) {
           if (run.gold < 20) return { text: '金币不足！', cls: 'bad' };
           run.gold -= 20;
@@ -106,6 +108,7 @@ const EVENT_POOL = [
     options: [
       {
         label: '🩸 献祭 6 点生命，随机获得一张稀有卡牌',
+        disabled(run) { return run.player.hp <= 6; },
         effect(run) {
           if (run.player.hp <= 6) return { text: '生命值过低，不敢冒险！', cls: 'bad' };
           damagePlayerRun(run, 6);

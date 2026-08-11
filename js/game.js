@@ -29,7 +29,45 @@ function cacheEls() {
     'profileScreen', 'profileStatsGrid', 'profileAchievements', 'profileCards', 'profileRelics', 'profileEnemies',
     'profileCardProgress', 'profileRelicProgress', 'profileEnemyProgress', 'profileBackBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
+    'infoModal', 'infoModalContent', 'infoModalClose',
   ].forEach(id => { el[id] = document.getElementById(id); });
+}
+
+// ---------------- Tooltip (hover) + info modal (click) ----------------
+function positionTooltip(e) {
+  el.tooltip.style.left = (e.clientX + 14) + 'px';
+  el.tooltip.style.top = (e.clientY + 14) + 'px';
+}
+function attachTooltip(elm, html) {
+  elm.addEventListener('mouseenter', (e) => { el.tooltip.innerHTML = html; el.tooltip.style.display = 'block'; positionTooltip(e); });
+  elm.addEventListener('mousemove', positionTooltip);
+  elm.addEventListener('mouseleave', () => { el.tooltip.style.display = 'none'; });
+}
+function showInfoModal(html) {
+  el.infoModalContent.innerHTML = html;
+  el.infoModal.classList.remove('hidden');
+}
+function hideInfoModal() { el.infoModal.classList.add('hidden'); }
+
+function relicInfoHtml(relicId) {
+  const r = RELICS[relicId];
+  return `<div class="modal-icon">${r.icon}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
+}
+function cardInfoHtml(defId) {
+  const def = CARDS[defId];
+  const typeLabel = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
+  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
+}
+function enemyInfoHtml(defId) {
+  const def = ENEMIES[defId];
+  const rarityLabel = { normal: '普通敌人', elite: '精英敌人', boss: 'Boss' }[def.rarity];
+  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${rarityLabel} · 生命 ${def.hpRange[0]}-${def.hpRange[1]}</div>`;
+}
+function unknownInfoHtml(label) {
+  return `<div class="modal-icon">❔</div><div class="modal-name">???</div><div class="modal-desc">尚未发现这个${label}</div>`;
+}
+function achievementInfoHtml(ach, unlocked) {
+  return `<div class="modal-icon">${unlocked ? ach.icon : '🔒'}</div><div class="modal-name">${unlocked ? ach.name : '???'}</div><div class="modal-meta">${unlocked ? '已解锁' : '尚未解锁'}</div><div class="modal-desc">${unlocked ? ach.desc : '达成条件后解锁'}</div>`;
 }
 
 function discover(listName, id) {
@@ -96,7 +134,14 @@ function renderHud() {
   const node = run.currentNodeId ? findNode(run.map, run.currentNodeId) : null;
   const floorText = node ? `${node.floor + 1} / ${run.map.floorCount + 1}` : `0 / ${run.map.floorCount + 1}`;
   el.hudFloor.textContent = `维度${run.act} · ${floorText}`;
-  el.hudRelics.innerHTML = run.relics.map(id => `<span title="${RELICS[id].name}: ${RELICS[id].desc}">${RELICS[id].icon}</span>`).join('');
+  el.hudRelics.innerHTML = '';
+  run.relics.forEach(id => {
+    const span = document.createElement('span');
+    span.textContent = RELICS[id].icon;
+    attachTooltip(span, `<b>${RELICS[id].name}</b><br>${RELICS[id].desc}`);
+    span.addEventListener('click', () => showInfoModal(relicInfoHtml(id)));
+    el.hudRelics.appendChild(span);
+  });
 }
 
 function checkRunDeath() {
@@ -244,7 +289,10 @@ function showEventScreenUI(node) {
   evt.options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'event-option-btn';
-    btn.textContent = opt.label;
+    const isLocked = opt.disabled && opt.disabled(run);
+    btn.textContent = opt.label + (isLocked ? '（条件不足）' : '');
+    btn.disabled = !!isLocked;
+    if (isLocked) { el.eventOptions.appendChild(btn); return; }
     btn.addEventListener('click', () => {
       if (opt.selectCard) {
         if (opt.canPick && !opt.canPick(run)) {
@@ -412,7 +460,7 @@ function renderShop(node) {
     const box = document.createElement('div');
     box.className = 'relic-card';
     box.textContent = relic.icon;
-    box.title = `${relic.name}\n${relic.desc}\n💰 ${offer.cost}`;
+    attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}<br>💰 ${offer.cost}`);
     if (run.gold >= offer.cost) {
       box.addEventListener('click', () => {
         run.gold -= offer.cost;
@@ -637,35 +685,43 @@ function showProfileScreen() {
     statBoxHtml('累计击杀', meta.totalEnemiesDefeated),
   ].join('');
 
-  el.profileAchievements.innerHTML = ACHIEVEMENTS.map(ach => {
+  el.profileAchievements.innerHTML = '';
+  ACHIEVEMENTS.forEach(ach => {
     const unlocked = !!meta.achievements[ach.id];
-    return `<div class="achievement-badge ${unlocked ? 'unlocked' : 'locked'}">
+    const div = document.createElement('div');
+    div.className = `achievement-badge ${unlocked ? 'unlocked' : 'locked'}`;
+    div.innerHTML = `
       <div class="ach-icon">${unlocked ? ach.icon : '🔒'}</div>
       <div class="ach-name">${unlocked ? ach.name : '???'}</div>
       <div class="ach-desc">${unlocked ? ach.desc : '尚未解锁'}</div>
-    </div>`;
-  }).join('');
+    `;
+    div.addEventListener('click', () => showInfoModal(achievementInfoHtml(ach, unlocked)));
+    el.profileAchievements.appendChild(div);
+  });
+
+  const buildCollectionGrid = (container, ids, discoveredList, infoFn, label) => {
+    container.innerHTML = '';
+    ids.forEach(id => {
+      const discovered = discoveredList.includes(id);
+      const div = document.createElement('div');
+      div.className = `collection-item ${discovered ? '' : 'undiscovered'}`;
+      div.textContent = discovered ? infoFn.icon(id) : '❔';
+      div.addEventListener('click', () => showInfoModal(discovered ? infoFn.html(id) : unknownInfoHtml(label)));
+      container.appendChild(div);
+    });
+  };
 
   const cardIds = Object.keys(CARDS);
   el.profileCardProgress.textContent = `(${meta.discoveredCards.length} / ${cardIds.length})`;
-  el.profileCards.innerHTML = cardIds.map(id => {
-    const discovered = meta.discoveredCards.includes(id);
-    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? CARDS[id].name : '未发现'}">${discovered ? CARDS[id].icon : '❔'}</div>`;
-  }).join('');
+  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => CARDS[id].icon, html: cardInfoHtml }, '卡牌');
 
   const relicIds = Object.keys(RELICS);
   el.profileRelicProgress.textContent = `(${meta.discoveredRelics.length} / ${relicIds.length})`;
-  el.profileRelics.innerHTML = relicIds.map(id => {
-    const discovered = meta.discoveredRelics.includes(id);
-    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? RELICS[id].name : '未发现'}">${discovered ? RELICS[id].icon : '❔'}</div>`;
-  }).join('');
+  buildCollectionGrid(el.profileRelics, relicIds, meta.discoveredRelics, { icon: (id) => RELICS[id].icon, html: relicInfoHtml }, '遗物');
 
   const enemyIds = Object.keys(ENEMIES);
   el.profileEnemyProgress.textContent = `(${meta.discoveredEnemies.length} / ${enemyIds.length})`;
-  el.profileEnemies.innerHTML = enemyIds.map(id => {
-    const discovered = meta.discoveredEnemies.includes(id);
-    return `<div class="collection-item ${discovered ? '' : 'undiscovered'}" title="${discovered ? ENEMIES[id].name : '未发现'}">${discovered ? ENEMIES[id].icon : '❔'}</div>`;
-  }).join('');
+  buildCollectionGrid(el.profileEnemies, enemyIds, meta.discoveredEnemies, { icon: (id) => ENEMIES[id].icon, html: enemyInfoHtml }, '敌人');
 }
 
 // ---------------- init ----------------
@@ -679,5 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
     combat.endTurn();
     afterCombatAction();
   });
+  el.infoModalClose.addEventListener('click', hideInfoModal);
+  el.infoModal.addEventListener('click', (e) => { if (e.target === el.infoModal) hideInfoModal(); });
   showScreen('menuScreen');
 });
