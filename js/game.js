@@ -18,6 +18,7 @@ function cacheEls() {
     'mapScreen', 'mapContainer', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
+    'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
     'shopScreen', 'shopCards', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
     'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn',
     'combatScreen', 'enemyRow', 'drawCount', 'discardCount', 'playerHpFill', 'playerHpText', 'playerBlockBadge', 'playerStatusRow',
@@ -251,6 +252,7 @@ function showRestScreen(node) {
   showScreen('restScreen');
   el.restUpgradeList.classList.add('hidden');
   el.restUpgradeList.innerHTML = '';
+  el.restUpgradePreview.classList.add('hidden');
   el.restHealBtn.disabled = false;
   el.restUpgradeBtn.disabled = false;
   el.restHealBtn.onclick = () => {
@@ -259,18 +261,33 @@ function showRestScreen(node) {
     renderHud();
     backToMapOrVictory(node);
   };
-  el.restUpgradeBtn.onclick = () => {
+
+  const renderUpgradeList = () => {
     const upgradable = run.deck.filter(c => !c.upgraded);
     if (upgradable.length === 0) { alert('卡组中所有卡牌都已经强化过了！'); return; }
+    el.restUpgradePreview.classList.add('hidden');
     el.restUpgradeList.classList.remove('hidden');
     el.restUpgradeList.innerHTML = '';
     upgradable.forEach(card => {
       el.restUpgradeList.appendChild(renderCardEl(card, {
         clickable: true,
-        onClick: () => { card.upgraded = true; backToMapOrVictory(node); },
+        onClick: () => showUpgradePreview(card),
       }));
     });
   };
+
+  const showUpgradePreview = (card) => {
+    el.restUpgradeList.classList.add('hidden');
+    el.restUpgradePreview.classList.remove('hidden');
+    el.restPreviewBefore.innerHTML = '';
+    el.restPreviewAfter.innerHTML = '';
+    el.restPreviewBefore.appendChild(renderCardEl(card, { clickable: false }));
+    el.restPreviewAfter.appendChild(renderCardEl({ uid: card.uid + '_preview', defId: card.defId, upgraded: true }, { clickable: false }));
+    el.restConfirmUpgradeBtn.onclick = () => { card.upgraded = true; backToMapOrVictory(node); };
+    el.restCancelUpgradeBtn.onclick = () => renderUpgradeList();
+  };
+
+  el.restUpgradeBtn.onclick = renderUpgradeList;
 }
 
 // ---------------- Shop screen ----------------

@@ -117,6 +117,8 @@ body{
 .event-result.bad{color:var(--red); border:1px solid var(--red);}
 .event-result.info{color:var(--blue); border:1px solid var(--blue);}
 .rest-options{display:flex; gap:12px; justify-content:center; margin-top:10px;}
+.upgrade-compare{display:flex; align-items:center; justify-content:center; gap:18px; margin:10px 0;}
+.upgrade-arrow{font-size:26px; color:var(--amber); font-weight:700;}
 
 /* ---- Reward ---- */
 .reward-panel{max-width:640px; margin:30px auto; text-align:center;}
