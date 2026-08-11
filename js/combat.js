@@ -2,6 +2,16 @@
 // CombatEngine — turn-based card battle logic (no rendering here)
 // ============================================================
 
+const STATUS_META = {
+  strength: { icon: '💪', label: '力量', desc: '每层永久增加你的攻击牌造成的伤害 +1。' },
+  dexterity: { icon: '🤸', label: '敏捷', desc: '每层永久增加你获得的格挡 +1。' },
+  weak: { icon: '😵', label: '虚弱', desc: '造成的伤害降低 25%。每回合结束时减少 1 层。' },
+  vulnerable: { icon: '🎯', label: '易伤', desc: '受到的伤害增加 50%。每回合结束时减少 1 层。' },
+  frail: { icon: '🍂', label: '脆弱', desc: '获得的格挡降低 25%。每回合结束时减少 1 层。' },
+  poison: { icon: '☠️', label: '中毒', desc: '每回合开始时损失等同于层数的生命值，之后层数 -1。' },
+  metallicize: { icon: '🔩', label: '金属化', desc: '每回合结束时自动获得等同于层数的格挡。' },
+};
+
 class CombatEngine {
   constructor(run, enemyDefIds, hpScaling = 1) {
     this.run = run; // { player:{hp,maxHp}, gold, relics:[], deck:[cardInstance] }
@@ -92,6 +102,7 @@ class CombatEngine {
         enemy.statuses.poison -= 1;
         if (enemy.hp <= 0) { enemy.hp = 0; this.log(`💀 ${enemy.name} 被毒死了！`, 'info'); this.runRelicHook('onEnemyKilled', enemy); this.checkVictory(); continue; }
       }
+      this.currentActor = 'enemy';
       if (enemy.nextMove) enemy.nextMove.execute(this, enemy);
       if (this.finished) return;
       enemy.statuses.weak = Math.max(0, enemy.statuses.weak - 1);
@@ -125,6 +136,7 @@ class CombatEngine {
 
     this.energy -= cost;
     if (isFreeAttack) this.firstAttackFree = false;
+    this.currentActor = 'player';
 
     this.hand.splice(idx, 1);
     const vars = def.vars(card.upgraded);
@@ -244,13 +256,22 @@ class CombatEngine {
   }
 
   applyStatusPlayer(name, amount) {
+    if (!amount) return;
     this.player.statuses[name] = (this.player.statuses[name] || 0) + amount;
+    const meta = STATUS_META[name];
+    if (meta && amount > 0) {
+      this.log(`${meta.icon} 你获得了 ${amount} 层【${meta.label}】`, this.currentActor === 'enemy' ? 'enemy' : 'player');
+    }
   }
 
   applyStatusEnemy(enemyId, name, amount) {
     const enemy = this.enemies.find(e => e.id === enemyId);
-    if (!enemy) return;
+    if (!enemy || !amount) return;
     enemy.statuses[name] = (enemy.statuses[name] || 0) + amount;
+    const meta = STATUS_META[name];
+    if (meta && amount > 0) {
+      this.log(`${meta.icon} ${enemy.name} 获得了 ${amount} 层【${meta.label}】`, this.currentActor === 'enemy' ? 'enemy' : 'player');
+    }
   }
 
   checkPlayerDeath() {

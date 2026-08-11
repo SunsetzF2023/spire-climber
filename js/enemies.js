@@ -13,8 +13,8 @@ const ENEMIES = {
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'debuff') {
         return {
-          name: '腐蚀粘液', icon: '🌀', type: 'debuff', displayValue: 1,
-          execute(combat, e) { combat.applyStatusPlayer('weak', 1); combat.log(`${e.name} 喷出腐蚀粘液，你获得 1 层虚弱`, 'enemy'); },
+          name: '腐蚀粘液', icon: '🌀', type: 'debuff', displayValue: 1, statusPreview: [{ name: 'weak', amount: 1 }],
+          execute(combat, e) { combat.log(`${e.name} 喷出腐蚀粘液！`, 'enemy'); combat.applyStatusPlayer('weak', 1); },
         };
       }
       return {
@@ -62,7 +62,7 @@ const ENEMIES = {
         };
       }
       return {
-        name: '毒液缠绕', icon: '⚔️', type: 'attack', displayValue: 6,
+        name: '毒液缠绕', icon: '⚔️', type: 'attack', displayValue: 6, statusPreview: [{ name: 'poison', amount: 2 }],
         execute(combat, e) { combat.dealDamageToPlayer(6, e.id); combat.applyStatusPlayer('poison', 2); },
       };
     },
@@ -123,7 +123,7 @@ const ENEMIES = {
         };
       }
       return {
-        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 9,
+        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 9, statusPreview: [{ name: 'vulnerable', amount: 2 }],
         execute(combat, e) { combat.dealDamageToPlayer(9, e.id); combat.applyStatusPlayer('vulnerable', 2); },
       };
     },
@@ -146,7 +146,7 @@ const ENEMIES = {
         };
       }
       return {
-        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 14,
+        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 14, statusPreview: [{ name: 'poison', amount: 3 }],
         execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('poison', 3); },
       };
     },
@@ -167,7 +167,7 @@ const ENEMIES = {
         };
       }
       return {
-        name: '虚空撕裂', icon: '⚔️', type: 'attack', displayValue: 18,
+        name: '虚空撕裂', icon: '⚔️', type: 'attack', displayValue: 18, statusPreview: [{ name: 'vulnerable', amount: 2 }],
         execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('vulnerable', 2); },
       };
     },
@@ -184,17 +184,17 @@ const ENEMIES = {
 
       if (pattern[step] === 'shield') {
         return {
-          name: '护盾力场', icon: '🛡️', type: 'defend', displayValue: 20,
+          name: '护盾力场', icon: '🛡️', type: 'defend', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }],
           execute(combat, e) {
+            combat.log(`${e.name} 张开护盾力场！`, 'enemy');
             combat.gainBlockEnemy(e.id, 20);
             combat.applyStatusPlayer('weak', 2);
-            combat.log(`${e.name} 张开护盾力场，你陷入虚弱`, 'enemy');
           },
         };
       }
       if (pattern[step] === 'breath') {
         return {
-          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 12,
+          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 12, statusPreview: [{ name: 'poison', amount: 3 }],
           execute(combat, e) { combat.dealDamageToPlayer(12, e.id); combat.applyStatusPlayer('poison', 3); },
         };
       }
@@ -231,7 +231,7 @@ const ENEMIES = {
       }
       if (pattern[step] === 'stomp') {
         return {
-          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14,
+          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14, statusPreview: [{ name: 'frail', amount: 2 }],
           execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('frail', 2); },
         };
       }
@@ -252,18 +252,18 @@ const ENEMIES = {
 
       if (pattern[step] === 'corrupt') {
         return {
-          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20,
+          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }, { name: 'vulnerable', amount: 2 }],
           execute(combat, e) {
+            combat.log(`${e.name} 释放虚空侵蚀！`, 'enemy');
             combat.gainBlockEnemy(e.id, 20);
             combat.applyStatusPlayer('weak', 2);
             combat.applyStatusPlayer('vulnerable', 2);
-            combat.log(`${e.name} 释放虚空侵蚀，你陷入虚弱与易伤`, 'enemy');
           },
         };
       }
       if (pattern[step] === 'reality_tear') {
         return {
-          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 18,
+          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 18, statusPreview: [{ name: 'poison', amount: 4 }],
           execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('poison', 4); },
         };
       }

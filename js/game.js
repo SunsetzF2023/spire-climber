@@ -489,6 +489,15 @@ function startCombat(enemyDefIds, tier, node) {
   renderCombat();
 }
 
+function buildStatusBadge(name, amount, showLabel) {
+  const meta = STATUS_META[name];
+  const span = document.createElement('span');
+  span.className = 'status-badge';
+  span.textContent = `${meta.icon}${showLabel ? ' ' + meta.label + ' ' : ''}${amount}`;
+  attachTooltip(span, `<b>${meta.icon} ${meta.label} ${amount} 层</b><br>${meta.desc}`);
+  return span;
+}
+
 function renderCombat() {
   el.enemyRow.innerHTML = '';
   combat.enemies.forEach(enemy => {
@@ -497,19 +506,32 @@ function renderCombat() {
     if (enemy.hp <= 0) box.style.opacity = 0.25;
     const move = enemy.nextMove;
     const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : ''))}` : '';
-    let statusBadges = '';
-    if (enemy.statuses.strength) statusBadges += `<span class="status-badge">💪${enemy.statuses.strength}</span>`;
-    if (enemy.statuses.weak) statusBadges += `<span class="status-badge">😵${enemy.statuses.weak}</span>`;
-    if (enemy.statuses.vulnerable) statusBadges += `<span class="status-badge">🎯${enemy.statuses.vulnerable}</span>`;
-    if (enemy.statuses.poison) statusBadges += `<span class="status-badge">☠️${enemy.statuses.poison}</span>`;
     box.innerHTML = `
       <div class="enemy-icon">${enemy.icon}</div>
       <div class="enemy-name">${enemy.name}</div>
       <div class="hp-bar"><div class="hp-fill" style="width:${Math.max(0, enemy.hp / enemy.maxHp * 100)}%"></div><div class="hp-text">${Math.max(0, enemy.hp)}/${enemy.maxHp}</div></div>
       <div class="block-badge">${enemy.block > 0 ? '🛡️ ' + enemy.block : ''}</div>
-      <div class="intent">${enemy.hp > 0 ? intentText : '💀'}</div>
-      <div class="status-row">${statusBadges}</div>
+      <div class="intent"></div>
+      <div class="status-row"></div>
     `;
+    const intentDiv = box.querySelector('.intent');
+    if (enemy.hp > 0) {
+      intentDiv.textContent = intentText;
+      if (move && move.statusPreview && move.statusPreview.length) {
+        const previewSpan = document.createElement('span');
+        previewSpan.className = 'intent-preview';
+        previewSpan.textContent = ' + ' + move.statusPreview.map(s => `${STATUS_META[s.name].icon}${s.amount}`).join(' ');
+        const tipText = move.statusPreview.map(s => `${STATUS_META[s.name].icon} ${STATUS_META[s.name].label} +${s.amount}：${STATUS_META[s.name].desc}`).join('<br>');
+        attachTooltip(previewSpan, `<b>该攻击还会施加：</b><br>${tipText}`);
+        intentDiv.appendChild(previewSpan);
+      }
+    } else {
+      intentDiv.textContent = '💀';
+    }
+    const statusRow = box.querySelector('.status-row');
+    ['strength', 'weak', 'vulnerable', 'poison'].forEach(name => {
+      if (enemy.statuses[name]) statusRow.appendChild(buildStatusBadge(name, enemy.statuses[name], false));
+    });
     if (enemy.hp > 0 && selectedCardUid) {
       box.addEventListener('click', () => {
         const res = combat.playCard(selectedCardUid, enemy.id);
@@ -524,15 +546,10 @@ function renderCombat() {
   el.playerHpFill.style.width = Math.max(0, run.player.hp / run.player.maxHp * 100) + '%';
   el.playerHpText.textContent = `${Math.max(0, Math.round(run.player.hp))}/${run.player.maxHp}`;
   el.playerBlockBadge.textContent = p.block > 0 ? `🛡️ ${p.block}` : '';
-  let pStatus = '';
-  if (p.statuses.strength) pStatus += `<span class="status-badge">💪 力量 ${p.statuses.strength}</span>`;
-  if (p.statuses.dexterity) pStatus += `<span class="status-badge">🤸 敏捷 ${p.statuses.dexterity}</span>`;
-  if (p.statuses.weak) pStatus += `<span class="status-badge">😵 虚弱 ${p.statuses.weak}</span>`;
-  if (p.statuses.vulnerable) pStatus += `<span class="status-badge">🎯 易伤 ${p.statuses.vulnerable}</span>`;
-  if (p.statuses.frail) pStatus += `<span class="status-badge">🍂 脆弱 ${p.statuses.frail}</span>`;
-  if (p.statuses.poison) pStatus += `<span class="status-badge">☠️ 中毒 ${p.statuses.poison}</span>`;
-  if (p.statuses.metallicize) pStatus += `<span class="status-badge">🔩 金属化 ${p.statuses.metallicize}</span>`;
-  el.playerStatusRow.innerHTML = pStatus;
+  el.playerStatusRow.innerHTML = '';
+  ['strength', 'dexterity', 'weak', 'vulnerable', 'frail', 'poison', 'metallicize'].forEach(name => {
+    if (p.statuses[name]) el.playerStatusRow.appendChild(buildStatusBadge(name, p.statuses[name], true));
+  });
 
   el.energyBadge.textContent = `${combat.energy}/${combat.energyMax}`;
   el.drawCount.textContent = combat.drawPile.length;
