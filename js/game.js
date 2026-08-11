@@ -18,7 +18,7 @@ function cacheEls() {
   [
     'menuScreen', 'startRunBtn', 'openProfileBtn',
     'mapScreen', 'mapContainer', 'mapActName', 'deckList', 'deckCount',
-    'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventResult', 'eventContinueBtn',
+    'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventCardSelect', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
     'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
     'shopScreen', 'shopCards', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
