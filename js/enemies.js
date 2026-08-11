@@ -42,7 +42,7 @@ const ENEMIES = {
     id: 'rampaging_hound', name: '暴走猎犬', icon: '🐕', hpRange: [46, 50], rarity: 'normal',
     chooseMove(enemy, combat) {
       const dmg = enemy.aiState.biteDmg || 6;
-      enemy.aiState.biteDmg = dmg + 3;
+      enemy.aiState.biteDmg = Math.min(dmg + 3, 15);
       return {
         name: '撕咬升级', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
