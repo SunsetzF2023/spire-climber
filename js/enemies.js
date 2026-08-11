@@ -4,6 +4,13 @@
 // enemy instance: { id, defId, name, icon, hp, maxHp, block, statuses:{}, aiState:{}, nextMove }
 // ============================================================
 
+function idleMove(name, icon, flavor) {
+  return {
+    name, icon, type: 'idle', displayValue: null,
+    execute(combat, e) { combat.log(`${icon} ${e.name} ${flavor}`, 'enemy'); },
+  };
+}
+
 const ENEMIES = {
   slime: {
     id: 'slime', name: '腐蚀软泥怪', icon: '🟢', hpRange: [40, 46], rarity: 'normal',
@@ -41,6 +48,12 @@ const ENEMIES = {
   rampaging_hound: {
     id: 'rampaging_hound', name: '暴走猎犬', icon: '🐕', hpRange: [46, 50], rarity: 'normal',
     chooseMove(enemy, combat) {
+      const pattern = ['atk', 'atk', 'atk', 'rest'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'rest') {
+        return idleMove('喘息', '💤', '连续撕咬后精疲力竭，喘了口气');
+      }
       const dmg = enemy.aiState.biteDmg || 6;
       enemy.aiState.biteDmg = Math.min(dmg + 3, 15);
       return {
@@ -154,9 +167,12 @@ const ENEMIES = {
   void_reaver: {
     id: 'void_reaver', name: '虚空掠夺者', icon: '👽', hpRange: [130, 145], rarity: 'elite',
     chooseMove(enemy, combat) {
-      const pattern = ['rend', 'drain'];
+      const pattern = ['rend', 'drain', 'meditate'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'meditate') {
+        return idleMove('虚空冥想', '🌀', '陷入虚空冥想，暂时按兵不动');
+      }
       if (pattern[step] === 'drain') {
         return {
           name: '生命汲取', icon: '⚔️', type: 'attack', displayValue: 10,

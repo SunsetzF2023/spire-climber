@@ -137,6 +137,7 @@ body{
   font-size:11px; margin-top:4px; background:var(--bg3); border-radius:6px; padding:3px 6px; display:inline-block;
 }
 .enemy-box .intent .intent-preview{color:var(--red); font-weight:700; cursor:help;}
+.enemy-box .intent.intent-idle{color:var(--green); border:1px solid var(--green); cursor:help;}
 .status-badge{cursor:help;}
 .enemy-box .status-row{margin-top:4px; font-size:10px; display:flex; gap:4px; justify-content:center; flex-wrap:wrap;}
 

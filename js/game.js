@@ -505,7 +505,7 @@ function renderCombat() {
     box.className = 'enemy-box' + (enemy.hp > 0 && selectedCardUid ? ' targetable' : '');
     if (enemy.hp <= 0) box.style.opacity = 0.25;
     const move = enemy.nextMove;
-    const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : ''))}` : '';
+    const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : (move.type === 'idle' ? move.name : '')))}` : '';
     box.innerHTML = `
       <div class="enemy-icon">${enemy.icon}</div>
       <div class="enemy-name">${enemy.name}</div>
@@ -517,6 +517,10 @@ function renderCombat() {
     const intentDiv = box.querySelector('.intent');
     if (enemy.hp > 0) {
       intentDiv.textContent = intentText;
+      if (move && move.type === 'idle') {
+        intentDiv.classList.add('intent-idle');
+        attachTooltip(intentDiv, `<b>${move.icon} ${move.name}</b><br>本回合${enemy.name}不会采取任何行动，放心进攻或补充资源吧。`);
+      }
       if (move && move.statusPreview && move.statusPreview.length) {
         const previewSpan = document.createElement('span');
         previewSpan.className = 'intent-preview';
