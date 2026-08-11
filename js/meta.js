@@ -14,7 +14,8 @@ const ACHIEVEMENTS = [
   { id: 'relic_collector', name: '遗物收藏家', icon: '💎', desc: '本局结束时持有 5 件及以上遗物', check: (s) => s.relicsHeld >= 5 },
   { id: 'big_spender', name: '挥金如土', icon: '💰', desc: '本局累计获得 150 枚以上金币', check: (s) => s.goldEarned >= 150 },
   { id: 'deck_bloat', name: '卡组膨胀', icon: '🃏', desc: '本局卡组膨胀到 20 张以上', check: (s) => s.deckSize >= 20 },
-  { id: 'boss_slayer', name: '登顶者', icon: '👑', desc: '击败深渊领主，成功登顶', check: (s) => s.won },
+  { id: 'dimension_walker', name: '维度行者', icon: '🌌', desc: '击败一个维度的Boss，穿越到下一维度', check: (s) => s.actsCleared >= 1 },
+  { id: 'boss_slayer', name: '登顶者', icon: '👑', desc: '击败所有维度的Boss，成功登顶', check: (s) => s.won },
   { id: 'survivor', name: '九死一生', icon: '🩸', desc: '以 10 点及以下生命值获得胜利', check: (s) => s.won && s.finalHp <= 10 },
   { id: 'card_shark', name: '出牌大师', icon: '🎴', desc: '本局中累计打出 80 张以上卡牌', check: (s) => s.cardsPlayed >= 80 },
   { id: 'treasure_hunter', name: '寻宝人', icon: '🗝️', desc: '本局中发现过宝藏节点', check: (s) => s.treasureFound },
@@ -61,10 +62,11 @@ function markDiscovered(meta, listName, id) {
 
 function computeScore(stats) {
   return stats.floorReached * 100
+    + (stats.actsCleared || 0) * 2000
     + stats.goldEarned
     + stats.enemiesDefeated * 15
     + stats.elitesDefeated * 40
-    + (stats.won ? 1000 : 0);
+    + (stats.won ? 5000 : 0);
 }
 
 // Applies a finished run's stats to the persistent meta object (mutates + saves it),

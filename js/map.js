@@ -18,17 +18,25 @@ function weightedPick(weights) {
   return entries[0][0];
 }
 
-function generateMap() {
-  const FLOOR_COUNT = 6; // floors 0..5 are travel floors, floor 6 is boss
+function generateMap(travelFloors = 6) {
+  const FLOOR_COUNT = travelFloors; // floors 0..FLOOR_COUNT-1 are travel floors, FLOOR_COUNT is boss
   const floors = [];
+
+  // For long acts, sprinkle a couple of guaranteed rest checkpoints roughly
+  // at the 1/3 and 2/3 marks so a 20-30 floor act isn't pure attrition.
+  const midCheckpoints = new Set();
+  if (FLOOR_COUNT >= 10) {
+    midCheckpoints.add(Math.round(FLOOR_COUNT / 3));
+    midCheckpoints.add(Math.round((FLOOR_COUNT * 2) / 3));
+  }
 
   for (let f = 0; f <= FLOOR_COUNT; f++) {
     const nodes = [];
     if (f === 0) {
       const n = 3;
       for (let i = 0; i < n; i++) nodes.push({ id: `${f}_${i}`, floor: f, idx: i, type: 'monster', visited: false });
-    } else if (f === FLOOR_COUNT - 1) {
-      // guaranteed rest site right before the boss
+    } else if (f === FLOOR_COUNT - 1 || midCheckpoints.has(f)) {
+      // guaranteed rest site right before the boss, and at act midpoints
       nodes.push({ id: `${f}_0`, floor: f, idx: 0, type: 'rest', visited: false });
     } else if (f === FLOOR_COUNT) {
       nodes.push({ id: `${f}_0`, floor: f, idx: 0, type: 'boss', visited: false });

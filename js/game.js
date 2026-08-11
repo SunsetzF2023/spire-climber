@@ -5,6 +5,7 @@
 
 const STARTING_HP = 70;
 const STARTING_GOLD = 99;
+const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
 
 let run = null;
 let combat = null;
@@ -16,7 +17,7 @@ const el = {};
 function cacheEls() {
   [
     'menuScreen', 'startRunBtn', 'openProfileBtn',
-    'mapScreen', 'mapContainer', 'deckList', 'deckCount',
+    'mapScreen', 'mapContainer', 'mapActName', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
     'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
@@ -75,10 +76,11 @@ function newRun() {
     gold: STARTING_GOLD,
     relics: [],
     deck: STARTER_DECK.map(id => makeCardInstance(id, false)),
-    map: generateMap(),
+    map: generateMap(ACT_FLOOR_COUNT),
     currentNodeId: null,
     removeCount: 0,
-    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, treasureFound: false },
+    act: 1,
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false },
   };
   STARTER_DECK.forEach(id => discover('discoveredCards', id));
   showScreen('mapScreen');
@@ -92,7 +94,8 @@ function renderHud() {
   el.hudHp.textContent = `${Math.max(0, Math.round(run.player.hp))}/${run.player.maxHp}`;
   el.hudGold.textContent = run.gold;
   const node = run.currentNodeId ? findNode(run.map, run.currentNodeId) : null;
-  el.hudFloor.textContent = node ? `${node.floor + 1} / ${run.map.floorCount + 1}` : `0 / ${run.map.floorCount + 1}`;
+  const floorText = node ? `${node.floor + 1} / ${run.map.floorCount + 1}` : `0 / ${run.map.floorCount + 1}`;
+  el.hudFloor.textContent = `维度${run.act} · ${floorText}`;
   el.hudRelics.innerHTML = run.relics.map(id => `<span title="${RELICS[id].name}: ${RELICS[id].desc}">${RELICS[id].icon}</span>`).join('');
 }
 
@@ -106,6 +109,7 @@ function checkRunDeath() {
 
 // ---------------- Map ----------------
 function renderMap() {
+  if (el.mapActName) el.mapActName.textContent = `第 ${run.act} 维度 · ${ACT_DEFS[run.act - 1].name}`;
   const reachable = new Set(getReachableNodeIds(run.map, run.currentNodeId));
   el.mapContainer.innerHTML = '';
   run.map.floors.forEach(floorNodes => {
@@ -142,12 +146,12 @@ function renderDeck() {
 function enterNode(node) {
   node.visited = true;
   run.currentNodeId = node.id;
-  run.stats.floorReached = Math.max(run.stats.floorReached, node.floor + 1);
+  run.stats.floorReached = Math.max(run.stats.floorReached, run.stats.actOffset + node.floor + 1);
   renderHud();
   switch (node.type) {
-    case 'monster': startCombat(spawnEnemyGroup('normal'), 'normal', node); break;
-    case 'elite': startCombat(spawnEnemyGroup('elite'), 'elite', node); break;
-    case 'boss': startCombat(spawnEnemyGroup('boss'), 'boss', node); break;
+    case 'monster': startCombat(spawnEnemyGroup('normal', run.act), 'normal', node); break;
+    case 'elite': startCombat(spawnEnemyGroup('elite', run.act), 'elite', node); break;
+    case 'boss': startCombat(spawnEnemyGroup('boss', run.act), 'boss', node); break;
     case 'rest': showRestScreen(node); break;
     case 'shop': showShopScreen(node); break;
     case 'event': showEventScreenUI(node); break;
@@ -158,12 +162,39 @@ function enterNode(node) {
 function backToMapOrVictory(node) {
   if (checkRunDeath()) return;
   if (node.type === 'boss') {
-    finishRun(true, '你击败了深渊领主，成功登顶！');
+    if (run.act < ACT_DEFS.length) {
+      advanceToNextAct(node);
+      return;
+    }
+    const bossName = ENEMIES[ACT_DEFS[run.act - 1].bossId].name;
+    finishRun(true, `你击败了${bossName}，穿越了全部 ${ACT_DEFS.length} 个维度，成功登顶！`);
     return;
   }
   showScreen('mapScreen');
   renderMap();
   renderDeck();
+  renderHud();
+}
+
+function advanceToNextAct(node) {
+  const clearedBossName = ENEMIES[ACT_DEFS[run.act - 1].bossId].name;
+  run.stats.actsCleared += 1;
+  run.stats.actOffset += ACT_FLOOR_COUNT + 1;
+  run.act += 1;
+  healPlayerRun(run, run.player.maxHp);
+  run.map = generateMap(ACT_FLOOR_COUNT);
+  run.currentNodeId = null;
+
+  showScreen('eventScreen');
+  el.eventIcon.textContent = '🌌';
+  el.eventName.textContent = `进入第 ${run.act} 维度`;
+  el.eventDesc.textContent = `你击败了${clearedBossName}！${ACT_DEFS[run.act - 1].name} —— 你感觉到更强大的威胁正在逼近……（生命已完全恢复）`;
+  el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.innerHTML = '';
+  el.eventResult.className = 'event-result hidden';
+  el.eventContinueBtn.classList.remove('hidden');
+  el.eventContinueBtn.onclick = () => { showScreen('mapScreen'); renderMap(); renderDeck(); renderHud(); };
   renderHud();
 }
 
@@ -399,7 +430,8 @@ function renderShop(node) {
 
 // ---------------- Combat ----------------
 function startCombat(enemyDefIds, tier, node) {
-  combat = new CombatEngine(run, enemyDefIds);
+  const hpScaling = ACT_DEFS[run.act - 1].scaling;
+  combat = new CombatEngine(run, enemyDefIds, hpScaling);
   combat.rewardTier = tier;
   combat.node = node;
   combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));
@@ -501,9 +533,10 @@ function afterCombatAction() {
 function showRewardScreen() {
   showScreen('rewardScreen');
   const tier = combat.rewardTier;
-  const goldReward = tier === 'boss' ? 60 + Math.floor(Math.random() * 20)
+  const actScaling = ACT_DEFS[run.act - 1].scaling;
+  const goldReward = Math.round((tier === 'boss' ? 60 + Math.floor(Math.random() * 20)
     : tier === 'elite' ? 25 + Math.floor(Math.random() * 15)
-    : 10 + Math.floor(Math.random() * 10);
+    : 10 + Math.floor(Math.random() * 10)) * actScaling);
   run.gold += goldReward;
   run.stats.goldEarned += goldReward;
   run.stats.enemiesDefeated += combat.enemies.length;
@@ -547,6 +580,8 @@ function finishRun(victory, desc) {
   showScreen('endScreen');
   const stats = {
     won: victory,
+    act: run.act,
+    actsCleared: run.stats.actsCleared,
     floorReached: run.stats.floorReached,
     goldEarned: run.stats.goldEarned,
     enemiesDefeated: run.stats.enemiesDefeated,
@@ -562,6 +597,7 @@ function finishRun(victory, desc) {
   el.endTitle.textContent = victory ? '🏆 通关成功！' : '💀 游戏结束';
   el.endDesc.textContent = desc || '';
   el.endStatsGrid.innerHTML = [
+    statBoxHtml('到达维度', `${stats.act}`),
     statBoxHtml('到达楼层', `${stats.floorReached}`),
     statBoxHtml('本局得分', score),
     statBoxHtml('获得金币', stats.goldEarned),

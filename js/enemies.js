@@ -129,7 +129,51 @@ const ENEMIES = {
     },
   },
 
-  // ---------------- Boss ----------------
+  plague_bearer: {
+    id: 'plague_bearer', name: '瘟疫使者', icon: '🧌', hpRange: [110, 120], rarity: 'elite',
+    chooseMove(enemy, combat) {
+      const pattern = ['toxic_slam', 'regenerate'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'regenerate') {
+        return {
+          name: '腐化再生', icon: '💚', type: 'heal', displayValue: 20,
+          execute(combat, e) {
+            combat.healEnemy(e.id, 20);
+            combat.gainBlockEnemy(e.id, 10);
+            combat.log(`${e.name} 吸收瘴气，回复生命并获得护甲`, 'enemy');
+          },
+        };
+      }
+      return {
+        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 14,
+        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('poison', 3); },
+      };
+    },
+  },
+  void_reaver: {
+    id: 'void_reaver', name: '虚空掠夺者', icon: '👽', hpRange: [130, 145], rarity: 'elite',
+    chooseMove(enemy, combat) {
+      const pattern = ['rend', 'drain'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'drain') {
+        return {
+          name: '生命汲取', icon: '⚔️', type: 'attack', displayValue: 10,
+          execute(combat, e) {
+            const dealt = combat.dealDamageToPlayer(10, e.id);
+            combat.healEnemy(e.id, Math.floor(dealt / 2));
+          },
+        };
+      }
+      return {
+        name: '虚空撕裂', icon: '⚔️', type: 'attack', displayValue: 18,
+        execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+      };
+    },
+  },
+
+  // ---------------- Bosses ----------------
   abyss_lord: {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',
     chooseMove(enemy, combat) {
@@ -167,16 +211,95 @@ const ENEMIES = {
       };
     },
   },
+  iron_colossus: {
+    id: 'iron_colossus', name: '钢铁巨像', icon: '🗿', hpRange: [240, 260], rarity: 'boss',
+    chooseMove(enemy, combat) {
+      const pattern = ['crush', 'overload', 'stomp'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      const enraged = enemy.hp <= enemy.maxHp * 0.5;
+
+      if (pattern[step] === 'overload') {
+        return {
+          name: '超载充能', icon: '💪', type: 'buff', displayValue: 25,
+          execute(combat, e) {
+            combat.gainBlockEnemy(e.id, 25);
+            combat.applyStatusEnemy(e.id, 'strength', 3);
+            combat.log(`${e.name} 超载充能：获得护甲与力量`, 'enemy');
+          },
+        };
+      }
+      if (pattern[step] === 'stomp') {
+        return {
+          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14,
+          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('frail', 2); },
+        };
+      }
+      const dmg = enraged ? 32 : 24;
+      return {
+        name: enraged ? '狂暴碾压' : '碾压', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  void_progenitor: {
+    id: 'void_progenitor', name: '虚空造物主', icon: '🪐', hpRange: [300, 330], rarity: 'boss',
+    chooseMove(enemy, combat) {
+      const pattern = ['annihilate', 'corrupt', 'reality_tear'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      const enraged = enemy.hp <= enemy.maxHp * 0.5;
+
+      if (pattern[step] === 'corrupt') {
+        return {
+          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20,
+          execute(combat, e) {
+            combat.gainBlockEnemy(e.id, 20);
+            combat.applyStatusPlayer('weak', 2);
+            combat.applyStatusPlayer('vulnerable', 2);
+            combat.log(`${e.name} 释放虚空侵蚀，你陷入虚弱与易伤`, 'enemy');
+          },
+        };
+      }
+      if (pattern[step] === 'reality_tear') {
+        return {
+          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 18,
+          execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('poison', 4); },
+        };
+      }
+      // annihilate
+      if (enraged) {
+        return {
+          name: '湮灭 x2', icon: '⚔️', type: 'attack', displayValue: 26, hitsCount: 2,
+          execute(combat, e) { combat.dealDamageToPlayer(26, e.id); combat.dealDamageToPlayer(26, e.id); },
+        };
+      }
+      return {
+        name: '湮灭打击', icon: '⚔️', type: 'attack', displayValue: 26,
+        execute(combat, e) { combat.dealDamageToPlayer(26, e.id); },
+      };
+    },
+  },
 };
 
 const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider'];
-const ELITE_ENEMY_IDS = ['iron_guard', 'shadow_priest'];
-const BOSS_ENEMY_IDS = ['abyss_lord'];
 
-function spawnEnemyGroup(rarity) {
+// ============================================================
+// Acts ("dimensions") — the run is a sequence of acts, each with its
+// own boss, elite roster, and an HP scaling multiplier applied to all
+// enemies (normal/elite/boss) spawned within that act.
+// ============================================================
+const ACT_DEFS = [
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0 },
+  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35 },
+  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7 },
+];
+
+function spawnEnemyGroup(rarity, act = 1) {
+  const actDef = ACT_DEFS[act - 1] || ACT_DEFS[ACT_DEFS.length - 1];
   // Returns an array of enemy defIds for a combat node.
-  if (rarity === 'boss') return [pick(BOSS_ENEMY_IDS)];
-  if (rarity === 'elite') return [pick(ELITE_ENEMY_IDS)];
+  if (rarity === 'boss') return [actDef.bossId];
+  if (rarity === 'elite') return [pick(actDef.eliteIds)];
   // normal: 1-2 enemies
   const count = Math.random() < 0.45 ? 2 : 1;
   const ids = [];

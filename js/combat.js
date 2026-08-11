@@ -3,7 +3,7 @@
 // ============================================================
 
 class CombatEngine {
-  constructor(run, enemyDefIds) {
+  constructor(run, enemyDefIds, hpScaling = 1) {
     this.run = run; // { player:{hp,maxHp}, gold, relics:[], deck:[cardInstance] }
     this.energyMax = 3;
     this.energy = 0;
@@ -21,7 +21,7 @@ class CombatEngine {
     this.enemies = enemyDefIds.map((defId, i) => {
       const def = ENEMIES[defId];
       const [min, max] = def.hpRange;
-      const hp = min + Math.floor(Math.random() * (max - min + 1));
+      const hp = Math.round((min + Math.floor(Math.random() * (max - min + 1))) * hpScaling);
       const enemy = {
         id: 'e' + i, defId, name: def.name, icon: def.icon,
         hp, maxHp: hp, block: 0,
@@ -206,6 +206,7 @@ class CombatEngine {
     this.log(`💥 ${attacker ? attacker.name : '未知敌人'} 对你造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'enemy');
     this.runRelicHook('onDamageTaken', dmg, attackerEnemyId);
     this.checkPlayerDeath();
+    return remaining;
   }
 
   damagePlayerDirect(amount) {
