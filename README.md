@@ -1,0 +1,41 @@
+# 🗡️ Spire Climber — An Original Card-Battling Roguelike Demo
+
+A minimal playable prototype inspired by **Slay the Spire**'s core loop, but with entirely original mechanics, cards, enemies, and relics.
+
+No build step, no backend — just double-click `index.html` or serve it with any static server.
+
+## Core gameplay loop
+> Climb a branching map → run into combat / elite / boss / event / rest / shop / treasure nodes → fight turn-based, energy-driven card battles → on victory, pick a card to add to your deck → keep climbing until you defeat the boss, or die trying.
+
+## Systems implemented
+- **Turn-based card combat**: fixed energy per turn (3 by default), draw 5 cards a turn, playing cards costs energy, block resets at the start of your own turn
+- **Status effects**: Strength (+attack damage), Dexterity (+block gained), Weak (-25% damage dealt), Vulnerable (+50% damage taken), Frail (-25% block gained), Poison (ticks damage down each turn), Metallicize (gain block at end of turn)
+- **Branching map**: each run generates a random branching path with node types — Combat⚔️ / Elite💀 / Rest🔥 / Shop🛒 / Event❓ / Treasure💎 / Boss👑 — you can only advance along unlocked connections
+- **Original enemy AI**: 5 normal enemies, 2 elites, and 1 boss, each with its own independent move cycle / scaling mechanic (e.g. the "Rampaging Hound" bite damage grows every turn; the "Abyss Lord" boss enters an enrage phase below 50% HP)
+- **Relic system**: 12 passive effects that don't take up deck space, earned from elites/treasure/events/shops, with hooks covering combat start, turn start/end, card played, damage taken, and enemy killed
+- **Random events**: sacrifice HP for a relic at an altar, open a suspicious chest, a storyteller who removes a card for free, a wandering blacksmith who upgrades a card for free, a wishing well gamble, and a merchant trading HP for a rare card
+- **Rest sites**: heal 30% of max HP, or permanently upgrade a card (stats improve, name gets a `+`)
+- **Merchant**: buy cards/relics, or pay an increasing gold cost to remove a card from your deck (deck-thinning strategy)
+
+## File structure
+- `index.html` / `style.css` — page structure and styling
+- `js/cards.js` — card definitions (starter deck + common/uncommon/rare reward pools, with upgrade values)
+- `js/relics.js` — relic definitions (hook-based passive effects)
+- `js/enemies.js` — enemy definitions and original AI move logic
+- `js/events.js` — random non-combat event pool
+- `js/map.js` — branching map generation and reachable-node logic
+- `js/combat.js` — `CombatEngine`: pure-logic turn-based battle simulator (energy/draw/discard/exhaust piles, status effects)
+- `js/game.js` — state machine: rendering and interaction wiring for map/event/rest/shop/combat/end screens
+
+## How to test if this is fun
+1. Open the page and click "Start a New Run"
+2. Pick reachable nodes on the map — prioritize combat for gold and cards, and be cautious with elites (high HP, strong mechanics, but a guaranteed relic drop)
+3. In combat: click a hand card to select it, then click an enemy if it needs a target; click "End Turn" once you're out of energy or want to save cards
+4. At rest sites, decide whether to heal or upgrade a card; at shops, decide whether to buy cards/relics or thin your deck
+5. Fight your way to the boss, the "Abyss Lord", and see if you have enough damage/block to survive its enrage phase below 50% HP
+
+## Possible next steps
+- A potion system, and more rarity tiers for cards and relics
+- Multiple starting decks/classes for replay variety
+- More complex multi-phase boss mechanics, curse/status cards
+- Run progress saving (localStorage) so a page refresh doesn't lose the current run

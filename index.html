@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🗡️ 爬塔者 <span>原创卡牌爬塔 Demo</span></h1>
+  <div class="run-hud" id="runHud">
+    <span>❤️ <b id="hudHp">-</b></span>
+    <span>💰 <b id="hudGold">-</b></span>
+    <span>🏔️ <b id="hudFloor">-</b></span>
+    <span id="hudRelics" class="hud-relics"></span>
+  </div>
+</header>
+
+<!-- ============ MAIN MENU ============ -->
+<section id="menuScreen" class="screen">
+  <div class="panel menu-panel">
+    <h2>🗡️ 爬塔者</h2>
+    <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
+    <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
+  </div>
+</section>
+
+<!-- ============ MAP SCREEN ============ -->
+<section id="mapScreen" class="screen hidden">
+  <div class="panel map-panel">
+    <h2>地图 <span class="hint">点击可到达的节点前进</span></h2>
+    <div id="mapContainer" class="map-container"></div>
+  </div>
+  <div class="panel deck-panel">
+    <h2>我的卡组 <span id="deckCount" class="hint"></span></h2>
+    <div id="deckList" class="card-grid small"></div>
+  </div>
+</section>
+
+<!-- ============ EVENT SCREEN ============ -->
+<section id="eventScreen" class="screen hidden">
+  <div class="panel event-panel">
+    <div class="event-icon" id="eventIcon">❓</div>
+    <h2 id="eventName">事件</h2>
+    <p class="event-desc" id="eventDesc"></p>
+    <div id="eventOptions" class="event-options"></div>
+    <div id="eventResult" class="event-result hidden"></div>
+    <button id="eventContinueBtn" class="btn btn-primary hidden">继续前进 ▶</button>
+  </div>
+</section>
+
+<!-- ============ REST SITE SCREEN ============ -->
+<section id="restScreen" class="screen hidden">
+  <div class="panel rest-panel">
+    <div class="event-icon">🔥</div>
+    <h2>营地</h2>
+    <p class="event-desc">在这里可以疗伤，或是打磨一张卡牌使其更强大。</p>
+    <div class="rest-options">
+      <button id="restHealBtn" class="btn btn-primary">🛌 休息（恢复 30% 最大生命）</button>
+      <button id="restUpgradeBtn" class="btn btn-primary">🔨 打磨一张卡牌（永久强化）</button>
+    </div>
+    <div id="restUpgradeList" class="card-grid hidden"></div>
+  </div>
+</section>
+
+<!-- ============ SHOP SCREEN ============ -->
+<section id="shopScreen" class="screen hidden">
+  <div class="panel shop-panel">
+    <h2>商人 <span class="hint">花金币购买卡牌/遗物，或移除一张卡</span></h2>
+    <div id="shopCards" class="card-grid"></div>
+    <div id="shopRelics" class="card-grid"></div>
+    <button id="shopRemoveBtn" class="btn btn-ghost">🗑️ 移除一张卡牌（<span id="removeCost">15</span> 金币）</button>
+    <button id="shopLeaveBtn" class="btn btn-primary">离开商店 ▶</button>
+  </div>
+</section>
+
+<!-- ============ CARD REWARD SCREEN ============ -->
+<section id="rewardScreen" class="screen hidden">
+  <div class="panel reward-panel">
+    <h2 id="rewardTitle">战斗胜利！</h2>
+    <p id="rewardGold" class="hint"></p>
+    <p class="hint">选择一张卡牌加入卡组（也可以跳过）：</p>
+    <div id="rewardCards" class="card-grid"></div>
+    <button id="rewardSkipBtn" class="btn btn-ghost">跳过，不选卡</button>
+  </div>
+</section>
+
+<!-- ============ COMBAT SCREEN ============ -->
+<section id="combatScreen" class="screen hidden">
+  <div class="enemy-row" id="enemyRow"></div>
+
+  <div class="combat-mid">
+    <div class="pile-box" id="drawPileBox">抽牌堆<br><b id="drawCount">0</b></div>
+    <div class="player-box">
+      <div class="player-name">🧙 你</div>
+      <div class="hp-bar"><div class="hp-fill" id="playerHpFill"></div><div class="hp-text" id="playerHpText">70/70</div></div>
+      <div class="block-badge" id="playerBlockBadge"></div>
+      <div class="status-row" id="playerStatusRow"></div>
+    </div>
+    <div class="pile-box" id="discardPileBox">弃牌堆<br><b id="discardCount">0</b></div>
+  </div>
+
+  <div class="combat-bottom">
+    <div class="energy-badge" id="energyBadge">3/3</div>
+    <div id="handRow" class="hand-row"></div>
+    <button id="endTurnBtn" class="btn btn-primary end-turn-btn">结束回合 ▶</button>
+  </div>
+
+  <div id="combatLog" class="combat-log"></div>
+</section>
+
+<!-- ============ GAME OVER / VICTORY ============ -->
+<section id="endScreen" class="screen hidden">
+  <div class="panel menu-panel">
+    <h2 id="endTitle">游戏结束</h2>
+    <p id="endDesc" class="hint"></p>
+    <button id="endRestartBtn" class="btn btn-primary">🔁 重新开始</button>
+  </div>
+</section>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="js/cards.js"></script>
+<script src="js/relics.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/events.js"></script>
+<script src="js/map.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
