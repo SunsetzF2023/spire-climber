@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -25,6 +25,15 @@
     <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
     <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
     <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
+  </div>
+</section>
+
+<!-- ============ CHARACTER SELECT ============ -->
+<section id="characterScreen" class="screen hidden">
+  <div class="panel character-panel">
+    <h2>选择你的角色 <span class="hint">· 不同角色拥有独立的卡牌流派与初始牌组</span></h2>
+    <div id="characterList" class="character-grid"></div>
+    <button id="characterBackBtn" class="btn btn-ghost">◀ 返回主菜单</button>
   </div>
 </section>
 
@@ -176,13 +185,14 @@
   </div>
 </div>
 
-<script src="js/cards.js?v=6"></script>
-<script src="js/relics.js?v=6"></script>
-<script src="js/enemies.js?v=6"></script>
-<script src="js/events.js?v=6"></script>
-<script src="js/map.js?v=6"></script>
-<script src="js/combat.js?v=6"></script>
-<script src="js/meta.js?v=6"></script>
-<script src="js/game.js?v=6"></script>
+<script src="js/cards.js?v=7"></script>
+<script src="js/relics.js?v=7"></script>
+<script src="js/enemies.js?v=7"></script>
+<script src="js/events.js?v=7"></script>
+<script src="js/map.js?v=7"></script>
+<script src="js/combat.js?v=7"></script>
+<script src="js/meta.js?v=7"></script>
+<script src="js/characters.js?v=7"></script>
+<script src="js/game.js?v=7"></script>
 </body>
 </html>

@@ -17,6 +17,7 @@ const el = {};
 function cacheEls() {
   [
     'menuScreen', 'startRunBtn', 'openProfileBtn',
+    'characterScreen', 'characterList', 'characterBackBtn',
     'mapScreen', 'mapContainer', 'mapActName', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventCardSelect', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
@@ -103,24 +104,115 @@ function addCardToDeck(run, defId, upgraded) {
 
 // ---------------- Screen switching ----------------
 function showScreen(name) {
-  ['menuScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen']
+  ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen']
     .forEach(s => el[s].classList.toggle('hidden', s !== name));
 }
 
+// ---------------- Character select ----------------
+function renderCharacterSelect() {
+  showScreen('characterScreen');
+  el.characterList.innerHTML = '';
+  Object.values(CHARACTERS).forEach(ch => {
+    const unlocked = isCharacterUnlocked(ch, meta);
+    const box = document.createElement('div');
+    box.className = 'character-card' + (unlocked ? '' : ' locked');
+    const lockAch = ch.unlockAchievement ? ACHIEVEMENTS.find(a => a.id === ch.unlockAchievement) : null;
+    box.innerHTML = `
+      <div class="character-icon">${unlocked ? ch.icon : '🔒'}</div>
+      <div class="character-name">${unlocked ? ch.name : '???'}</div>
+      <div class="character-desc">${unlocked ? ch.desc : `完成成就「${lockAch ? lockAch.name : ''}」后解锁`}</div>
+    `;
+    if (unlocked) box.addEventListener('click', () => selectCharacterAndStart(ch.id));
+    el.characterList.appendChild(box);
+  });
+}
+
+function selectCharacterAndStart(characterId) {
+  const bonusOptions = [];
+  if (meta.achievements['card_master']) bonusOptions.push('card');
+  if (meta.achievements['relic_hoarder']) bonusOptions.push('relic');
+  if (bonusOptions.length === 0) { newRun(characterId); return; }
+  showBonusSelectScreen(characterId, bonusOptions);
+}
+
+function showBonusSelectScreen(characterId, bonusOptions) {
+  showScreen('eventScreen');
+  el.eventIcon.textContent = '🎁';
+  el.eventName.textContent = '出征前的准备';
+  el.eventDesc.textContent = '你过往的成就为本次冒险带来了额外奖励，请选择：';
+  el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.innerHTML = '';
+  el.eventResult.className = 'event-result hidden';
+  el.eventContinueBtn.classList.add('hidden');
+
+  const options = [];
+  if (bonusOptions.includes('card')) options.push({ label: '🎴 选择一张额外的初始卡牌', action: 'card' });
+  if (bonusOptions.includes('relic')) options.push({ label: '💎 选择一件额外的初始遗物', action: 'relic' });
+  options.push({ label: '⏭️ 跳过奖励，直接出发', action: 'skip' });
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'event-option-btn';
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => {
+      Array.from(el.eventOptions.children).forEach(b => b.disabled = true);
+      if (opt.action === 'skip') { newRun(characterId); return; }
+      el.eventCardSelect.className = 'card-grid';
+      el.eventCardSelect.innerHTML = '';
+      if (opt.action === 'card') {
+        const offered = [];
+        while (offered.length < 3) {
+          const id = pickRandomCardId(characterId, offered);
+          if (!offered.includes(id)) offered.push(id);
+        }
+        offered.forEach(id => {
+          const inst = makeCardInstance(id, false);
+          el.eventCardSelect.appendChild(renderCardEl(inst, {
+            clickable: true,
+            onClick: () => newRun(characterId, { bonusCardId: id }),
+          }));
+        });
+      } else if (opt.action === 'relic') {
+        const offered = [];
+        while (offered.length < 3) {
+          const id = pickRandomRelic(offered);
+          if (!offered.includes(id)) offered.push(id);
+        }
+        offered.forEach(id => {
+          const relic = RELICS[id];
+          const box = document.createElement('div');
+          box.className = 'relic-card';
+          box.textContent = relic.icon;
+          attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}`);
+          box.addEventListener('click', () => newRun(characterId, { bonusRelicId: id }));
+          el.eventCardSelect.appendChild(box);
+        });
+      }
+    });
+    el.eventOptions.appendChild(btn);
+  });
+}
+
 // ---------------- Run lifecycle ----------------
-function newRun() {
+function newRun(characterId, bonus = {}) {
+  const character = CHARACTERS[characterId] || CHARACTERS.warrior;
+  const deckIds = character.startingDeck.slice();
+  if (bonus.bonusCardId) deckIds.push(bonus.bonusCardId);
   run = {
-    player: { hp: STARTING_HP, maxHp: STARTING_HP },
+    characterId: character.id,
+    player: { hp: character.startingHp, maxHp: character.startingHp },
     gold: STARTING_GOLD,
     relics: [],
-    deck: STARTER_DECK.map(id => makeCardInstance(id, false)),
+    deck: deckIds.map(id => makeCardInstance(id, false)),
     map: generateMap(ACT_FLOOR_COUNT),
     currentNodeId: null,
     removeCount: 0,
     act: 1,
-    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false },
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {} },
   };
-  STARTER_DECK.forEach(id => discover('discoveredCards', id));
+  if (bonus.bonusRelicId) addRelicToRun(run, bonus.bonusRelicId);
+  deckIds.forEach(id => discover('discoveredCards', id));
   showScreen('mapScreen');
   renderHud();
   renderMap();
@@ -389,7 +481,7 @@ function showRestScreen(node) {
 function showShopScreen(node) {
   showScreen('shopScreen');
   currentShop = {
-    cards: [0, 1, 2].map(() => ({ id: pickRandomCardId(), cost: 0 })),
+    cards: [0, 1, 2].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
     relics: [0, 1].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
   };
   currentShop.cards.forEach(offer => {
@@ -622,7 +714,7 @@ function showRewardScreen() {
 
   const offered = [];
   while (offered.length < 3) {
-    const id = pickRandomCardId(offered);
+    const id = pickRandomCardId(run.characterId, offered);
     if (!offered.includes(id)) offered.push(id);
   }
   el.rewardCards.innerHTML = '';
@@ -660,6 +752,7 @@ function finishRun(victory, desc) {
     deckSize: run.deck.length,
     finalHp: run.player.hp,
     treasureFound: run.stats.treasureFound,
+    uniqueCardsUsed: Object.keys(run.stats.uniqueCardIds || {}).length,
   };
   const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
 
@@ -749,7 +842,8 @@ function showProfileScreen() {
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
   meta = loadMeta();
-  el.startRunBtn.addEventListener('click', newRun);
+  el.startRunBtn.addEventListener('click', renderCharacterSelect);
+  el.characterBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.openProfileBtn.addEventListener('click', () => showProfileScreen());
   el.profileBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.endTurnBtn.addEventListener('click', () => {

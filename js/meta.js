@@ -20,6 +20,9 @@ const ACHIEVEMENTS = [
   { id: 'card_shark', name: '出牌大师', icon: '🎴', desc: '本局中累计打出 80 张以上卡牌', check: (s) => s.cardsPlayed >= 80 },
   { id: 'treasure_hunter', name: '寻宝人', icon: '🗝️', desc: '本局中发现过宝藏节点', check: (s) => s.treasureFound },
   { id: 'monster_slayer', name: '屠夫', icon: '⚔️', desc: '本局中累计击败 15 只以上敌人', check: (s) => s.enemiesDefeated >= 15 },
+  { id: 'diverse_arsenal', name: '身法如风', icon: '🏹', desc: '本局中打出过 15 种及以上不同的卡牌 —— 解锁新角色·女猎手', check: (s) => s.uniqueCardsUsed >= 15 },
+  { id: 'card_master', name: '精简大师', icon: '🎴', desc: '卡组规模不超过 15 张的情况下获胜 —— 解锁出征前的额外初始卡牌选择', check: (s) => s.won && s.deckSize <= 15 },
+  { id: 'relic_hoarder', name: '遗物猎人', icon: '💎', desc: '本局结束时持有 7 件及以上遗物 —— 解锁出征前的额外初始遗物选择', check: (s) => s.relicsHeld >= 7 },
 ];
 
 function defaultMeta() {

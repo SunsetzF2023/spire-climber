@@ -10,6 +10,7 @@ const STATUS_META = {
   frail: { icon: '🍂', label: '脆弱', desc: '获得的格挡降低 25%。每回合结束时减少 1 层。' },
   poison: { icon: '☠️', label: '中毒', desc: '每回合开始时损失等同于层数的生命值，之后层数 -1。' },
   metallicize: { icon: '🔩', label: '金属化', desc: '每回合结束时自动获得等同于层数的格挡。' },
+  venom: { icon: '🐍', label: '渗毒', desc: '你的攻击牌命中造成伤害时，额外对目标施加等同于层数的中毒。' },
 };
 
 class CombatEngine {
@@ -25,7 +26,7 @@ class CombatEngine {
 
     this.player = {
       block: 0,
-      statuses: { strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0 },
+      statuses: { strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0 },
     };
 
     this.enemies = enemyDefIds.map((defId, i) => {
@@ -147,7 +148,11 @@ class CombatEngine {
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
-    if (this.run.stats) this.run.stats.cardsPlayed = (this.run.stats.cardsPlayed || 0) + 1;
+    if (this.run.stats) {
+      this.run.stats.cardsPlayed = (this.run.stats.cardsPlayed || 0) + 1;
+      this.run.stats.uniqueCardIds = this.run.stats.uniqueCardIds || {};
+      this.run.stats.uniqueCardIds[card.defId] = true;
+    }
     this.checkVictory();
     return { success: true };
   }
@@ -193,6 +198,9 @@ class CombatEngine {
     }
     enemy.hp -= remaining;
     this.log(`⚔️ ${opts.source || '攻击'} 对 ${enemy.name} 造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'player');
+    if (this.currentActor === 'player' && dmg > 0 && this.player.statuses.venom > 0 && enemy.hp > 0) {
+      this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom);
+    }
     if (enemy.hp <= 0) {
       enemy.hp = 0;
       this.log(`💀 ${enemy.name} 被击败了！`, 'info');

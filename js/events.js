@@ -112,7 +112,8 @@ const EVENT_POOL = [
         effect(run) {
           if (run.player.hp <= 6) return { text: '生命值过低，不敢冒险！', cls: 'bad' };
           damagePlayerRun(run, 6);
-          const id = REWARD_POOL_RARE[Math.floor(Math.random() * REWARD_POOL_RARE.length)];
+          const rarePool = [...REWARD_POOLS.rare.neutral, ...(REWARD_POOLS.rare[run.characterId] || REWARD_POOLS.rare.warrior)];
+          const id = rarePool[Math.floor(Math.random() * rarePool.length)];
           addCardToDeck(run, id, false);
           return { text: `获得了稀有卡牌：${CARDS[id].name}`, cls: 'good' };
         },

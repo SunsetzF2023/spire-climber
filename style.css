@@ -51,6 +51,20 @@ body{
 .menu-panel{max-width:520px; margin:60px auto; text-align:center;}
 .menu-panel h2{font-size:26px; justify-content:center;}
 
+/* ---- Character Select ---- */
+.character-panel{max-width:760px; margin:40px auto; text-align:center;}
+.character-grid{display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:16px 0 20px;}
+.character-card{
+  width:200px; background:var(--bg3); border:2px solid var(--border); border-radius:12px;
+  padding:16px 14px; cursor:pointer; transition:.15s;
+}
+.character-card:hover{border-color:var(--amber); transform:translateY(-4px);}
+.character-card.locked{opacity:.45; cursor:not-allowed;}
+.character-card.locked:hover{transform:none; border-color:var(--border);}
+.character-icon{font-size:40px;}
+.character-name{font-size:15px; font-weight:700; margin-top:8px;}
+.character-desc{font-size:11px; color:var(--dim); margin-top:8px; line-height:1.5;}
+
 /* ---- Map ---- */
 .map-container{
   display:flex; flex-direction:column-reverse; gap:22px; align-items:center; padding:16px 0;
