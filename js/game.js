@@ -181,18 +181,48 @@ function showEventScreenUI(node) {
   el.eventName.textContent = evt.name;
   el.eventDesc.textContent = evt.desc;
   el.eventResult.className = 'event-result hidden';
+  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.innerHTML = '';
   el.eventOptions.innerHTML = '';
+
+  const finishOption = (result) => {
+    Array.from(el.eventOptions.children).forEach(b => b.disabled = true);
+    el.eventCardSelect.className = 'card-grid hidden';
+    el.eventCardSelect.innerHTML = '';
+    el.eventResult.className = 'event-result ' + (result.cls || 'info');
+    el.eventResult.textContent = result.text;
+    el.eventContinueBtn.classList.remove('hidden');
+    renderHud();
+  };
+
   evt.options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'event-option-btn';
     btn.textContent = opt.label;
     btn.addEventListener('click', () => {
-      const result = opt.effect(run);
-      Array.from(el.eventOptions.children).forEach(b => b.disabled = true);
-      el.eventResult.className = 'event-result ' + (result.cls || 'info');
-      el.eventResult.textContent = result.text;
-      el.eventContinueBtn.classList.remove('hidden');
-      renderHud();
+      if (opt.selectCard) {
+        if (opt.canPick && !opt.canPick(run)) {
+          finishOption({ text: opt.blockedText || '无法选择。', cls: 'bad' });
+          return;
+        }
+        Array.from(el.eventOptions.children).forEach(b => b.disabled = true);
+        el.eventCardSelect.className = 'card-grid';
+        el.eventCardSelect.innerHTML = '';
+        if (opt.pickHint) {
+          const hint = document.createElement('div');
+          hint.className = 'hint';
+          hint.textContent = opt.pickHint;
+          el.eventCardSelect.appendChild(hint);
+        }
+        run.deck.forEach(card => {
+          el.eventCardSelect.appendChild(renderCardEl(card, {
+            clickable: true,
+            onClick: (c) => finishOption(opt.effect(run, c.uid)),
+          }));
+        });
+        return;
+      }
+      finishOption(opt.effect(run));
     });
     el.eventOptions.appendChild(btn);
   });

@@ -1,6 +1,8 @@
 // ============================================================
 // Random non-combat events — triggered on "?" map nodes.
-// effect(run) mutates run state and returns { text, cls }.
+// effect(run, cardUid?) mutates run state and returns { text, cls }.
+// Options with selectCard:true let the player pick a card from their deck
+// first (rendered by game.js), then call effect(run, chosenCardUid).
 // Relies on helper functions defined in game.js: addRelicToRun,
 // healPlayerRun, damagePlayerRun, removeRandomCardFromDeck,
 // upgradeRandomCardInDeck, addCardToDeck.
@@ -47,11 +49,16 @@ const EVENT_POOL = [
     desc: '一位说书人愿意用一个故事，换取你放下一张不需要的卡牌的记忆。',
     options: [
       {
-        label: '📖 听故事，免费移除一张卡牌',
-        effect(run) {
-          if (run.deck.length <= 5) return { text: '你的卡组已经很精简了，说书人摇了摇头。', cls: 'bad' };
-          const removed = removeRandomCardFromDeck(run);
-          return { text: removed ? `移除了：${CARDS[removed.defId].name}` : '没有可移除的卡牌。', cls: 'good' };
+        label: '📖 听故事，选择一张卡牌免费移除',
+        selectCard: true,
+        canPick(run) { return run.deck.length > 5; },
+        pickHint: '选择一张要移除的卡牌：',
+        blockedText: '你的卡组已经很精简了，说书人摇了摇头。',
+        effect(run, cardUid) {
+          const idx = run.deck.findIndex(c => c.uid === cardUid);
+          if (idx === -1) return { text: '没有找到这张卡牌。', cls: 'bad' };
+          const [removed] = run.deck.splice(idx, 1);
+          return { text: `移除了：${CARDS[removed.defId].name}`, cls: 'good' };
         },
       },
       { label: '🚶 没有时间听故事', effect() { return { text: '你匆匆离开了。', cls: 'info' }; } },
