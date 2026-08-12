@@ -4,6 +4,18 @@
 // ============================================================
 
 const STARTING_HP = 70;
+
+// Art asset system: tries to load an image from assets/, falls back to emoji on error.
+// Usage: artIcon('cards', def.id, def.icon) -> <img> or emoji string
+function artIcon(folder, id, fallbackEmoji) {
+  const src = `assets/${folder}/${id}.png`;
+  return `<img src="${src}" class="art-icon art-${folder}" alt="${id}" loading="lazy" onerror="this.outerHTML='${fallbackEmoji}'">`;
+}
+// For textContent contexts (collection grid) — returns emoji only (can't use img in textContent)
+// For HTML contexts — returns img tag with fallback
+function artIconHtml(folder, id, fallbackEmoji) {
+  return artIcon(folder, id, fallbackEmoji);
+}
 const STARTING_GOLD = 99;
 const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
 
@@ -53,17 +65,17 @@ function hideInfoModal() { el.infoModal.classList.add('hidden'); }
 
 function relicInfoHtml(relicId) {
   const r = RELICS[relicId];
-  return `<div class="modal-icon">${r.icon}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
+  return `<div class="modal-icon">${artIcon('relics', relicId, r.icon)}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
 }
 function cardInfoHtml(defId) {
   const def = CARDS[defId];
   const typeLabel = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
-  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
+  return `<div class="modal-icon">${artIcon('cards', defId, def.icon)}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
 }
 function enemyInfoHtml(defId) {
   const def = ENEMIES[defId];
   const rarityLabel = { normal: '普通敌人', elite: '精英敌人', boss: 'Boss' }[def.rarity];
-  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${rarityLabel} · 生命 ${def.hpRange[0]}-${def.hpRange[1]}</div>`;
+  return `<div class="modal-icon">${artIcon('enemies', defId, def.icon)}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${rarityLabel} · 生命 ${def.hpRange[0]}-${def.hpRange[1]}</div>`;
 }
 function unknownInfoHtml(label) {
   return `<div class="modal-icon">❔</div><div class="modal-name">???</div><div class="modal-desc">尚未发现这个${label}</div>`;
@@ -234,7 +246,7 @@ function renderHud() {
   el.hudRelics.innerHTML = '';
   run.relics.forEach(id => {
     const span = document.createElement('span');
-    span.textContent = RELICS[id].icon;
+    span.innerHTML = artIcon('relics', id, RELICS[id].icon);
     attachTooltip(span, `<b>${RELICS[id].name}</b><br>${RELICS[id].desc}`);
     span.addEventListener('click', () => showInfoModal(relicInfoHtml(id)));
     el.hudRelics.appendChild(span);
@@ -352,7 +364,7 @@ function renderCardEl(cardInstance, opts = {}) {
   div.innerHTML = `
     <div class="cost">${cost}</div>
     <div class="rarity-tag">${def.rarity}</div>
-    <div class="icon">${def.icon}</div>
+    <div class="icon">${artIcon('cards', def.id, def.icon)}</div>
     <div class="name">${def.name}</div>
     <div class="type-label">${{ attack: '攻击', skill: '技能', power: '能力' }[def.type]}</div>
     <div class="desc">${cardDesc(cardInstance)}</div>
@@ -556,7 +568,7 @@ function renderShop(node) {
     const relic = RELICS[offer.id];
     const box = document.createElement('div');
     box.className = 'relic-card';
-    box.textContent = relic.icon;
+    box.innerHTML = artIcon('relics', offer.id, relic.icon);
     attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}<br>💰 ${offer.cost}`);
     if (run.gold >= offer.cost) {
       box.addEventListener('click', () => {
@@ -604,7 +616,7 @@ function renderCombat() {
     const move = enemy.nextMove;
     const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : (move.type === 'idle' ? move.name : '')))}` : '';
     box.innerHTML = `
-      <div class="enemy-icon">${enemy.icon}</div>
+      <div class="enemy-icon">${artIcon('enemies', enemy.defId, enemy.icon)}</div>
       <div class="enemy-name">${enemy.name}</div>
       <div class="hp-bar"><div class="hp-fill" style="width:${Math.max(0, enemy.hp / enemy.maxHp * 100)}%"></div><div class="hp-text">${Math.max(0, enemy.hp)}/${enemy.maxHp}</div></div>
       <div class="block-badge">${enemy.block > 0 ? '🛡️ ' + enemy.block : ''}</div>
@@ -846,7 +858,7 @@ function showProfileScreen() {
       const discovered = discoveredList.includes(id);
       const div = document.createElement('div');
       div.className = `collection-item ${discovered ? '' : 'undiscovered'}`;
-      div.textContent = discovered ? infoFn.icon(id) : '❔';
+      div.innerHTML = discovered ? infoFn.icon(id) : '❔';
       div.addEventListener('click', () => showInfoModal(discovered ? infoFn.html(id) : unknownInfoHtml(label)));
       container.appendChild(div);
     });
@@ -854,15 +866,15 @@ function showProfileScreen() {
 
   const cardIds = Object.keys(CARDS);
   el.profileCardProgress.textContent = `(${meta.discoveredCards.length} / ${cardIds.length})`;
-  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => CARDS[id].icon, html: cardInfoHtml }, '卡牌');
+  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => artIcon('cards', id, CARDS[id].icon), html: cardInfoHtml }, '卡牌');
 
   const relicIds = Object.keys(RELICS);
   el.profileRelicProgress.textContent = `(${meta.discoveredRelics.length} / ${relicIds.length})`;
-  buildCollectionGrid(el.profileRelics, relicIds, meta.discoveredRelics, { icon: (id) => RELICS[id].icon, html: relicInfoHtml }, '遗物');
+  buildCollectionGrid(el.profileRelics, relicIds, meta.discoveredRelics, { icon: (id) => artIcon('relics', id, RELICS[id].icon), html: relicInfoHtml }, '遗物');
 
   const enemyIds = Object.keys(ENEMIES);
   el.profileEnemyProgress.textContent = `(${meta.discoveredEnemies.length} / ${enemyIds.length})`;
-  buildCollectionGrid(el.profileEnemies, enemyIds, meta.discoveredEnemies, { icon: (id) => ENEMIES[id].icon, html: enemyInfoHtml }, '敌人');
+  buildCollectionGrid(el.profileEnemies, enemyIds, meta.discoveredEnemies, { icon: (id) => artIcon('enemies', id, ENEMIES[id].icon), html: enemyInfoHtml }, '敌人');
 }
 
 // ---------------- init ----------------

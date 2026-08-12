@@ -248,3 +248,24 @@ body{
 @media (max-width:800px){
   .mapScreen, #mapScreen{grid-template-columns:1fr;}
 }
+
+/* ---- Art icon system (custom PNG assets with emoji fallback) ---- */
+.art-icon{object-fit:contain; display:inline-block; vertical-align:middle;}
+
+/* Card icons: 48x48 within the .game-card .icon area */
+.game-card .icon .art-icon{width:48px; height:48px;}
+
+/* Enemy icons: 64x64 in combat */
+.enemy-box .enemy-icon .art-icon{width:64px; height:64px;}
+
+/* Relic card icons (shop): 40x40 */
+.relic-card .art-icon{width:40px; height:40px;}
+
+/* HUD relic icons: 20x20 */
+.hud-relics .art-icon{width:20px; height:20px;}
+
+/* Modal icons: 56x56 */
+.modal-icon .art-icon{width:56px; height:56px;}
+
+/* Collection grid icons: 40x40 */
+.collection-item .art-icon{width:40px; height:40px;}
