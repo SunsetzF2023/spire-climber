@@ -353,22 +353,16 @@ function advanceToNextAct(node) {
 
 // ---------------- Generic card element renderer ----------------
 function patchCardEl(node, card, combat) {
-  // 只 patch 主要内容，不重建节点
+  // 只 patch 主要内容，不重建节点，不处理 opts
   const def = CARDS[card.defId];
   node.className = `game-card type-${def.type}` + (card.upgraded ? ' upgraded' : '');
-  if (opts && opts.selected) node.classList.add('selected'); else node.classList.remove('selected');
-  if (opts && opts.unplayable) node.classList.add('unplayable'); else node.classList.remove('unplayable');
   node.querySelector('.cost').textContent = (combat && combat.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
   node.querySelector('.rarity-tag').textContent = def.rarity;
   node.querySelector('.icon').innerHTML = def.icon;
   node.querySelector('.name').textContent = def.name;
   node.querySelector('.type-label').textContent = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
   node.querySelector('.desc').textContent = cardDesc(card);
-  // patch 点击事件
-  node.onclick = null;
-  if (opts && opts.clickable) {
-    node.onclick = () => opts.onClick(card);
-  }
+  // 不 patch 事件和选中/可用状态
 }
 
 function renderCardEl(cardInstance, opts = {}) {
