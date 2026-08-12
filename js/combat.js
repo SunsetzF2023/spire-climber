@@ -11,6 +11,13 @@ const STATUS_META = {
   poison: { icon: '☠️', label: '中毒', desc: '每回合开始时损失等同于层数的生命值，之后层数 -1。' },
   metallicize: { icon: '🔩', label: '金属化', desc: '每回合结束时自动获得等同于层数的格挡。' },
   venom: { icon: '🐍', label: '渗毒', desc: '你的攻击牌命中造成伤害时，额外对目标施加等同于层数的中毒。' },
+  darkEmbrace: { icon: '🖤', label: '暗影拥抱', desc: '每当你消耗一张卡牌，抽取等同于层数的牌。' },
+  feelNoPain: { icon: '🦴', label: '无惧疼痛', desc: '每当你消耗一张卡牌，获得等同于层数的格挡。' },
+  barricade: { icon: '🧱', label: '壁垒', desc: '你的格挡不再在回合开始时清除。' },
+  juggernaut: { icon: '🐘', label: '势不可当', desc: '每当你获得格挡，对一个随机敌人造成等同于层数的伤害。' },
+  noxiousFumes: { icon: '☠️', label: '毒雾', desc: '每回合开始时，对所有敌人施加等同于层数的中毒。' },
+  wellLaidPlans: { icon: '📋', label: '计划妥当', desc: '回合结束时保留等同于层数的手牌，不会被弃置。' },
+  toolsOfTrade: { icon: '🧰', label: '必备工具', desc: '每回合开始时，抽 1 张牌并弃 1 张牌。' },
 };
 
 class CombatEngine {
@@ -26,7 +33,10 @@ class CombatEngine {
 
     this.player = {
       block: 0,
-      statuses: { strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0 },
+      statuses: {
+        strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0,
+        darkEmbrace: 0, feelNoPain: 0, barricade: 0, juggernaut: 0, noxiousFumes: 0, wellLaidPlans: 0, toolsOfTrade: 0,
+      },
     };
 
     this.enemies = enemyDefIds.map((defId, i) => {
@@ -65,7 +75,7 @@ class CombatEngine {
 
   startTurn() {
     this.turnCount += 1;
-    this.player.block = 0;
+    if (!(this.player.statuses.barricade > 0)) this.player.block = 0;
     if (this.player.statuses.poison > 0) {
       this.damagePlayerDirect(this.player.statuses.poison);
       this.log(`☠️ 中毒发作，损失 ${this.player.statuses.poison} 点生命`, 'enemy');
@@ -73,7 +83,16 @@ class CombatEngine {
     }
     this.energy = this.energyMax;
     this.runRelicHook('onTurnStart');
+    if (this.player.statuses.noxiousFumes > 0) {
+      this.enemies.forEach(e => { if (e.hp > 0) this.applyStatusEnemy(e.id, 'poison', this.player.statuses.noxiousFumes); });
+    }
     this.drawCards(5);
+    if (this.player.statuses.toolsOfTrade > 0) {
+      for (let i = 0; i < this.player.statuses.toolsOfTrade; i++) {
+        this.drawCards(1);
+        this.discardRandomFromHand(1);
+      }
+    }
     this.log(`—— 回合 ${this.turnCount} 开始 ——`, 'info');
   }
 
@@ -86,9 +105,12 @@ class CombatEngine {
     this.player.statuses.weak = Math.max(0, this.player.statuses.weak - 1);
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
-    // discard hand
-    this.discardPile.push(...this.hand);
-    this.hand = [];
+    // discard hand (retaining cards if Well-Laid-Plans-style power is active)
+    const retain = this.player.statuses.wellLaidPlans || 0;
+    const kept = retain > 0 ? this.hand.slice(0, retain) : [];
+    const toDiscard = retain > 0 ? this.hand.slice(retain) : this.hand;
+    this.discardPile.push(...toDiscard);
+    this.hand = kept;
     this.enemyTurn();
   }
 
@@ -144,7 +166,7 @@ class CombatEngine {
     def.effect({ combat: this, target, card, vars });
     this.runRelicHook('onCardPlayed', card);
 
-    if (def.exhaust) this.exhaustPile.push(card);
+    if (def.exhaust) { this.exhaustPile.push(card); this.onCardExhausted(); }
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
@@ -175,6 +197,27 @@ class CombatEngine {
     if (idx === -1) return;
     const [card] = this.hand.splice(idx, 1);
     this.exhaustPile.push(card);
+    this.onCardExhausted();
+  }
+
+  onCardExhausted() {
+    if (this.player.statuses.darkEmbrace > 0) this.drawCards(this.player.statuses.darkEmbrace);
+    if (this.player.statuses.feelNoPain > 0) this.gainBlockPlayer(this.player.statuses.feelNoPain);
+  }
+
+  discardRandomFromHand(n = 1) {
+    for (let i = 0; i < n; i++) {
+      if (this.hand.length === 0) break;
+      const idx = Math.floor(Math.random() * this.hand.length);
+      const [card] = this.hand.splice(idx, 1);
+      this.discardPile.push(card);
+    }
+  }
+
+  doubleBlockPlayer() {
+    const before = this.player.block;
+    this.player.block *= 2;
+    this.log(`🛡️ 格挡翻倍：${before} → ${this.player.block}`, 'player');
   }
 
   addCardToDiscard(defId, upgraded) {
@@ -241,6 +284,13 @@ class CombatEngine {
     final = Math.max(0, final);
     this.player.block += final;
     this.log(`🛡️ 你获得 ${final} 点格挡`, 'player');
+    if (final > 0 && this.player.statuses.juggernaut > 0) {
+      const living = this.enemies.filter(e => e.hp > 0);
+      if (living.length > 0) {
+        const target = living[Math.floor(Math.random() * living.length)];
+        this.dealDamageToEnemy(target.id, this.player.statuses.juggernaut, { source: '势不可当', noStrength: true });
+      }
+    }
   }
 
   gainBlockEnemy(enemyId, amount) {

@@ -239,6 +239,44 @@ const CARDS = {
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '重殴' }); },
   },
 
+  // ---------------- Warrior uncommon (power synergy) ----------------
+  dark_embrace: {
+    id: 'dark_embrace', name: '暗影拥抱', icon: '🖤', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    vars(up) { return { amt: up ? 2 : 1 }; },
+    descTemplate(v) { return `永久获得 ${v.amt} 层暗影拥抱：此后每当你消耗一张牌，抽 ${v.amt} 张牌`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('darkEmbrace', ctx.vars.amt); },
+  },
+  feel_no_pain: {
+    id: 'feel_no_pain', name: '无惧疼痛', icon: '🦴', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    vars(up) { return { amt: up ? 5 : 3 }; },
+    descTemplate(v) { return `永久获得无惧疼痛：此后每当你消耗一张牌，获得 ${v.amt} 点格挡`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('feelNoPain', ctx.vars.amt); },
+  },
+  entrench: {
+    id: 'entrench', name: '巩固', icon: '📐', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'warrior',
+    vars() { return {}; },
+    descTemplate() { return `将你当前的格挡翻倍`; },
+    effect(ctx) { ctx.combat.doubleBlockPlayer(); },
+  },
+  disarm: {
+    id: 'disarm', name: '缴械', icon: '🔧', type: 'skill', cost: 1, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { amt: up ? 3 : 2 }; },
+    descTemplate(v) { return `使目标永久失去 ${v.amt} 点力量`; },
+    effect(ctx) { ctx.combat.applyStatusEnemy(ctx.target.id, 'strength', -ctx.vars.amt); },
+  },
+  barricade: {
+    id: 'barricade', name: '壁垒', icon: '🧱', type: 'power', cost: 2, target: 'none', rarity: 'rare', cls: 'warrior',
+    vars() { return {}; },
+    descTemplate() { return `永久获得壁垒：你的格挡不再在回合开始时清除`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('barricade', 1); },
+  },
+  juggernaut: {
+    id: 'juggernaut', name: '势不可当', icon: '🐘', type: 'power', cost: 2, target: 'none', rarity: 'rare', cls: 'warrior',
+    vars(up) { return { amt: up ? 9 : 7 }; },
+    descTemplate(v) { return `永久获得势不可当：此后每当你获得格挡，对一个随机敌人造成 ${v.amt} 点伤害`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('juggernaut', ctx.vars.amt); },
+  },
+
   // ================= 女猎手（Huntress）=================
   dagger_throw: {
     id: 'dagger_throw', name: '飞刀', icon: '🔪', type: 'attack', cost: 1, target: 'enemy', rarity: 'starter', cls: 'huntress',
@@ -354,23 +392,54 @@ const CARDS = {
       ctx.combat.dealDamageToEnemy(ctx.target.id, dmg, { source: '致命一击' });
     },
   },
+  // ---------------- Huntress (draw/poison synergy) ----------------
+  acrobatics: {
+    id: 'acrobatics', name: '杂技', icon: '🤹', type: 'skill', cost: 1, target: 'none', rarity: 'common', cls: 'huntress',
+    vars(up) { return { draw: up ? 4 : 3 }; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌，然后弃 1 张牌`; },
+    effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); ctx.combat.discardRandomFromHand(1); },
+  },
+  tools_of_the_trade: {
+    id: 'tools_of_the_trade', name: '必备工具', icon: '🧰', type: 'power', cost: 1, target: 'none', rarity: 'common', cls: 'huntress',
+    vars() { return {}; },
+    descTemplate() { return `永久获得必备工具：此后每回合开始时，抽 1 张牌并弃 1 张牌`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('toolsOfTrade', 1); },
+  },
+  noxious_fumes: {
+    id: 'noxious_fumes', name: '毒雾', icon: '☠️', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'huntress',
+    vars(up) { return { amt: up ? 3 : 2 }; },
+    descTemplate(v) { return `永久获得毒雾：此后每回合开始时，对所有敌人施加 ${v.amt} 层中毒`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('noxiousFumes', ctx.vars.amt); },
+  },
+  well_laid_plans: {
+    id: 'well_laid_plans', name: '计划妥当', icon: '📋', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'huntress',
+    vars(up) { return { amt: up ? 3 : 2 }; },
+    descTemplate(v) { return `永久获得计划妥当：此后回合结束时保留 ${v.amt} 张手牌，不会被弃置`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('wellLaidPlans', ctx.vars.amt); },
+  },
+  backstab: {
+    id: 'backstab', name: '背刺', icon: '�️', type: 'attack', cost: 0, target: 'enemy', rarity: 'rare', cls: 'huntress', exhaust: true,
+    vars(up) { return { dmg: up ? 22 : 17 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害（消耗）`; },
+    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '背刺' }); },
+  },
 };
 
 const REWARD_POOLS = {
   common: {
     neutral: ['bandage_up', 'flash_strike'],
-    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance'],
-    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder'],
+    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm'],
+    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade'],
   },
   uncommon: {
     neutral: ['second_skin', 'swift_focus'],
-    warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage'],
-    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang'],
+    warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench'],
+    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans'],
   },
   rare: {
     neutral: ['apex_form'],
-    warrior: ['reaper', 'immolate', 'offering', 'bludgeon'],
-    huntress: ['thousand_cuts', 'assassinate'],
+    warrior: ['reaper', 'immolate', 'offering', 'bludgeon', 'barricade', 'juggernaut'],
+    huntress: ['thousand_cuts', 'assassinate', 'backstab'],
   },
 };
 
