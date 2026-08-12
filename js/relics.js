@@ -2,7 +2,11 @@
 // Relic definitions — passive effects, don't take card/deck slots.
 // Hooks (all optional): onPickup(run), onCombatStart(combat),
 // onTurnStart(combat), onTurnEnd(combat), onCardPlayed(combat, cardInstance),
-// onDamageTaken(combat, amount, attackerEnemyId), onEnemyKilled(combat, enemy)
+// onDamageTaken(combat, amount, attackerEnemyId), onEnemyKilled(combat, enemy),
+// onCardExhausted(combat), onCombatEnd(combat).
+// onCardAdded(run, defId, upgraded) is special: it fires OUTSIDE combat
+// (reward/shop/event card pickups), so it receives the run object directly
+// instead of a CombatEngine instance.
 // ============================================================
 
 const RELICS = {
@@ -76,11 +80,50 @@ const RELICS = {
     desc: '战斗胜利后回复 10 点生命',
     onCombatEnd(combat) { combat.healPlayer(10); },
   },
+  marbled_pouch: {
+    id: 'marbled_pouch', name: '大理石袋', icon: '🔮', rarity: 'common',
+    desc: '每场战斗开始时，对所有敌人施加 1 层易伤',
+    onCombatStart(combat) { combat.enemies.forEach(e => { if (e.hp > 0) combat.applyStatusEnemy(e.id, 'vulnerable', 1); }); },
+  },
+  first_strike_fang: {
+    id: 'first_strike_fang', name: '先手獠牙', icon: '🦷', rarity: 'common',
+    desc: '每场战斗中第一张打出的攻击牌额外造成 8 点伤害',
+    onCombatStart(combat) { combat.firstAttackBonusAmount = 8; },
+  },
+  ceramic_fish: {
+    id: 'ceramic_fish', name: '陶瓷鱼', icon: '🐟', rarity: 'common',
+    desc: '每当一张卡牌加入你的卡组，获得 9 金币',
+    onCardAdded(run) { run.gold += 9; },
+  },
+  gremlin_horn: {
+    id: 'gremlin_horn', name: '地精号角', icon: '📯', rarity: 'uncommon',
+    desc: '每当一个敌人死亡，获得 1 点能量并抽 1 张牌',
+    onEnemyKilled(combat) { combat.gainEnergy(1); combat.drawCards(1); },
+  },
+  centennial_puzzle: {
+    id: 'centennial_puzzle', name: '百年谜题', icon: '🧩', rarity: 'uncommon',
+    desc: '每场战斗中，第一次受到伤害时抽 3 张牌',
+    onCombatStart(combat) { combat.relicFlags.centennialUsed = false; },
+    onDamageTaken(combat, amount) {
+      if (amount > 0 && !combat.relicFlags.centennialUsed) {
+        combat.relicFlags.centennialUsed = true;
+        combat.drawCards(3);
+        combat.log('🧩 百年谜题：抽了 3 张牌', 'info');
+      }
+    },
+  },
+  ashen_charm: {
+    id: 'ashen_charm', name: '灰烬护符', icon: '🕯️', rarity: 'rare',
+    desc: '每当你消耗一张卡牌，对所有敌人造成 3 点伤害',
+    onCardExhausted(combat) {
+      combat.enemies.forEach(e => { if (e.hp > 0) combat.dealDamageToEnemy(e.id, 3, { source: '灰烬护符', noStrength: true }); });
+    },
+  },
 };
 
-const RELIC_LIST_COMMON = ['whetstone', 'hourglass', 'hunters_badge', 'greedy_badge'];
-const RELIC_LIST_UNCOMMON = ['calm_heart', 'thorns', 'eagle_eye', 'vengeful_heart', 'serpent_breath'];
-const RELIC_LIST_RARE = ['turbo_heart', 'cracked_shield', 'bloodstone'];
+const RELIC_LIST_COMMON = ['whetstone', 'hourglass', 'hunters_badge', 'greedy_badge', 'marbled_pouch', 'first_strike_fang', 'ceramic_fish'];
+const RELIC_LIST_UNCOMMON = ['calm_heart', 'thorns', 'eagle_eye', 'vengeful_heart', 'serpent_breath', 'gremlin_horn', 'centennial_puzzle'];
+const RELIC_LIST_RARE = ['turbo_heart', 'cracked_shield', 'bloodstone', 'ashen_charm'];
 
 function pickRandomRelic(excludeIds = []) {
   const r = Math.random();

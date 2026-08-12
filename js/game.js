@@ -101,6 +101,10 @@ function upgradeRandomCardInDeck(run) {
 function addCardToDeck(run, defId, upgraded) {
   run.deck.push(makeCardInstance(defId, upgraded));
   discover('discoveredCards', defId);
+  run.relics.forEach(relicId => {
+    const relic = RELICS[relicId];
+    if (relic && typeof relic.onCardAdded === 'function') relic.onCardAdded(run, defId, upgraded);
+  });
 }
 
 // ---------------- Screen switching ----------------

@@ -103,6 +103,121 @@ const EVENT_POOL = [
     ],
   },
   {
+    id: 'golden_shrine', name: '金色神龛', icon: '🛕',
+    desc: '一座镶金的古老神龛，散发着诱人的光泽。',
+    options: [
+      {
+        label: '🙏 祈祷（获得少量金币，无风险）',
+        effect(run) {
+          const gold = 25 + Math.floor(Math.random() * 15);
+          run.gold += gold;
+          run.stats.goldEarned += gold;
+          return { text: `神龛回应了你的祈祷，获得 ${gold} 金币。`, cls: 'good' };
+        },
+      },
+      {
+        label: '🔨 打碎神龛（获得更多金币，但损失生命）',
+        effect(run) {
+          const gold = 60 + Math.floor(Math.random() * 30);
+          run.gold += gold;
+          run.stats.goldEarned += gold;
+          damagePlayerRun(run, 8);
+          return { text: `神龛崩裂，涌出 ${gold} 金币，但反噬之力让你损失 8 点生命。`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不敢亵渎神明，离开', effect() { return { text: '你恭敬地退开了。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'duplicator', name: '复制神龛', icon: '✨',
+    desc: '一座能够复制卡牌的古老神龛，静静等待着你的选择。',
+    options: [
+      {
+        label: '📑 选择一张卡牌，复制一份加入卡组',
+        selectCard: true,
+        pickHint: '选择要复制的卡牌：',
+        effect(run, cardUid) {
+          const card = run.deck.find(c => c.uid === cardUid);
+          if (!card) return { text: '没有找到这张卡牌。', cls: 'bad' };
+          addCardToDeck(run, card.defId, card.upgraded);
+          return { text: `复制了一份：${CARDS[card.defId].name}${card.upgraded ? '+' : ''}`, cls: 'good' };
+        },
+      },
+      { label: '🚶 不需要复制品，离开', effect() { return { text: '你选择保持卡组的纯粹。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'we_meet_again', name: '故人重逢', icon: '🤝',
+    desc: '一个眼熟的旅人凑了过来，提议用金币换取一件遗物。',
+    options: [
+      {
+        label: '💰 支付 75 金币，获得一件遗物',
+        disabled(run) { return run.gold < 75; },
+        effect(run) {
+          if (run.gold < 75) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 75;
+          const relic = addRelicToRun(run, pickRandomRelic(run.relics));
+          return { text: `获得了遗物：${RELICS[relic].icon} ${RELICS[relic].name}`, cls: 'good' };
+        },
+      },
+      { label: '🚶 谢绝交易，离开', effect() { return { text: '你婉言谢绝，转身离开。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'dead_adventurer', name: '遇难的冒险者', icon: '💀',
+    desc: '路边倒着一具冒险者的遗体，身上似乎还带着一些遗物。',
+    options: [
+      {
+        label: '🔍 搜刮遗体（大概率获得金币和遗物，小概率被埋伏）',
+        effect(run) {
+          if (Math.random() < 0.65) {
+            const gold = 40 + Math.floor(Math.random() * 30);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            const relic = addRelicToRun(run, pickRandomRelic(run.relics));
+            return { text: `搜到了 ${gold} 金币，以及遗物：${RELICS[relic].icon} ${RELICS[relic].name}`, cls: 'good' };
+          }
+          damagePlayerRun(run, 12);
+          return { text: '遗体是伏击的诱饵！你损失了 12 点生命……', cls: 'bad' };
+        },
+      },
+      { label: '🚶 不打扰逝者，离开', effect() { return { text: '你默哀片刻，继续赶路。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'wheel_of_change', name: '命运之轮', icon: '🎡',
+    desc: '一座奇异的转轮矗立在路中央，似乎在邀请你转动它，赌上一把运气。',
+    options: [
+      {
+        label: '🎡 转动命运之轮',
+        effect(run) {
+          const roll = Math.random();
+          if (roll < 0.25) {
+            const gold = 50 + Math.floor(Math.random() * 30);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `幸运！获得 ${gold} 金币。`, cls: 'good' };
+          }
+          if (roll < 0.45) {
+            const relic = addRelicToRun(run, pickRandomRelic(run.relics));
+            return { text: `大奖！获得遗物：${RELICS[relic].icon} ${RELICS[relic].name}`, cls: 'good' };
+          }
+          if (roll < 0.65) {
+            const amount = Math.round(run.player.maxHp * 0.2);
+            healPlayerRun(run, amount);
+            return { text: `回复了 ${amount} 点生命。`, cls: 'good' };
+          }
+          if (roll < 0.85) {
+            damagePlayerRun(run, 10);
+            return { text: '转轮反噬，损失了 10 点生命……', cls: 'bad' };
+          }
+          return { text: '转轮静止不动，什么都没发生。', cls: 'info' };
+        },
+      },
+      { label: '🚶 不想赌运气，离开', effect() { return { text: '你选择相信自己的实力，而非运气。', cls: 'info' }; } },
+    ],
+  },
+  {
     id: 'wandering_merchant', name: '路边旅商', icon: '🧳',
     desc: '一位旅行商人愿意用你的生命值换取一张强力卡牌。',
     options: [

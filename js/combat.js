@@ -30,6 +30,10 @@ class CombatEngine {
     this.winner = null;
     this.log_ = [];
     this.firstAttackFree = false;
+    this.firstAttackBonusAmount = 0;
+    this.pendingAttackBonus = 0;
+    this.firstAttackDone = false;
+    this.relicFlags = {};
 
     this.player = {
       block: 0,
@@ -159,6 +163,10 @@ class CombatEngine {
 
     this.energy -= cost;
     if (isFreeAttack) this.firstAttackFree = false;
+    if (def.type === 'attack' && !this.firstAttackDone) {
+      this.pendingAttackBonus = this.firstAttackBonusAmount;
+      this.firstAttackDone = true;
+    }
     this.currentActor = 'player';
 
     this.hand.splice(idx, 1);
@@ -203,6 +211,7 @@ class CombatEngine {
   onCardExhausted() {
     if (this.player.statuses.darkEmbrace > 0) this.drawCards(this.player.statuses.darkEmbrace);
     if (this.player.statuses.feelNoPain > 0) this.gainBlockPlayer(this.player.statuses.feelNoPain);
+    this.runRelicHook('onCardExhausted');
   }
 
   discardRandomFromHand(n = 1) {
@@ -230,6 +239,7 @@ class CombatEngine {
     const enemy = this.enemies.find(e => e.id === enemyId);
     if (!enemy || enemy.hp <= 0) return 0;
     let dmg = baseAmount + (opts.noStrength ? 0 : (this.player.statuses.strength || 0));
+    if (this.pendingAttackBonus) { dmg += this.pendingAttackBonus; this.pendingAttackBonus = 0; }
     if (!opts.ignoreWeak && this.player.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
     if (!opts.ignoreVulnerable && enemy.statuses.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
     dmg = Math.max(0, dmg);
