@@ -9,7 +9,8 @@ const STARTING_HP = 70;
 // Usage: artIcon('cards', def.id, def.icon) -> <img> or emoji string
 function artIcon(folder, id, fallbackEmoji) {
   const src = `assets/${folder}/${id}.png`;
-  return `<img src="${src}" class="art-icon art-${folder}" alt="${id}" loading="lazy" onerror="this.outerHTML='${fallbackEmoji}'">`;
+  // 用 span 包裹 emoji fallback，避免盒模型突变
+  return `<img src=\"${src}\" class=\"art-icon art-${folder}\" alt=\"${id}\" loading=\"lazy\" onerror=\"this.outerHTML='<span class=\\'art-icon art-icon-fallback art-${folder}\\'>${fallbackEmoji}</span>'\">`;
 }
 // For textContent contexts (collection grid) — returns emoji only (can't use img in textContent)
 // For HTML contexts — returns img tag with fallback

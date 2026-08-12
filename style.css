@@ -269,3 +269,21 @@ body{
 
 /* Collection grid icons: 40x40 */
 .collection-item .art-icon{width:40px; height:40px;}
+
+/* Fallback emoji art icon: same size as .art-icon in各场景 */
+.art-icon-fallback {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  font-size: inherit;
+  line-height: 1;
+  text-align: center;
+  vertical-align: middle;
+  object-fit: contain;
+}
+.game-card .icon .art-icon-fallback { width:48px; height:48px; font-size:32px; }
+.enemy-box .enemy-icon .art-icon-fallback { width:64px; height:64px; font-size:40px; }
+.relic-card .art-icon-fallback { width:40px; height:40px; font-size:28px; }
+.hud-relics .art-icon-fallback { width:20px; height:20px; font-size:16px; }
+.modal-icon .art-icon-fallback { width:56px; height:56px; font-size:40px; }
+.collection-item .art-icon-fallback { width:40px; height:40px; font-size:24px; }
