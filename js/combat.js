@@ -18,11 +18,16 @@ const STATUS_META = {
   noxiousFumes: { icon: '☠️', label: '毒雾', desc: '每回合开始时，对所有敌人施加等同于层数的中毒。' },
   wellLaidPlans: { icon: '📋', label: '计划妥当', desc: '回合结束时保留等同于层数的手牌，不会被弃置。' },
   toolsOfTrade: { icon: '🧰', label: '必备工具', desc: '每回合开始时，抽 1 张牌并弃 1 张牌。' },
+  cardLock: { icon: '🔒', label: '封印', desc: '本回合无法打出任何卡牌。回合结束时解除。' },
+  battleHymn: { icon: '🎵', label: '战歌', desc: '每回合开始时，对所有敌人造成等同于层数的伤害。' },
+  corruption: { icon: '🩸', label: '腐化', desc: '所有卡牌费用变为 0，但打出后会被消耗。' },
+  demonForm: { icon: '😈', label: '恶魔形态', desc: '每回合开始时获得等同于层数的力量。' },
 };
 
 class CombatEngine {
   constructor(run, enemyDefIds, hpScaling = 1) {
     this.run = run; // { player:{hp,maxHp}, gold, relics:[], deck:[cardInstance] }
+    this.hpScaling = hpScaling;
     this.energyMax = 3;
     this.energy = 0;
     this.turnCount = 0;
@@ -40,6 +45,7 @@ class CombatEngine {
       statuses: {
         strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0,
         darkEmbrace: 0, feelNoPain: 0, barricade: 0, juggernaut: 0, noxiousFumes: 0, wellLaidPlans: 0, toolsOfTrade: 0,
+        cardLock: 0, battleHymn: 0, corruption: 0, demonForm: 0,
       },
     };
 
@@ -87,10 +93,21 @@ class CombatEngine {
     }
     this.energy = this.energyMax;
     this.runRelicHook('onTurnStart');
+    if (this.player.statuses.battleHymn > 0) {
+      this.enemies.forEach(e => { if (e.hp > 0) this.dealDamageToEnemy(e.id, this.player.statuses.battleHymn, { source: '战歌', noStrength: true, bypassProtected: true }); });
+      this.log(`🎵 战歌激荡，对所有敌人造成 ${this.player.statuses.battleHymn} 点伤害！`, 'player');
+    }
     if (this.player.statuses.noxiousFumes > 0) {
-      this.enemies.forEach(e => { if (e.hp > 0) this.applyStatusEnemy(e.id, 'poison', this.player.statuses.noxiousFumes); });
+      this.enemies.forEach(e => { if (e.hp > 0) this.applyStatusEnemy(e.id, 'poison', this.player.statuses.noxiousFumes, { fromPower: true }); });
+    }
+    if (this.player.statuses.demonForm > 0) {
+      this.applyStatusPlayer('strength', this.player.statuses.demonForm);
     }
     this.drawCards(5);
+    if (this.bonusDrawNext) {
+      this.drawCards(this.bonusDrawNext);
+      this.bonusDrawNext = 0;
+    }
     if (this.player.statuses.toolsOfTrade > 0) {
       for (let i = 0; i < this.player.statuses.toolsOfTrade; i++) {
         this.drawCards(1);
@@ -109,6 +126,10 @@ class CombatEngine {
     this.player.statuses.weak = Math.max(0, this.player.statuses.weak - 1);
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
+    if (this.player.statuses.cardLock > 0) {
+      this.player.statuses.cardLock -= 1;
+      this.log('🔓 封印解除', 'info');
+    }
     // discard hand (retaining cards if Well-Laid-Plans-style power is active)
     const retain = this.player.statuses.wellLaidPlans || 0;
     const kept = retain > 0 ? this.hand.slice(0, retain) : [];
@@ -122,12 +143,22 @@ class CombatEngine {
     for (const enemy of this.enemies) {
       if (this.finished) return;
       if (enemy.hp <= 0) continue;
+      if (enemy.aiState.summonedMinionIds) {
+        const livingMinions = enemy.aiState.summonedMinionIds.filter(id => {
+          const m = this.enemies.find(e => e.id === id);
+          return m && m.hp > 0;
+        });
+        if (livingMinions.length === 0 && enemy.protected) {
+          enemy.protected = false;
+          this.log(`🛡️ ${enemy.name} 的护盾随从全部被消灭，护盾解除！`, 'info');
+        }
+      }
       enemy.block = 0;
       if (enemy.statuses.poison > 0) {
         enemy.hp -= enemy.statuses.poison;
         this.log(`☠️ ${enemy.name} 中毒发作，损失 ${enemy.statuses.poison} 点生命`, 'player');
         enemy.statuses.poison -= 1;
-        if (enemy.hp <= 0) { enemy.hp = 0; this.log(`💀 ${enemy.name} 被毒死了！`, 'info'); this.runRelicHook('onEnemyKilled', enemy); this.checkVictory(); continue; }
+        if (enemy.hp <= 0) { enemy.hp = 0; this.log(`💀 ${enemy.name} 被毒死了！`, 'info'); this.handleEnemyDeath(enemy); continue; }
       }
       this.currentActor = 'enemy';
       if (enemy.nextMove) enemy.nextMove.execute(this, enemy);
@@ -140,19 +171,25 @@ class CombatEngine {
   }
 
   canAfford(cardInstance) {
+    if (this.player.statuses.cardLock > 0) return false;
     const def = CARDS[cardInstance.defId];
-    const cost = (this.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
+    if (this.player.statuses.corruption > 0) return true;
+    const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+    const cost = (this.firstAttackFree && def.type === 'attack') ? 0 : baseCost;
     return this.energy >= cost;
   }
 
   playCard(cardUid, targetEnemyId) {
     if (this.finished) return { success: false, reason: 'finished' };
+    if (this.player.statuses.cardLock > 0) return { success: false, reason: 'card-locked' };
     const idx = this.hand.findIndex(c => c.uid === cardUid);
     if (idx === -1) return { success: false, reason: 'not-in-hand' };
     const card = this.hand[idx];
     const def = CARDS[card.defId];
+    const isCorrupted = this.player.statuses.corruption > 0;
     const isFreeAttack = this.firstAttackFree && def.type === 'attack';
-    const cost = isFreeAttack ? 0 : def.cost;
+    const baseCost = (card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+    const cost = isCorrupted ? 0 : (isFreeAttack ? 0 : baseCost);
     if (this.energy < cost) return { success: false, reason: 'no-energy' };
 
     let target = null;
@@ -173,8 +210,14 @@ class CombatEngine {
     const vars = def.vars(card.upgraded);
     def.effect({ combat: this, target, card, vars });
     this.runRelicHook('onCardPlayed', card);
+    this.enemies.forEach(e => {
+      if (e.hp > 0) {
+        const eDef = ENEMIES[e.defId];
+        if (eDef && typeof eDef.onCardPlayed === 'function') eDef.onCardPlayed(e, this, card);
+      }
+    });
 
-    if (def.exhaust) { this.exhaustPile.push(card); this.onCardExhausted(); }
+    if (def.exhaust || isCorrupted) { this.exhaustPile.push(card); this.onCardExhausted(); }
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
@@ -238,6 +281,10 @@ class CombatEngine {
   dealDamageToEnemy(enemyId, baseAmount, opts = {}) {
     const enemy = this.enemies.find(e => e.id === enemyId);
     if (!enemy || enemy.hp <= 0) return 0;
+    if (enemy.protected && opts.isAoE && !opts.bypassProtected) {
+      this.log(`🛡️ ${enemy.name} 被护盾保护，免疫群体伤害！`, 'enemy');
+      return 0;
+    }
     let dmg = baseAmount + (opts.noStrength ? 0 : (this.player.statuses.strength || 0));
     if (this.pendingAttackBonus) { dmg += this.pendingAttackBonus; this.pendingAttackBonus = 0; }
     if (!opts.ignoreWeak && this.player.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
@@ -252,15 +299,65 @@ class CombatEngine {
     enemy.hp -= remaining;
     this.log(`⚔️ ${opts.source || '攻击'} 对 ${enemy.name} 造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'player');
     if (this.currentActor === 'player' && dmg > 0 && this.player.statuses.venom > 0 && enemy.hp > 0) {
-      this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom);
+      this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom, { fromPower: true });
     }
     if (enemy.hp <= 0) {
       enemy.hp = 0;
       this.log(`💀 ${enemy.name} 被击败了！`, 'info');
-      this.runRelicHook('onEnemyKilled', enemy);
-      this.checkVictory();
+      this.handleEnemyDeath(enemy);
     }
     return remaining;
+  }
+
+  handleEnemyDeath(enemy) {
+    const def = ENEMIES[enemy.defId];
+    if (def.splitInto) this.splitEnemy(enemy, def);
+    this.runRelicHook('onEnemyKilled', enemy);
+    this.checkVictory();
+  }
+
+  splitEnemy(enemy, def) {
+    const childDef = ENEMIES[def.splitInto];
+    const wasAttacking = !!(enemy.nextMove && enemy.nextMove.type === 'attack');
+    const count = def.splitCount || 2;
+    for (let i = 0; i < count; i++) {
+      const [min, max] = childDef.hpRange;
+      const hp = Math.max(1, Math.round((min + Math.floor(Math.random() * (max - min + 1))) * this.hpScaling));
+      const child = {
+        id: `${enemy.id}_s${i}_${Math.random().toString(36).slice(2, 6)}`,
+        defId: def.splitInto, name: childDef.name, icon: childDef.icon,
+        hp, maxHp: hp, block: 0,
+        statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0 },
+        aiState: { confused: wasAttacking }, nextMove: null,
+      };
+      child.nextMove = childDef.chooseMove(child, this);
+      this.enemies.push(child);
+      if (discover) discover('discoveredEnemies', child.defId);
+    }
+    this.log(`🟢 ${enemy.name} 死亡时分裂成了 ${count} 只 ${childDef.name}！${wasAttacking ? '（因原本准备攻击，分裂体将困惑 1 回合）' : ''}`, 'info');
+  }
+
+  summonEnemy(summonerEnemy, defId, opts = {}) {
+    const def = ENEMIES[defId];
+    if (!def) return null;
+    const [min, max] = def.hpRange;
+    const hp = Math.max(1, Math.round((min + Math.floor(Math.random() * (max - min + 1))) * this.hpScaling));
+    const minion = {
+      id: `${summonerEnemy.id}_m_${Math.random().toString(36).slice(2, 6)}`,
+      defId, name: def.name, icon: def.icon,
+      hp, maxHp: hp, block: 0,
+      statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0 },
+      aiState: {}, nextMove: null,
+    };
+    minion.nextMove = def.chooseMove(minion, this);
+    this.enemies.push(minion);
+    if (discover) discover('discoveredEnemies', defId);
+    if (opts.registerToSummoner) {
+      summonerEnemy.aiState.summonedMinionIds = summonerEnemy.aiState.summonedMinionIds || [];
+      summonerEnemy.aiState.summonedMinionIds.push(minion.id);
+    }
+    this.log(`🧟 ${summonerEnemy.name} 召唤了 ${def.name}！`, 'enemy');
+    return minion;
   }
 
   dealDamageToPlayer(baseAmount, attackerEnemyId) {
@@ -332,9 +429,13 @@ class CombatEngine {
     }
   }
 
-  applyStatusEnemy(enemyId, name, amount) {
+  applyStatusEnemy(enemyId, name, amount, opts = {}) {
     const enemy = this.enemies.find(e => e.id === enemyId);
     if (!enemy || !amount) return;
+    if (enemy.protected && !opts.fromPower && amount > 0 && ['weak', 'vulnerable', 'frail', 'poison'].includes(name)) {
+      this.log(`🛡️ ${enemy.name} 被护盾保护，免疫负面状态！`, 'enemy');
+      return;
+    }
     enemy.statuses[name] = (enemy.statuses[name] || 0) + amount;
     const meta = STATUS_META[name];
     if (meta && amount > 0) {

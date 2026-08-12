@@ -649,7 +649,8 @@ function renderCombat() {
   el.playerBlockBadge.textContent = p.block > 0 ? `🛡️ ${p.block}` : '';
   el.playerStatusRow.innerHTML = '';
   ['strength', 'dexterity', 'weak', 'vulnerable', 'frail', 'poison', 'metallicize', 'venom',
-    'darkEmbrace', 'feelNoPain', 'barricade', 'juggernaut', 'noxiousFumes', 'wellLaidPlans', 'toolsOfTrade'].forEach(name => {
+    'darkEmbrace', 'feelNoPain', 'barricade', 'juggernaut', 'noxiousFumes', 'wellLaidPlans', 'toolsOfTrade',
+    'cardLock', 'battleHymn', 'corruption', 'demonForm'].forEach(name => {
     if (p.statuses[name]) el.playerStatusRow.appendChild(buildStatusBadge(name, p.statuses[name], true));
   });
 

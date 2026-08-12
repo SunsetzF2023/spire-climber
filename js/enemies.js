@@ -14,6 +14,7 @@ function idleMove(name, icon, flavor) {
 const ENEMIES = {
   slime: {
     id: 'slime', name: '腐蚀软泥怪', icon: '🟢', hpRange: [32, 38], rarity: 'normal',
+    splitInto: 'slime_medium', splitCount: 2,
     chooseMove(enemy, combat) {
       const pattern = ['atk', 'atk', 'debuff'];
       const step = enemy.aiState.cycle || 0;
@@ -27,6 +28,33 @@ const ENEMIES = {
       return {
         name: '撞击', icon: '⚔️', type: 'attack', displayValue: 8,
         execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
+      };
+    },
+  },
+  slime_medium: {
+    id: 'slime_medium', name: '腐蚀软泥怪（中）', icon: '🟩', hpRange: [16, 20], rarity: 'normal',
+    splitInto: 'slime_small', splitCount: 2,
+    chooseMove(enemy, combat) {
+      if (enemy.aiState.confused) {
+        enemy.aiState.confused = false;
+        return idleMove('困惑', '❓', '刚分裂出来，还没缓过神，呆立原地');
+      }
+      return {
+        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 4,
+        execute(combat, e) { combat.dealDamageToPlayer(4, e.id); },
+      };
+    },
+  },
+  slime_small: {
+    id: 'slime_small', name: '腐蚀软泥怪（小）', icon: '🟢', hpRange: [8, 10], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      if (enemy.aiState.confused) {
+        enemy.aiState.confused = false;
+        return idleMove('困惑', '❓', '刚分裂出来，还没缓过神，呆立原地');
+      }
+      return {
+        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(2, e.id); },
       };
     },
   },
@@ -161,6 +189,150 @@ const ENEMIES = {
       return {
         name: '突刺', icon: '⚔️', type: 'attack', displayValue: 7,
         execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
+      };
+    },
+  },
+
+  // ---------------- Dimension 2 enemies (special mechanics) ----------------
+  card_reactor: {
+    id: 'card_reactor', name: '符文反应堆', icon: '⚙️', hpRange: [50, 60], rarity: 'normal',
+    onCardPlayed(enemy, combat, card) {
+      enemy.aiState.cardsPlayed = (enemy.aiState.cardsPlayed || 0) + 1;
+      if (enemy.aiState.cardsPlayed >= 2) {
+        enemy.aiState.cardsPlayed = 0;
+        combat.applyStatusEnemy(enemy.id, 'strength', 1);
+        combat.log(`⚙️ ${enemy.name} 吸收符文能量，力量 +1`, 'enemy');
+      }
+    },
+    chooseMove(enemy, combat) {
+      const pattern = ['atk', 'charge', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'charge') {
+        return {
+          name: '充能', icon: '🔋', type: 'buff', displayValue: 12,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 12); combat.applyStatusEnemy(e.id, 'strength', 2); combat.log(`${e.name} 蓄能充能！`, 'enemy'); },
+        };
+      }
+      const dmg = 10 + (enemy.statuses.strength || 0);
+      return {
+        name: '符文轰击', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  necro_minion: {
+    id: 'necro_minion', name: '亡灵随从', icon: '💀', hpRange: [12, 16], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      return {
+        name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 5,
+        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); },
+      };
+    },
+  },
+  necromancer: {
+    id: 'necromancer', name: '死灵法师', icon: '🧙', hpRange: [55, 65], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      if (!enemy.aiState.initialized) {
+        enemy.aiState.initialized = true;
+        enemy.protected = true;
+      }
+      const pattern = ['summon', 'atk', 'atk', 'summon'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'summon') {
+        const livingMinions = (enemy.aiState.summonedMinionIds || []).filter(id => {
+          const m = combat.enemies.find(e => e.id === id);
+          return m && m.hp > 0;
+        });
+        if (livingMinions.length < 2) {
+          return {
+            name: '召唤亡灵', icon: '🧟', type: 'summon', displayValue: null,
+            execute(combat, e) { combat.summonEnemy(e, 'necro_minion', { registerToSummoner: true }); },
+          };
+        }
+        return {
+          name: '死亡射线', icon: '⚔️', type: 'attack', displayValue: 12, statusPreview: [{ name: 'weak', amount: 1 }],
+          execute(combat, e) { combat.dealDamageToPlayer(12, e.id); combat.applyStatusPlayer('weak', 1); },
+        };
+      }
+      return {
+        name: '灵魂汲取', icon: '⚔️', type: 'attack', displayValue: 10,
+        execute(combat, e) {
+          const dealt = combat.dealDamageToPlayer(10, e.id);
+          if (dealt > 0) { combat.healEnemy(e.id, Math.floor(dealt / 2)); combat.log(`${e.name} 汲取了 ${Math.floor(dealt / 2)} 点生命`, 'enemy'); }
+        },
+      };
+    },
+  },
+  silence_warden: {
+    id: 'silence_warden', name: '沉默守望者', icon: '🔇', hpRange: [48, 56], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['silence', 'atk', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'silence') {
+        return {
+          name: '封印术', icon: '🔒', type: 'debuff', displayValue: null, statusPreview: [{ name: 'cardLock', amount: 1 }],
+          execute(combat, e) { combat.applyStatusPlayer('cardLock', 1); combat.log(`🔇 ${e.name} 施放封印术！你下回合无法打出卡牌！`, 'enemy'); },
+        };
+      }
+      return {
+        name: '静默之刃', icon: '⚔️', type: 'attack', displayValue: 14,
+        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
+      };
+    },
+  },
+  mirror_sprite: {
+    id: 'mirror_sprite', name: '镜影精灵', icon: '🪞', hpRange: [40, 48], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['atk', 'reflect', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'reflect') {
+        return {
+          name: '镜面反射', icon: '🪞', type: 'defend', displayValue: 8,
+          execute(combat, e) {
+            combat.gainBlockEnemy(e.id, 8);
+            e.aiState.reflecting = true;
+            combat.log(`${e.name} 张开镜面，本回合受到攻击将反射伤害！`, 'enemy');
+          },
+        };
+      }
+      return {
+        name: '碎片风暴', icon: '⚔️', type: 'attack', displayValue: 8, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); if (e.hp > 0) combat.dealDamageToPlayer(8, e.id); },
+      };
+    },
+    onCardPlayed(enemy, combat, card) {
+      if (enemy.aiState.reflecting && CARDS[card.defId].type === 'attack') {
+        enemy.aiState.reflecting = false;
+        combat.damagePlayerDirect(4);
+        combat.log(`🪞 ${enemy.name} 反射了 4 点伤害！`, 'enemy');
+      }
+    },
+  },
+  rust_sentinel: {
+    id: 'rust_sentinel', name: '锈蚀哨兵', icon: '🤖', hpRange: [58, 68], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['guard', 'corrode', 'slam'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'guard') {
+        return {
+          name: '锈蚀护甲', icon: '🛡️', type: 'defend', displayValue: 16,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 16); combat.log(`${e.name} 锈蚀护甲激活`, 'enemy'); },
+        };
+      }
+      if (pattern[step] === 'corrode') {
+        return {
+          name: '腐蚀喷吐', icon: '⚔️', type: 'attack', displayValue: 8, statusPreview: [{ name: 'frail', amount: 2 }, { name: 'weak', amount: 1 }],
+          execute(combat, e) { combat.dealDamageToPlayer(8, e.id); combat.applyStatusPlayer('frail', 2); combat.applyStatusPlayer('weak', 1); },
+        };
+      }
+      return {
+        name: '铁拳重击', icon: '⚔️', type: 'attack', displayValue: 20,
+        execute(combat, e) { combat.dealDamageToPlayer(20, e.id); },
       };
     },
   },
@@ -366,15 +538,17 @@ const ENEMIES = {
 
 const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin'];
 
+const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'slime', 'gargoyle', 'shadow_assassin'];
+
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its
 // own boss, elite roster, and an HP scaling multiplier applied to all
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, doubleSpawnChance: 0.30 },
-  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, doubleSpawnChance: 0.45 },
-  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, doubleSpawnChance: 0.55 },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, doubleSpawnChance: 0.30, enemyPool: NORMAL_ENEMY_IDS },
+  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
+  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, doubleSpawnChance: 0.55, enemyPool: ACT2_ENEMY_IDS },
 ];
 
 function spawnEnemyGroup(rarity, act = 1) {
@@ -385,7 +559,7 @@ function spawnEnemyGroup(rarity, act = 1) {
   // normal: 1-2 enemies
   const count = Math.random() < (actDef.doubleSpawnChance ?? 0.45) ? 2 : 1;
   const ids = [];
-  for (let i = 0; i < count; i++) ids.push(pick(NORMAL_ENEMY_IDS));
+  for (let i = 0; i < count; i++) ids.push(pick(actDef.enemyPool || NORMAL_ENEMY_IDS));
   return ids;
 }
 
