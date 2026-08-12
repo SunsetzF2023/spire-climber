@@ -13,7 +13,7 @@ function idleMove(name, icon, flavor) {
 
 const ENEMIES = {
   slime: {
-    id: 'slime', name: '腐蚀软泥怪', icon: '🟢', hpRange: [40, 46], rarity: 'normal',
+    id: 'slime', name: '腐蚀软泥怪', icon: '🟢', hpRange: [32, 38], rarity: 'normal',
     chooseMove(enemy, combat) {
       const pattern = ['atk', 'atk', 'debuff'];
       const step = enemy.aiState.cycle || 0;
@@ -25,18 +25,18 @@ const ENEMIES = {
         };
       }
       return {
-        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 10,
-        execute(combat, e) { combat.dealDamageToPlayer(10, e.id); },
+        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 8,
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
       };
     },
   },
   bat: {
-    id: 'bat', name: '尖啸蝙蝠', icon: '🦇', hpRange: [28, 32], rarity: 'normal',
+    id: 'bat', name: '尖啸蝙蝠', icon: '🦇', hpRange: [24, 28], rarity: 'normal',
     chooseMove(enemy, combat) {
       if (Math.random() < 0.6) {
         return {
-          name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 7,
-          execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
+          name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 6,
+          execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
         };
       }
       return {
@@ -46,7 +46,7 @@ const ENEMIES = {
     },
   },
   rampaging_hound: {
-    id: 'rampaging_hound', name: '暴走猎犬', icon: '🐕', hpRange: [46, 50], rarity: 'normal',
+    id: 'rampaging_hound', name: '暴走猎犬', icon: '🐕', hpRange: [38, 44], rarity: 'normal',
     chooseMove(enemy, combat) {
       const pattern = ['atk', 'atk', 'atk', 'rest'];
       const step = enemy.aiState.cycle || 0;
@@ -54,8 +54,8 @@ const ENEMIES = {
       if (pattern[step] === 'rest') {
         return idleMove('喘息', '💤', '连续撕咬后精疲力竭，喘了口气');
       }
-      const dmg = enemy.aiState.biteDmg || 6;
-      enemy.aiState.biteDmg = Math.min(dmg + 3, 15);
+      const dmg = enemy.aiState.biteDmg || 5;
+      enemy.aiState.biteDmg = Math.min(dmg + 3, 12);
       return {
         name: '撕咬升级', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
@@ -63,38 +63,104 @@ const ENEMIES = {
     },
   },
   tentacle: {
-    id: 'tentacle', name: '腐蚀触手', icon: '🐙', hpRange: [42, 48], rarity: 'normal',
+    id: 'tentacle', name: '腐蚀触手', icon: '🐙', hpRange: [36, 42], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['atk_poison', 'guard'];
+      const pattern = ['atk_vuln', 'guard'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'guard') {
         return {
-          name: '硬化', icon: '🛡️', type: 'defend', displayValue: 12,
-          execute(combat, e) { combat.gainBlockEnemy(e.id, 12); },
+          name: '硬化', icon: '🛡️', type: 'defend', displayValue: 10,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 10); },
         };
       }
       return {
-        name: '毒液缠绕', icon: '⚔️', type: 'attack', displayValue: 6, statusPreview: [{ name: 'poison', amount: 2 }],
-        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); combat.applyStatusPlayer('poison', 2); },
+        name: '缠绕撕裂', icon: '⚔️', type: 'attack', displayValue: 8, statusPreview: [{ name: 'vulnerable', amount: 1 }],
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); combat.applyStatusPlayer('vulnerable', 1); },
       };
     },
   },
   raider: {
-    id: 'raider', name: '掠夺者', icon: '🪓', hpRange: [40, 46], rarity: 'normal',
+    id: 'raider', name: '掠夺者', icon: '🪓', hpRange: [34, 40], rarity: 'normal',
     chooseMove(enemy, combat) {
       const pattern = ['atk', 'defend', 'atk'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'defend') {
         return {
-          name: '格挡', icon: '🛡️', type: 'defend', displayValue: 9,
-          execute(combat, e) { combat.gainBlockEnemy(e.id, 9); },
+          name: '格挡', icon: '🛡️', type: 'defend', displayValue: 8,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 8); },
         };
       }
       return {
-        name: '劈砍', icon: '⚔️', type: 'attack', displayValue: 11,
-        execute(combat, e) { combat.dealDamageToPlayer(11, e.id); },
+        name: '劈砍', icon: '⚔️', type: 'attack', displayValue: 9,
+        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
+      };
+    },
+  },
+  skeleton_guard: {
+    id: 'skeleton_guard', name: '骸骨卫兵', icon: '💀', hpRange: [34, 40], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['atk', 'defend'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'defend') {
+        return {
+          name: '骨盾', icon: '🛡️', type: 'defend', displayValue: 8,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 8); },
+        };
+      }
+      return {
+        name: '骸骨挥砍', icon: '⚔️', type: 'attack', displayValue: 9,
+        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
+      };
+    },
+  },
+  hornet_swarm: {
+    id: 'hornet_swarm', name: '蜂群', icon: '🐝', hpRange: [24, 28], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      if (Math.random() < 0.15) {
+        return idleMove('盘旋', '🌀', '收拢队形，绕着你盘旋');
+      }
+      return {
+        name: '双重刺击', icon: '⚔️', type: 'attack', displayValue: 4, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(4, e.id); if (e.hp > 0) combat.dealDamageToPlayer(4, e.id); },
+      };
+    },
+  },
+  gargoyle: {
+    id: 'gargoyle', name: '石像鬼', icon: '🪨', hpRange: [44, 50], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['charge', 'charge', 'unleash'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'charge') {
+        return {
+          name: '蓄力', icon: '🛡️', type: 'defend', displayValue: 10,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 10); combat.log(`${e.name} 石化蓄力`, 'enemy'); },
+        };
+      }
+      return {
+        name: '碎石猛击', icon: '⚔️', type: 'attack', displayValue: 18,
+        execute(combat, e) { combat.dealDamageToPlayer(18, e.id); },
+      };
+    },
+  },
+  shadow_assassin: {
+    id: 'shadow_assassin', name: '暗影刺客', icon: '🗡️', hpRange: [24, 28], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['ambush', 'atk', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'ambush') {
+        return {
+          name: '伏击', icon: '⚔️', type: 'attack', displayValue: 13,
+          execute(combat, e) { combat.dealDamageToPlayer(13, e.id); },
+        };
+      }
+      return {
+        name: '突刺', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
       };
     },
   },
@@ -159,8 +225,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 14, statusPreview: [{ name: 'poison', amount: 3 }],
-        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('poison', 3); },
+        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 16, statusPreview: [{ name: 'frail', amount: 2 }],
+        execute(combat, e) { combat.dealDamageToPlayer(16, e.id); combat.applyStatusPlayer('frail', 2); },
       };
     },
   },
@@ -210,8 +276,8 @@ const ENEMIES = {
       }
       if (pattern[step] === 'breath') {
         return {
-          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 12, statusPreview: [{ name: 'poison', amount: 3 }],
-          execute(combat, e) { combat.dealDamageToPlayer(12, e.id); combat.applyStatusPlayer('poison', 3); },
+          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 13, statusPreview: [{ name: 'vulnerable', amount: 2 }],
+          execute(combat, e) { combat.dealDamageToPlayer(13, e.id); combat.applyStatusPlayer('vulnerable', 2); },
         };
       }
       // slam
@@ -279,8 +345,8 @@ const ENEMIES = {
       }
       if (pattern[step] === 'reality_tear') {
         return {
-          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 18, statusPreview: [{ name: 'poison', amount: 4 }],
-          execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('poison', 4); },
+          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }, { name: 'vulnerable', amount: 2 }],
+          execute(combat, e) { combat.dealDamageToPlayer(20, e.id); combat.applyStatusPlayer('weak', 2); combat.applyStatusPlayer('vulnerable', 2); },
         };
       }
       // annihilate
@@ -298,7 +364,7 @@ const ENEMIES = {
   },
 };
 
-const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider'];
+const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin'];
 
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its
@@ -306,9 +372,9 @@ const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0 },
-  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35 },
-  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7 },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, doubleSpawnChance: 0.30 },
+  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, doubleSpawnChance: 0.45 },
+  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, doubleSpawnChance: 0.55 },
 ];
 
 function spawnEnemyGroup(rarity, act = 1) {
@@ -317,7 +383,7 @@ function spawnEnemyGroup(rarity, act = 1) {
   if (rarity === 'boss') return [actDef.bossId];
   if (rarity === 'elite') return [pick(actDef.eliteIds)];
   // normal: 1-2 enemies
-  const count = Math.random() < 0.45 ? 2 : 1;
+  const count = Math.random() < (actDef.doubleSpawnChance ?? 0.45) ? 2 : 1;
   const ids = [];
   for (let i = 0; i < count; i++) ids.push(pick(NORMAL_ENEMY_IDS));
   return ids;
