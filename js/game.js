@@ -6,16 +6,14 @@
 const STARTING_HP = 70;
 
 // Art asset system: tries to load an image from assets/, falls back to emoji on error.
-// Usage: artIcon('cards', def.id, def.icon) -> <img> or emoji string
+// Usage: $2 -> <img> or emoji string
 function artIcon(folder, id, fallbackEmoji) {
-  const src = `assets/${folder}/${id}.png`;
-  // 用 span 包裹 emoji fallback，避免盒模型突变
-  return `<img src=\"${src}\" class=\"art-icon art-${folder}\" alt=\"${id}\" loading=\"lazy\" onerror=\"this.outerHTML='<span class=\\'art-icon art-icon-fallback art-${folder}\\'>${fallbackEmoji}</span>'\">`;
+  return fallbackEmoji;
 }
 // For textContent contexts (collection grid) — returns emoji only (can't use img in textContent)
 // For HTML contexts — returns img tag with fallback
 function artIconHtml(folder, id, fallbackEmoji) {
-  return artIcon(folder, id, fallbackEmoji);
+  return fallbackEmoji;
 }
 const STARTING_GOLD = 99;
 const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
@@ -66,17 +64,17 @@ function hideInfoModal() { el.infoModal.classList.add('hidden'); }
 
 function relicInfoHtml(relicId) {
   const r = RELICS[relicId];
-  return `<div class="modal-icon">${artIcon('relics', relicId, r.icon)}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
+  return `<div class="modal-icon">${r.icon}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
 }
 function cardInfoHtml(defId) {
   const def = CARDS[defId];
   const typeLabel = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
-  return `<div class="modal-icon">${artIcon('cards', defId, def.icon)}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
+  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
 }
 function enemyInfoHtml(defId) {
   const def = ENEMIES[defId];
   const rarityLabel = { normal: '普通敌人', elite: '精英敌人', boss: 'Boss' }[def.rarity];
-  return `<div class="modal-icon">${artIcon('enemies', defId, def.icon)}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${rarityLabel} · 生命 ${def.hpRange[0]}-${def.hpRange[1]}</div>`;
+  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${rarityLabel} · 生命 ${def.hpRange[0]}-${def.hpRange[1]}</div>`;
 }
 function unknownInfoHtml(label) {
   return `<div class="modal-icon">❔</div><div class="modal-name">???</div><div class="modal-desc">尚未发现这个${label}</div>`;
@@ -247,7 +245,7 @@ function renderHud() {
   el.hudRelics.innerHTML = '';
   run.relics.forEach(id => {
     const span = document.createElement('span');
-    span.innerHTML = artIcon('relics', id, RELICS[id].icon);
+    span.innerHTML = RELICS[id].icon;
     attachTooltip(span, `<b>${RELICS[id].name}</b><br>${RELICS[id].desc}`);
     span.addEventListener('click', () => showInfoModal(relicInfoHtml(id)));
     el.hudRelics.appendChild(span);
@@ -362,7 +360,7 @@ function patchCardEl(node, card, combat) {
   if (opts && opts.unplayable) node.classList.add('unplayable'); else node.classList.remove('unplayable');
   node.querySelector('.cost').textContent = (combat && combat.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
   node.querySelector('.rarity-tag').textContent = def.rarity;
-  node.querySelector('.icon').innerHTML = artIcon('cards', def.id, def.icon);
+  node.querySelector('.icon').innerHTML = def.icon;
   node.querySelector('.name').textContent = def.name;
   node.querySelector('.type-label').textContent = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
   node.querySelector('.desc').textContent = cardDesc(card);
@@ -384,7 +382,7 @@ function renderCardEl(cardInstance, opts = {}) {
   div.innerHTML = `
     <div class="cost">${cost}</div>
     <div class="rarity-tag">${def.rarity}</div>
-    <div class="icon">${artIcon('cards', def.id, def.icon)}</div>
+    <div class="icon">${def.icon}</div>
     <div class="name">${def.name}</div>
     <div class="type-label">${{ attack: '攻击', skill: '技能', power: '能力' }[def.type]}</div>
     <div class="desc">${cardDesc(cardInstance)}</div>
@@ -846,7 +844,7 @@ function finishRun(victory, desc) {
     deckSize: run.deck.length,
     finalHp: run.player.hp,
     treasureFound: run.stats.treasureFound,
-    uniqueCardsUsed: Object.keys(run.stats.uniqueCardIds || {}).length,
+    uniqueCardIds: Object.keys(run.stats.uniqueCardIds || {}).length,
   };
   const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
 
