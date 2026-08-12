@@ -153,6 +153,11 @@
 
 <!-- ============ PROFILE / PERSONAL CENTER ============ -->
 <section id="profileScreen" class="screen hidden">
+  <div class="panel cloud-sync-panel">
+    <div id="cloudSyncStatus" class="hint">☁️ 未登录 — 进度仅保存在本设备</div>
+    <button id="cloudLoginBtn" class="btn btn-ghost">🔗 使用 GitHub 登录，跨设备同步进度</button>
+    <button id="cloudLogoutBtn" class="btn btn-ghost hidden">🚪 退出登录</button>
+  </div>
   <div class="panel profile-panel">
     <h2>🧑‍💼 个人中心 <span class="hint">跨局持久保存的成长记录</span></h2>
     <div id="profileStatsGrid" class="stats-grid"></div>
@@ -185,6 +190,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js?v=7"></script>
 <script src="js/cards.js?v=7"></script>
 <script src="js/relics.js?v=7"></script>
 <script src="js/enemies.js?v=7"></script>
@@ -193,6 +200,7 @@
 <script src="js/combat.js?v=7"></script>
 <script src="js/meta.js?v=7"></script>
 <script src="js/characters.js?v=7"></script>
+<script src="js/cloud-sync.js?v=7"></script>
 <script src="js/game.js?v=7"></script>
 </body>
 </html>

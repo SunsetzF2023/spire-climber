@@ -186,6 +186,9 @@ body{
 .log-entry.enemy{color:var(--red);}
 .log-entry.info{color:var(--purple);}
 
+/* ---- Cloud sync ---- */
+.cloud-sync-panel{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:10px 18px;}
+
 /* ---- Run summary / Profile ---- */
 .summary-panel{max-width:640px; margin:30px auto; text-align:center;}
 .profile-panel{max-width:1100px;}

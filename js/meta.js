@@ -53,6 +53,7 @@ function loadMeta() {
 
 function saveMeta(meta) {
   try { localStorage.setItem(META_STORAGE_KEY, JSON.stringify(meta)); } catch (e) { /* storage unavailable, ignore */ }
+  if (typeof onMetaSaved === 'function') onMetaSaved(meta);
 }
 
 function markDiscovered(meta, listName, id) {

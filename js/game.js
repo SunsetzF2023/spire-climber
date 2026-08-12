@@ -31,6 +31,7 @@ function cacheEls() {
     'profileCardProgress', 'profileRelicProgress', 'profileEnemyProgress', 'profileBackBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
+    'cloudSyncStatus', 'cloudLoginBtn', 'cloudLogoutBtn',
   ].forEach(id => { el[id] = document.getElementById(id); });
 }
 
@@ -787,9 +788,29 @@ function finishRun(victory, desc) {
   el.endProfileBtn.onclick = () => showProfileScreen();
 }
 
+// ---------------- Cloud sync UI ----------------
+function renderCloudSyncStatus() {
+  if (cloudUser) {
+    const name = cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name);
+    el.cloudSyncStatus.textContent = `☁️ 已登录${name ? '：' + name : ''} — 进度已同步到云端`;
+    el.cloudLoginBtn.classList.add('hidden');
+    el.cloudLogoutBtn.classList.remove('hidden');
+  } else {
+    el.cloudSyncStatus.textContent = '☁️ 未登录 — 进度仅保存在本设备';
+    el.cloudLoginBtn.classList.remove('hidden');
+    el.cloudLogoutBtn.classList.add('hidden');
+  }
+}
+
+function onCloudAuthChanged(user) {
+  renderCloudSyncStatus();
+  if (el.profileScreen && !el.profileScreen.classList.contains('hidden')) showProfileScreen();
+}
+
 // ---------------- Profile / Personal Center ----------------
 function showProfileScreen() {
   showScreen('profileScreen');
+  renderCloudSyncStatus();
   el.profileStatsGrid.innerHTML = [
     statBoxHtml('总局数', meta.totalRuns),
     statBoxHtml('胜利次数', meta.wins),
@@ -852,5 +873,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   el.infoModalClose.addEventListener('click', hideInfoModal);
   el.infoModal.addEventListener('click', (e) => { if (e.target === el.infoModal) hideInfoModal(); });
+  el.cloudLoginBtn.addEventListener('click', signInWithGitHub);
+  el.cloudLogoutBtn.addEventListener('click', signOutCloud);
+  initCloudSync();
   showScreen('menuScreen');
 });
