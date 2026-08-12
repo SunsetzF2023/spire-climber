@@ -354,6 +354,25 @@ function advanceToNextAct(node) {
 }
 
 // ---------------- Generic card element renderer ----------------
+function patchCardEl(node, card, combat) {
+  // 只 patch 主要内容，不重建节点
+  const def = CARDS[card.defId];
+  node.className = `game-card type-${def.type}` + (card.upgraded ? ' upgraded' : '');
+  if (opts && opts.selected) node.classList.add('selected'); else node.classList.remove('selected');
+  if (opts && opts.unplayable) node.classList.add('unplayable'); else node.classList.remove('unplayable');
+  node.querySelector('.cost').textContent = (combat && combat.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
+  node.querySelector('.rarity-tag').textContent = def.rarity;
+  node.querySelector('.icon').innerHTML = artIcon('cards', def.id, def.icon);
+  node.querySelector('.name').textContent = def.name;
+  node.querySelector('.type-label').textContent = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
+  node.querySelector('.desc').textContent = cardDesc(card);
+  // patch 点击事件
+  node.onclick = null;
+  if (opts && opts.clickable) {
+    node.onclick = () => opts.onClick(card);
+  }
+}
+
 function renderCardEl(cardInstance, opts = {}) {
   const def = CARDS[cardInstance.defId];
   const div = document.createElement('div');
@@ -608,53 +627,94 @@ function buildStatusBadge(name, amount, showLabel) {
   return span;
 }
 
-function renderCombat() {
-  el.enemyRow.innerHTML = '';
-  combat.enemies.forEach(enemy => {
-    const box = document.createElement('div');
-    box.className = 'enemy-box' + (enemy.hp > 0 && selectedCardUid ? ' targetable' : '');
-    if (enemy.hp <= 0) box.style.opacity = 0.25;
-    const move = enemy.nextMove;
+function patchEnemyBox(node, enemy) {
+  // 更新 class
+  node.className = 'enemy-box' + (enemy.hp > 0 && selectedCardUid ? ' targetable' : '');
+  node.style.opacity = enemy.hp <= 0 ? 0.25 : 1;
+  // 更新 icon
+  node.querySelector('.enemy-icon').innerHTML = artIcon('enemies', enemy.defId, enemy.icon);
+  // 更新名字
+  node.querySelector('.enemy-name').textContent = enemy.name;
+  // 更新血条
+  node.querySelector('.hp-fill').style.width = Math.max(0, enemy.hp / enemy.maxHp * 100) + '%';
+  node.querySelector('.hp-text').textContent = `${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+  // 更新格挡
+  node.querySelector('.block-badge').textContent = enemy.block > 0 ? `🛡️ ${enemy.block}` : '';
+  // 更新意图
+  const move = enemy.nextMove;
+  const intentDiv = node.querySelector('.intent');
+  if (enemy.hp > 0) {
     const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : (move.type === 'idle' ? move.name : '')))}` : '';
-    box.innerHTML = `
-      <div class="enemy-icon">${artIcon('enemies', enemy.defId, enemy.icon)}</div>
-      <div class="enemy-name">${enemy.name}</div>
-      <div class="hp-bar"><div class="hp-fill" style="width:${Math.max(0, enemy.hp / enemy.maxHp * 100)}%"></div><div class="hp-text">${Math.max(0, enemy.hp)}/${enemy.maxHp}</div></div>
-      <div class="block-badge">${enemy.block > 0 ? '🛡️ ' + enemy.block : ''}</div>
-      <div class="intent"></div>
-      <div class="status-row"></div>
-    `;
-    const intentDiv = box.querySelector('.intent');
-    if (enemy.hp > 0) {
-      intentDiv.textContent = intentText;
-      if (move && move.type === 'idle') {
-        intentDiv.classList.add('intent-idle');
-        attachTooltip(intentDiv, `<b>${move.icon} ${move.name}</b><br>本回合${enemy.name}不会采取任何行动，放心进攻或补充资源吧。`);
-      }
-      if (move && move.statusPreview && move.statusPreview.length) {
-        const previewSpan = document.createElement('span');
-        previewSpan.className = 'intent-preview';
-        previewSpan.textContent = ' + ' + move.statusPreview.map(s => `${STATUS_META[s.name].icon}${s.amount}`).join(' ');
-        const tipText = move.statusPreview.map(s => `${STATUS_META[s.name].icon} ${STATUS_META[s.name].label} +${s.amount}：${STATUS_META[s.name].desc}`).join('<br>');
-        attachTooltip(previewSpan, `<b>该攻击还会施加：</b><br>${tipText}`);
-        intentDiv.appendChild(previewSpan);
-      }
-    } else {
-      intentDiv.textContent = '💀';
+    intentDiv.textContent = intentText;
+    intentDiv.className = 'intent';
+    if (move && move.type === 'idle') {
+      intentDiv.classList.add('intent-idle');
+      attachTooltip(intentDiv, `<b>${move.icon} ${move.name}</b><br>本回合${enemy.name}不会采取任何行动，放心进攻或补充资源吧。`);
     }
-    const statusRow = box.querySelector('.status-row');
-    ['strength', 'weak', 'vulnerable', 'poison'].forEach(name => {
-      if (enemy.statuses[name]) statusRow.appendChild(buildStatusBadge(name, enemy.statuses[name], false));
-    });
-    if (enemy.hp > 0 && selectedCardUid) {
-      box.addEventListener('click', () => {
-        const res = combat.playCard(selectedCardUid, enemy.id);
-        selectedCardUid = null;
-        if (res.success) afterCombatAction(); else renderCombat();
-      });
+    if (move && move.statusPreview && move.statusPreview.length) {
+      const previewSpan = document.createElement('span');
+      previewSpan.className = 'intent-preview';
+      previewSpan.textContent = ' + ' + move.statusPreview.map(s => `${STATUS_META[s.name].icon}${s.amount}`).join(' ');
+      const tipText = move.statusPreview.map(s => `${STATUS_META[s.name].icon} ${STATUS_META[s.name].label} +${s.amount}：${STATUS_META[s.name].desc}`).join('<br>');
+      attachTooltip(previewSpan, `<b>该攻击还会施加：</b><br>${tipText}`);
+      intentDiv.appendChild(previewSpan);
     }
-    el.enemyRow.appendChild(box);
+  } else {
+    intentDiv.textContent = '💀';
+    intentDiv.className = 'intent';
+  }
+  // 更新状态
+  const statusRow = node.querySelector('.status-row');
+  statusRow.innerHTML = '';
+  ['strength', 'weak', 'vulnerable', 'poison'].forEach(name => {
+    if (enemy.statuses[name]) statusRow.appendChild(buildStatusBadge(name, enemy.statuses[name], false));
   });
+  // 更新点击事件
+  node.onclick = null;
+  if (enemy.hp > 0 && selectedCardUid) {
+    node.onclick = () => {
+      const res = combat.playCard(selectedCardUid, enemy.id);
+      selectedCardUid = null;
+      if (res.success) afterCombatAction(); else renderCombat();
+    };
+  }
+}
+
+function createEnemyBox(enemy) {
+  const box = document.createElement('div');
+  box.innerHTML = `
+    <div class="enemy-icon"></div>
+    <div class="enemy-name"></div>
+    <div class="hp-bar"><div class="hp-fill"></div><div class="hp-text"></div></div>
+    <div class="block-badge"></div>
+    <div class="intent"></div>
+    <div class="status-row"></div>
+  `;
+  patchEnemyBox(box, enemy);
+  return box;
+}
+
+function renderCombat() {
+  // --- ENEMY ZONE DIFF PATCH ---
+  const enemyMap = {};
+  Array.from(el.enemyRow.children).forEach(child => {
+    const eid = child.getAttribute('data-eid');
+    if (eid) enemyMap[eid] = child;
+  });
+  const newEnemyOrder = [];
+  combat.enemies.forEach(enemy => {
+    let node = enemyMap[enemy.id];
+    if (node) {
+      patchEnemyBox(node, enemy);
+      delete enemyMap[enemy.id];
+    } else {
+      node = createEnemyBox(enemy);
+    }
+    node.setAttribute('data-eid', enemy.id);
+    newEnemyOrder.push(node);
+  });
+  Object.values(enemyMap).forEach(n => n.remove());
+  newEnemyOrder.forEach(n => el.enemyRow.appendChild(n));
 
   const p = combat.player;
   el.playerHpFill.style.width = Math.max(0, run.player.hp / run.player.maxHp * 100) + '%';
@@ -671,28 +731,42 @@ function renderCombat() {
   el.drawCount.textContent = combat.drawPile.length;
   el.discardCount.textContent = combat.discardPile.length;
 
-  el.handRow.innerHTML = '';
-  combat.hand.forEach(card => {
-    const def = CARDS[card.defId];
-    const affordable = combat.canAfford(card);
-    const cardEl = renderCardEl(card, {
-      clickable: true,
-      selected: selectedCardUid === card.uid,
-      unplayable: !affordable,
-      liveCombat: combat,
-      onClick: (c) => {
-        if (!combat.canAfford(c)) return;
-        if (def.target === 'enemy') {
-          selectedCardUid = selectedCardUid === c.uid ? null : c.uid;
-          renderCombat();
-        } else {
-          const res = combat.playCard(c.uid, null);
-          if (res.success) afterCombatAction();
-        }
-      },
-    });
-    el.handRow.appendChild(cardEl);
+  // --- HAND ZONE DIFF PATCH ---
+  const handMap = {};
+  Array.from(el.handRow.children).forEach(child => {
+    const uid = child.getAttribute('data-uid');
+    if (uid) handMap[uid] = child;
   });
+  const newHandOrder = [];
+  combat.hand.forEach(card => {
+    let node = handMap[card.uid];
+    if (node) {
+      patchCardEl(node, card, combat);
+      delete handMap[card.uid];
+    } else {
+      node = renderCardEl(card, {
+        clickable: true,
+        selected: selectedCardUid === card.uid,
+        unplayable: !combat.canAfford(card),
+        liveCombat: combat,
+        onClick: (c) => {
+          if (!combat.canAfford(c)) return;
+          const def = CARDS[c.defId];
+          if (def.target === 'enemy') {
+            selectedCardUid = selectedCardUid === c.uid ? null : c.uid;
+            renderCombat();
+          } else {
+            const res = combat.playCard(c.uid, null);
+            if (res.success) afterCombatAction();
+          }
+        },
+      });
+    }
+    node.setAttribute('data-uid', card.uid);
+    newHandOrder.push(node);
+  });
+  Object.values(handMap).forEach(n => n.remove());
+  newHandOrder.forEach(n => el.handRow.appendChild(n));
 
   el.combatLog.innerHTML = combat.log_.slice(-40).reverse().map(e => `<div class="log-entry ${e.cls}">${e.text}</div>`).join('');
   el.endTurnBtn.disabled = combat.finished;
