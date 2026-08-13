@@ -119,11 +119,67 @@ const RELICS = {
       combat.enemies.forEach(e => { if (e.hp > 0) combat.dealDamageToEnemy(e.id, 3, { source: '灰烬护符', noStrength: true }); });
     },
   },
+
+  // ---------------- Negative / Event relics ----------------
+  mark_of_bloom: {
+    id: 'mark_of_bloom', name: '绽放之印', icon: '🌸', rarity: 'event',
+    desc: '你无法再回复生命',
+    onPickup(run) { run.flags = run.flags || {}; run.flags.noHeal = true; },
+  },
+  gremlin_visage: {
+    id: 'gremlin_visage', name: '哥布林面具', icon: '👹', rarity: 'event',
+    desc: '每场战斗开始时获得 1 层虚弱',
+    onCombatStart(combat) { combat.applyStatusPlayer('weak', 1); },
+  },
+  mutagenic_strength: {
+    id: 'mutagenic_strength', name: '变异力量', icon: '💉', rarity: 'event',
+    desc: '每场战斗开始时获得 3 层力量，第一回合结束时失去 3 层力量',
+    onCombatStart(combat) {
+      combat.applyStatusPlayer('strength', 3);
+      combat.relicFlags.mutagenicActive = true;
+    },
+    onTurnEnd(combat) {
+      if (combat.relicFlags.mutagenicActive) {
+        combat.relicFlags.mutagenicActive = false;
+        combat.applyStatusPlayer('strength', -3);
+        combat.log('💉 变异力量消退：力量 -3', 'enemy');
+      }
+    },
+  },
+  cursed_key: {
+    id: 'cursed_key', name: '诅咒之钥', icon: '🗝️', rarity: 'event',
+    desc: '每场战斗开始时额外获得 1 点能量，但获得时加入一张诅咒牌',
+    onPickup(run) {
+      const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
+      const curseId = curses[Math.floor(Math.random() * curses.length)];
+      addCardToDeck(run, curseId, false);
+    },
+    onCombatStart(combat) { combat.gainEnergy(1); },
+  },
+  brimstone: {
+    id: 'brimstone', name: '硫磺石', icon: '🪨', rarity: 'event',
+    desc: '每回合开始时获得 2 层力量，所有敌人获得 1 层力量',
+    onTurnStart(combat) {
+      combat.applyStatusPlayer('strength', 2);
+      combat.enemies.forEach(e => { if (e.hp > 0) combat.applyStatusEnemy(e.id, 'strength', 1); });
+    },
+  },
+  golden_idol: {
+    id: 'golden_idol', name: '黄金偶像', icon: '🗿', rarity: 'event',
+    desc: '敌人掉落 25% 更多金币',
+    onPickup(run) { run.flags = run.flags || {}; run.flags.goldBonus = (run.flags.goldBonus || 0) + 0.25; },
+  },
+  red_mask: {
+    id: 'red_mask', name: '红色面具', icon: '🎭', rarity: 'event',
+    desc: '每场战斗开始时对所有敌人施加 1 层虚弱',
+    onCombatStart(combat) { combat.enemies.forEach(e => { if (e.hp > 0) combat.applyStatusEnemy(e.id, 'weak', 1); }); },
+  },
 };
 
 const RELIC_LIST_COMMON = ['whetstone', 'hourglass', 'hunters_badge', 'greedy_badge', 'marbled_pouch', 'first_strike_fang', 'ceramic_fish'];
 const RELIC_LIST_UNCOMMON = ['calm_heart', 'thorns', 'eagle_eye', 'vengeful_heart', 'serpent_breath', 'gremlin_horn', 'centennial_puzzle'];
 const RELIC_LIST_RARE = ['turbo_heart', 'cracked_shield', 'bloodstone', 'ashen_charm'];
+const RELIC_LIST_EVENT = ['mark_of_bloom', 'gremlin_visage', 'mutagenic_strength', 'cursed_key', 'brimstone', 'golden_idol', 'red_mask'];
 
 function pickRandomRelic(excludeIds = []) {
   const r = Math.random();

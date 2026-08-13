@@ -219,13 +219,19 @@ const ENEMIES = {
   fungi_beast: {
     id: 'fungi_beast', name: '真菌兽', icon: '🍄', hpRange: [22, 28], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['atk', 'grow', 'atk'];
+      const pattern = ['atk', 'grow', 'spore', 'atk'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'grow') {
         return {
           name: '菌丝生长', icon: '🛡️', type: 'defend', displayValue: 6, statusPreview: [{ name: 'strength', amount: 2 }],
           execute(combat, e) { combat.gainBlockEnemy(e.id, 6); combat.applyStatusEnemy(e.id, 'strength', 2); combat.log(`${e.name} 菌丝生长：格挡 +6，力量 +2`, 'enemy'); },
+        };
+      }
+      if (pattern[step] === 'spore') {
+        return {
+          name: '孢子云', icon: '🍄', type: 'debuff', displayValue: null,
+          execute(combat, e) { combat.shuffleStatusIntoDrawPile('slimed', 2); combat.log(`🍄 ${e.name} 释放孢子云，2 张粘液牌洗入抽牌堆！`, 'enemy'); },
         };
       }
       return {
@@ -276,7 +282,7 @@ const ENEMIES = {
       if (pattern[step] === 'zap') {
         return {
           name: '电击', icon: '⚔️', type: 'attack', displayValue: 18,
-          execute(combat, e) { combat.dealDamageToPlayer(18, e.id); },
+          execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.shuffleStatusIntoDrawPile('burn', 1); combat.log(`🔥 ${e.name} 的电击灼烧了你！1 张灼烧牌洗入抽牌堆`, 'enemy'); },
         };
       }
       return {
@@ -456,7 +462,7 @@ const ENEMIES = {
       if (pattern[step] === 'corrode') {
         return {
           name: '腐蚀喷吐', icon: '⚔️', type: 'attack', displayValue: 8, statusPreview: [{ name: 'frail', amount: 2 }, { name: 'weak', amount: 1 }],
-          execute(combat, e) { combat.dealDamageToPlayer(8, e.id); combat.applyStatusPlayer('frail', 2); combat.applyStatusPlayer('weak', 1); },
+          execute(combat, e) { combat.dealDamageToPlayer(8, e.id); combat.applyStatusPlayer('frail', 2); combat.applyStatusPlayer('weak', 1); combat.shuffleStatusIntoDrawPile('dazed', 1); combat.log(`🌫️ ${e.name} 的腐蚀让你迷茫！1 张迷茫牌洗入抽牌堆`, 'enemy'); },
         };
       }
       return {

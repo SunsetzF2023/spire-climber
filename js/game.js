@@ -95,7 +95,7 @@ function addRelicToRun(run, relicId) {
   discover('discoveredRelics', relicId);
   return relicId;
 }
-function healPlayerRun(run, amount) { run.player.hp = Math.min(run.player.maxHp, run.player.hp + amount); }
+function healPlayerRun(run, amount) { if (run.flags && run.flags.noHeal) return; run.player.hp = Math.min(run.player.maxHp, run.player.hp + amount); }
 function damagePlayerRun(run, amount) { run.player.hp = Math.max(0, run.player.hp - amount); }
 function removeRandomCardFromDeck(run) {
   if (run.deck.length === 0) return null;

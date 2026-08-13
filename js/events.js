@@ -40,7 +40,10 @@ const EVENT_POOL = [
             return { text: `获得了 ${gold} 金币！`, cls: 'good' };
           }
           damagePlayerRun(run, 8);
-          return { text: '触发了陷阱，损失 8 点生命……', cls: 'bad' };
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'pain', 'shame', 'writhe'];
+          const curseId = curses[Math.floor(Math.random() * curses.length)];
+          addCardToDeck(run, curseId, false);
+          return { text: `触发了陷阱，损失 8 点生命，且一张诅咒牌【${CARDS[curseId].name}】混入了卡组……`, cls: 'bad' };
         },
       },
       { label: '🚶 太可疑了，不开', effect() { return { text: '安全第一，你没有打开宝箱。', cls: 'info' }; } },
@@ -234,6 +237,57 @@ const EVENT_POOL = [
         },
       },
       { label: '🚶 不划算，拒绝', effect() { return { text: '你婉拒了商人的提议。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'cursed_tome', name: '诅咒之书', icon: '📕',
+    desc: '一本散发着不祥气息的古书静静躺在路边，翻开它似乎能获得力量，但代价不菲。',
+    options: [
+      {
+        label: '📖 翻开古书（获得一件负面遗物 + 大量金币）',
+        effect(run) {
+          const eventRelics = ['mark_of_bloom', 'gremlin_visage', 'mutagenic_strength', 'cursed_key', 'brimstone'];
+          const available = eventRelics.filter(id => !run.relics.includes(id));
+          if (available.length === 0) return { text: '你已经拥有所有诅咒之书的力量了。', cls: 'info' };
+          const relicId = available[Math.floor(Math.random() * available.length)];
+          addRelicToRun(run, relicId);
+          const gold = 50 + Math.floor(Math.random() * 30);
+          run.gold += gold;
+          run.stats.goldEarned += gold;
+          return { text: `翻开古书！获得 ${gold} 金币，但被诅咒了：${RELICS[relicId].icon} ${RELICS[relicId].name} — ${RELICS[relicId].desc}`, cls: 'info' };
+        },
+      },
+      {
+        label: '🩸 接受诅咒，获得一张随机诅咒牌和 80 金币',
+        effect(run) {
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
+          const curseId = curses[Math.floor(Math.random() * curses.length)];
+          addCardToDeck(run, curseId, false);
+          const gold = 80;
+          run.gold += gold;
+          run.stats.goldEarned += gold;
+          return { text: `获得 ${gold} 金币，但一张诅咒牌【${CARDS[curseId].name}】混入了你的卡组！`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不碰诅咒之物', effect() { return { text: '你明智地远离了那本书。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'face_trader', name: '面容交易者', icon: '🎭',
+    desc: '一个诡异的人贩子收集着各种面孔，他愿意和你做一笔交易。',
+    options: [
+      {
+        label: '🎭 随机获得一张面孔（可能是好是坏）',
+        effect(run) {
+          const faces = ['red_mask', 'gremlin_visage', 'golden_idol', 'mutagenic_strength'];
+          const available = faces.filter(id => !run.relics.includes(id));
+          if (available.length === 0) return { text: '你的面容已经够多了。', cls: 'info' };
+          const relicId = available[Math.floor(Math.random() * available.length)];
+          addRelicToRun(run, relicId);
+          return { text: `获得了：${RELICS[relicId].icon} ${RELICS[relicId].name} — ${RELICS[relicId].desc}`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不需要新面孔', effect() { return { text: '你对自己的脸很满意。', cls: 'info' }; } },
     ],
   },
 ];

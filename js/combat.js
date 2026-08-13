@@ -46,7 +46,7 @@ class CombatEngine {
       statuses: {
         strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0,
         darkEmbrace: 0, feelNoPain: 0, barricade: 0, juggernaut: 0, noxiousFumes: 0, wellLaidPlans: 0, toolsOfTrade: 0,
-        cardLock: 0, battleHymn: 0, corruption: 0, demonForm: 0,
+        cardLock: 0, battleHymn: 0, corruption: 0, demonForm: 0, normalityLock: 0,
       },
     };
 
@@ -128,18 +128,40 @@ class CombatEngine {
     if (this.player.statuses.metallicize > 0) {
       this.gainBlockPlayer(this.player.statuses.metallicize);
     }
+    // Burn and Decay end-of-turn damage
+    const burnDmg = this.hand.filter(c => c.defId === 'burn').reduce((sum, c) => {
+      const v = CARDS.burn.vars(c.upgraded);
+      return sum + v.dmg;
+    }, 0);
+    if (burnDmg > 0) { this.damagePlayerDirect(burnDmg); this.log(`🔥 灼烧：受到 ${burnDmg} 点伤害`, 'enemy'); }
+    const decayDmg = this.hand.filter(c => c.defId === 'decay').reduce((sum, c) => {
+      const v = CARDS.decay.vars(c.upgraded);
+      return sum + v.dmg;
+    }, 0);
+    if (decayDmg > 0) { this.damagePlayerDirect(decayDmg); this.log(`🪦 腐朽：受到 ${decayDmg} 点伤害`, 'enemy'); }
     this.runRelicHook('onTurnEnd');
     this.player.statuses.weak = Math.max(0, this.player.statuses.weak - 1);
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
+    this.player.statuses.normalityLock = 0;
     if (this.player.statuses.cardLock > 0) {
       this.player.statuses.cardLock -= 1;
       this.log('🔓 封印解除', 'info');
     }
-    // discard hand (retaining cards if Well-Laid-Plans-style power is active)
+    // discard hand — ethereal cards are exhausted instead of discarded
     const retain = this.player.statuses.wellLaidPlans || 0;
     const kept = retain > 0 ? this.hand.slice(0, retain) : [];
-    const toDiscard = retain > 0 ? this.hand.slice(retain) : this.hand;
+    const toProcess = retain > 0 ? this.hand.slice(retain) : this.hand;
+    const toDiscard = [];
+    toProcess.forEach(c => {
+      const def = CARDS[c.defId];
+      if (def.id === 'dazed' || def.id === 'void') {
+        this.exhaustPile.push(c);
+        this.log(`🌫️ ${def.name} 因虚无被消耗`, 'info');
+      } else {
+        toDiscard.push(c);
+      }
+    });
     this.discardPile.push(...toDiscard);
     this.hand = kept;
     this.enemyTurn();
@@ -179,6 +201,8 @@ class CombatEngine {
   canAfford(cardInstance) {
     if (this.player.statuses.cardLock > 0) return false;
     const def = CARDS[cardInstance.defId];
+    if (def.type === 'status' || def.type === 'curse') return false;
+    if (this.player.statuses.normalityLock > 0 && def.type === 'attack') return false;
     if (this.player.statuses.corruption > 0) return true;
     const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
     const cost = (this.firstAttackFree && def.type === 'attack') ? 0 : baseCost;
@@ -247,7 +271,53 @@ class CombatEngine {
         this.discardPile = [];
         this.log('🔀 弃牌堆已洗入抽牌堆', 'info');
       }
-      this.hand.push(this.drawPile.pop());
+      const card = this.drawPile.pop();
+      this.hand.push(card);
+      this.triggerOnDraw(card);
+    }
+  }
+
+  triggerOnDraw(card) {
+    const def = CARDS[card.defId];
+    if (!def) return;
+    if (def.id === 'void') {
+      if (this.energy > 0) { this.energy -= 1; this.log(`🕳️ 虚空：失去 1 点能量`, 'enemy'); }
+    }
+    if (def.id === 'pain') {
+      const loss = card.vars && card.vars.dmg ? card.vars.dmg : 2;
+      if (this.energy >= loss) { this.energy -= loss; this.log(`🩸 痛苦：失去 ${loss} 点能量`, 'enemy'); }
+      else { this.energy = 0; this.log(`🩸 痛苦：失去所有能量`, 'enemy'); }
+    }
+    if (def.id === 'parasite') {
+      const dmg = card.vars && card.vars.dmg ? card.vars.dmg : 3;
+      this.damagePlayerDirect(dmg);
+      this.log(`🪱 寄生虫：受到 ${dmg} 点伤害`, 'enemy');
+    }
+    if (def.id === 'doubt') {
+      this.applyStatusPlayer('frail', 1);
+      this.log(`❓ 疑虑：获得 1 层脆弱`, 'enemy');
+    }
+    if (def.id === 'shame') {
+      this.applyStatusPlayer('weak', 1);
+      this.log(`😳 耻辱：获得 1 层虚弱`, 'enemy');
+    }
+    if (def.id === 'regret') {
+      this.run.player.maxHp = Math.max(1, this.run.player.maxHp - 1);
+      this.run.player.hp = Math.min(this.run.player.hp, this.run.player.maxHp);
+      this.log(`😢 悔恨：最大生命值 -1`, 'enemy');
+    }
+    if (def.id === 'normality') {
+      this.player.statuses.normalityLock = 1;
+      this.log(`😐 平庸：本回合不能打出攻击牌`, 'enemy');
+    }
+  }
+
+  shuffleStatusIntoDrawPile(statusId, count = 1, upgraded = false) {
+    for (let i = 0; i < count; i++) {
+      this.drawPile.push({
+        uid: 's' + Math.random().toString(36).slice(2),
+        defId: statusId, upgraded,
+      });
     }
   }
 
@@ -418,6 +488,7 @@ class CombatEngine {
 
   healPlayer(amount) {
     if (amount <= 0) return;
+    if (this.run.flags && this.run.flags.noHeal) { this.log('🌸 绽放之印：无法回复生命', 'enemy'); return; }
     const before = this.run.player.hp;
     this.run.player.hp = Math.min(this.run.player.maxHp, this.run.player.hp + amount);
     if (this.run.player.hp > before) this.log(`💚 你回复了 ${this.run.player.hp - before} 点生命`, 'player');

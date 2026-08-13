@@ -730,6 +730,100 @@ const CARDS = {
     descTemplate(v) { return `使目标获得 ${v.vuln} 层易伤（消耗）`; },
     effect(ctx) { ctx.combat.applyStatusEnemy(ctx.target.id, 'vulnerable', ctx.vars.vuln); },
   },
+
+  // ================= 状态牌（Status）==================
+  wound: {
+    id: 'wound', name: '伤口', icon: '🩹', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `不可打出`; },
+    effect() {},
+  },
+  burn: {
+    id: 'burn', name: '灼烧', icon: '🔥', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars(up) { return { dmg: up ? 4 : 2 }; },
+    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。不可打出`; },
+    effect() {},
+  },
+  dazed: {
+    id: 'dazed', name: '迷茫', icon: '🌫️', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `虚无。不可打出`; },
+    effect() {},
+  },
+  slimed: {
+    id: 'slimed', name: '被粘液覆盖', icon: '🟢', type: 'status', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
+    vars() { return {}; },
+    descTemplate() { return `消耗`; },
+    effect() {},
+  },
+  void: {
+    id: 'void', name: '虚空', icon: '🕳️', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `抽到时失去 1 点能量。虚无。不可打出`; },
+    effect() {},
+  },
+
+  // ================= 诅咒牌（Curse）==================
+  clumsy: {
+    id: 'clumsy', name: '笨拙', icon: '🤡', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
+    vars() { return {}; },
+    descTemplate() { return `消耗`; },
+    effect() {},
+  },
+  decay: {
+    id: 'decay', name: '腐朽', icon: '🪦', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return { dmg: 2 }; },
+    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。不可打出`; },
+    effect() {},
+  },
+  doubt: {
+    id: 'doubt', name: '疑虑', icon: '❓', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `抽到时获得 1 层脆弱。不可打出`; },
+    effect() {},
+  },
+  injury: {
+    id: 'injury', name: '创伤', icon: '💢', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `不可打出`; },
+    effect() {},
+  },
+  normality: {
+    id: 'normality', name: '平庸', icon: '😐', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `抽到时，本回合不能再打出攻击牌。不可打出`; },
+    effect() {},
+  },
+  pain: {
+    id: 'pain', name: '痛苦', icon: '🩸', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return { dmg: 2 }; },
+    descTemplate(v) { return `抽到时失去 ${v.dmg} 点能量。不可打出`; },
+    effect() {},
+  },
+  parasite: {
+    id: 'parasite', name: '寄生虫', icon: '🪱', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return { dmg: 3 }; },
+    descTemplate(v) { return `抽到时受到 ${v.dmg} 点伤害。不可打出`; },
+    effect() {},
+  },
+  regret: {
+    id: 'regret', name: '悔恨', icon: '😢', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `抽到时失去 1 点最大生命值。不可打出`; },
+    effect() {},
+  },
+  shame: {
+    id: 'shame', name: '耻辱', icon: '😳', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `抽到时获得 1 层虚弱。不可打出`; },
+    effect() {},
+  },
+  writhe: {
+    id: 'writhe', name: '煎熬', icon: '😣', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return {}; },
+    descTemplate() { return `不可打出`; },
+    effect() {},
+  },
 };
 
 const REWARD_POOLS = {

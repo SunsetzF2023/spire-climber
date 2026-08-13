@@ -94,6 +94,8 @@ body{
 .game-card.type-attack{border-top:3px solid var(--red);}
 .game-card.type-skill{border-top:3px solid var(--blue);}
 .game-card.type-power{border-top:3px solid var(--purple);}
+.game-card.type-status{border-top:3px solid #555; background:linear-gradient(160deg,#2a2a2a,#1a1a1a);}
+.game-card.type-curse{border-top:3px solid #660066; background:linear-gradient(160deg,#2a1040,#1a0820);}
 .game-card .cost{
   position:absolute; top:6px; left:6px; width:22px; height:22px; border-radius:50%;
   background:var(--bg); border:1px solid var(--amber); color:var(--amber);
