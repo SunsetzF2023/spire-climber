@@ -524,6 +524,75 @@ const EVENT_POOL = [
       { label: '🚶 绕道而行', effect() { return { text: '你选择不惹麻烦，绕道而行。', cls: 'info' }; } },
     ],
   },
+  {
+    id: 'adventurer_encounter', name: '冒险者遭遇', icon: '🧭',
+    desc: '在岔路口你遇到了另一位冒险者。他看起来经验丰富，但似乎受了伤。你可以选择救助、偷窃、袭击或离开。',
+    options: [
+      {
+        label: '🤝 救助他（消耗 15 金币，获得遗物或金币回报）',
+        disabled(run) { return run.gold < 15; },
+        effect(run) {
+          if (run.gold < 15) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 15;
+          const roll = Math.random();
+          if (roll < 0.4) {
+            const relicId = pickRandomRelic(run.relics);
+            if (relicId) {
+              addRelicToRun(run, relicId);
+              return { text: `冒险者感激你的救助，赠予你：${RELICS[relicId].icon} ${RELICS[relicId].name}！`, cls: 'good' };
+            }
+          }
+          if (roll < 0.7) {
+            const gold = 30 + Math.floor(Math.random() * 20);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `冒险者感激你的救助，给了你 ${gold} 金币作为回报。`, cls: 'good' };
+          }
+          healPlayerRun(run, 10);
+          return { text: `冒险者感激你的救助，帮你包扎了伤口，回复 10 点生命。`, cls: 'good' };
+        },
+      },
+      {
+        label: '🥷 偷窃他的财物（可能被发现并引发战斗）',
+        effect(run) {
+          const roll = Math.random();
+          if (roll < 0.5) {
+            const gold = 20 + Math.floor(Math.random() * 20);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `你趁他不注意偷到了 ${gold} 金币。`, cls: 'good' };
+          }
+          if (roll < 0.75) {
+            const dmg = 4 + Math.floor(Math.random() * 4);
+            damagePlayerRun(run, dmg);
+            return { text: `偷窃失败！冒险者反击了你，损失 ${dmg} 点生命。`, cls: 'bad' };
+          }
+          if (Math.random() < 0.3) {
+            startCombatFromEvent(['karen'], 'elite');
+            return { text: `你试图偷窃，但这位冒险者竟然是传说中的 Karen！她愤怒地拔出了武器！`, cls: 'bad' };
+          }
+          const types = ['adventurer_guardian', 'adventurer_thief', 'adventurer_disguised'];
+          const enemyId = types[Math.floor(Math.random() * types.length)];
+          startCombatFromEvent([enemyId], 'normal');
+          return { text: `偷窃被发现，冒险者暴怒攻击了你！`, cls: 'bad' };
+        },
+      },
+      {
+        label: '⚔️ 袭击他（进入战斗，有概率遭遇精英 Karen）',
+        effect(run) {
+          if (Math.random() < 0.25) {
+            startCombatFromEvent(['karen'], 'elite');
+            return { text: `你发起了攻击，但这位冒险者竟然是传说中的 Karen！她冷笑着迎战！`, cls: 'bad' };
+          }
+          const types = ['adventurer_guardian', 'adventurer_thief', 'adventurer_fragile', 'adventurer_disguised'];
+          const enemyId = types[Math.floor(Math.random() * types.length)];
+          startCombatFromEvent([enemyId], 'normal');
+          return { text: `你向冒险者发起了攻击！`, cls: 'info' };
+        },
+      },
+      { label: '🚶 离开', effect() { return { text: '你点头致意，各自赶路。', cls: 'info' }; } },
+    ],
+  },
 ];
 
 function pickRandomEvent() {

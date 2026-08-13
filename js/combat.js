@@ -22,6 +22,7 @@ const STATUS_META = {
   battleHymn: { icon: '🎵', label: '战歌', desc: '每回合开始时，对所有敌人造成等同于层数的伤害。' },
   corruption: { icon: '🩸', label: '腐化', desc: '所有卡牌费用变为 0，但打出后会被消耗。' },
   demonForm: { icon: '😈', label: '恶魔形态', desc: '每回合开始时获得等同于层数的力量。' },
+  evasion: { icon: '💨', label: '闪避', desc: '50% 几率规避下一次受到的任何伤害。负面状态无法被闪避。' },
 };
 
 class CombatEngine {
@@ -40,6 +41,7 @@ class CombatEngine {
     this.pendingAttackBonus = 0;
     this.firstAttackDone = false;
     this.relicFlags = {};
+    this.combatStats = { blockUsed: false, damageTakenByTurn: [], eliteTurns: null };
 
     this.player = {
       block: 0,
@@ -57,7 +59,7 @@ class CombatEngine {
       const enemy = {
         id: 'e' + i, defId, name: def.name, icon: def.icon,
         hp, maxHp: hp, block: 0,
-        statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0 },
+        statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0, evasion: 0 },
         aiState: {}, nextMove: null,
       };
       enemy.nextMove = def.chooseMove(enemy, this);
@@ -186,8 +188,8 @@ class CombatEngine {
           this.log(`🛡️ ${enemy.name} 的护盾随从全部被消灭，护盾解除！`, 'info');
         }
       }
-      enemy.block = 0;
-      if (enemy.statuses.poison > 0) {
+      if (!enemy.persistentBlock) enemy.block = 0;
+      if (enemy.statuses.poison > 0 && !enemy.poisonImmune) {
         enemy.hp -= enemy.statuses.poison;
         this.log(`☠️ ${enemy.name} 中毒发作，损失 ${enemy.statuses.poison} 点生命`, 'player');
         enemy.statuses.poison -= 1;
@@ -376,6 +378,14 @@ class CombatEngine {
         return 0;
       }
     }
+    if (enemy.statuses.evasion > 0 && !opts.bypassEvasion) {
+      if (Math.random() < 0.5) {
+        enemy.statuses.evasion -= 1;
+        this.log(`💨 ${enemy.name} 闪避了攻击！`, 'enemy');
+        return 0;
+      }
+      enemy.statuses.evasion -= 1;
+    }
     let dmg = baseAmount + (opts.noStrength ? 0 : (this.player.statuses.strength || 0));
     if (this.pendingAttackBonus) { dmg += this.pendingAttackBonus; this.pendingAttackBonus = 0; }
     if (!opts.ignoreWeak && this.player.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
@@ -422,7 +432,7 @@ class CombatEngine {
         id: `${enemy.id}_s${i}_${Math.random().toString(36).slice(2, 6)}`,
         defId: def.splitInto, name: childDef.name, icon: childDef.icon,
         hp, maxHp: hp, block: 0,
-        statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0 },
+        statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0, evasion: 0 },
         aiState: { confused: wasAttacking }, nextMove: null,
       };
       child.nextMove = childDef.chooseMove(child, this);
@@ -442,7 +452,7 @@ class CombatEngine {
       id: `${summonerEnemy.id}_m_${Math.random().toString(36).slice(2, 6)}`,
       defId, name: def.name, icon: def.icon,
       hp, maxHp: hp, block: 0,
-      statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0 },
+      statuses: { strength: 0, weak: 0, vulnerable: 0, poison: 0, evasion: 0 },
       aiState: {}, nextMove: null,
     };
     minion.nextMove = def.chooseMove(minion, this);
@@ -471,6 +481,7 @@ class CombatEngine {
       remaining -= absorbed;
     }
     this.run.player.hp -= remaining;
+    if (remaining > 0) this.combatStats.damageTakenByTurn[this.turnCount] = (this.combatStats.damageTakenByTurn[this.turnCount] || 0) + remaining;
     this.log(`💥 ${attacker ? attacker.name : '未知敌人'} 对你造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'enemy');
     this.runRelicHook('onDamageTaken', dmg, attackerEnemyId);
     this.checkPlayerDeath();
@@ -487,6 +498,7 @@ class CombatEngine {
     let final = amount + dex;
     if (this.player.statuses.frail > 0) final = Math.floor(final * 0.75);
     final = Math.max(0, final);
+    if (final > 0) this.combatStats.blockUsed = true;
     this.player.block += final;
     this.log(`🛡️ 你获得 ${final} 点格挡`, 'player');
     if (final > 0 && this.player.statuses.juggernaut > 0) {
@@ -535,6 +547,10 @@ class CombatEngine {
       this.log(`🛡️ ${enemy.name} 被护盾保护，免疫负面状态！`, 'enemy');
       return;
     }
+    if (enemy.poisonImmune && name === 'poison') {
+      this.log(`🧪 ${enemy.name} 对中毒免疫！`, 'enemy');
+      return;
+    }
     enemy.statuses[name] = (enemy.statuses[name] || 0) + amount;
     const meta = STATUS_META[name];
     if (meta && amount > 0) {
@@ -548,6 +564,9 @@ class CombatEngine {
       this.finished = true;
       this.winner = 'enemy';
       this.log('💀 你倒下了……', 'info');
+      if (this.run.stats && this.rewardTier === 'normal') {
+        this.run.stats.killedByNormal = true;
+      }
     }
   }
 
@@ -558,6 +577,17 @@ class CombatEngine {
       this.winner = 'player';
       this.log('🎉 战斗胜利！', 'info');
       this.runRelicHook('onCombatEnd');
+      if (this.run.stats) {
+        if (!this.combatStats.blockUsed) {
+          if (this.rewardTier === 'normal') this.run.stats.noBlockKillNormal = true;
+          if (this.rewardTier === 'elite') this.run.stats.noBlockKillElite = true;
+        }
+        if (this.rewardTier === 'elite' && this.turnCount <= 3) {
+          this.run.stats.eliteKilledIn3Turns = true;
+        }
+        const dmg0to3 = [1, 2, 3].every(t => !(this.combatStats.damageTakenByTurn[t] > 0));
+        if (dmg0to3) this.run.stats.fortress = true;
+      }
     }
   }
 }

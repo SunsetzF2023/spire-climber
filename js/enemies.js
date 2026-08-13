@@ -742,6 +742,84 @@ const ENEMIES = {
     },
   },
 
+  // ---------------- Special Elite: Karen (from adventurer event) ----------------
+  karen: {
+    id: 'karen', name: '冒险者前辈 Karen', icon: '😤', hpRange: [250, 250], rarity: 'elite',
+    onSpawn(enemy) {
+      enemy.persistentBlock = true;
+      enemy.poisonImmune = true;
+      enemy.aiState.turnCount = 0;
+      enemy.aiState.enraged = false;
+      enemy.aiState.enrageTurns = 0;
+    },
+    chooseMove(enemy, combat) {
+      enemy.aiState.turnCount = (enemy.aiState.turnCount || 0) + 1;
+      const turn = enemy.aiState.turnCount;
+
+      if (enemy.aiState.enraged) {
+        enemy.aiState.enrageTurns += 1;
+        if (enemy.aiState.enrageTurns >= 3) {
+          const explosionDmg = enemy.hp;
+          return {
+            name: '🔥 引爆', icon: '💥', type: 'attack', displayValue: explosionDmg,
+            execute(combat, e) {
+              combat.dealDamageToPlayer(explosionDmg, e.id);
+              e.hp = 0;
+              combat.log(`💥 ${e.name} 引爆！造成 ${explosionDmg} 点伤害后自毁！`, 'enemy');
+              combat.handleEnemyDeath(e);
+            },
+          };
+        }
+        const remain = 3 - enemy.aiState.enrageTurns;
+        return {
+          name: `🔥 引燃倒计时（${remain} 回合）`, icon: '⏳', type: 'idle', displayValue: null,
+          execute(combat, e) {
+            combat.log(`🔥 ${e.name} 正在引燃！${remain} 回合后爆炸！`, 'enemy');
+          },
+        };
+      }
+
+      if (enemy.hp < 100 && !enemy.aiState.enraged) {
+        enemy.aiState.enraged = true;
+        enemy.aiState.enrageTurns = 0;
+        return {
+          name: '🔥 引燃', icon: '🔥', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            combat.log(`🔥 ${e.name} 生命值低于 100，进入引燃状态！3 回合后将爆炸造成其生命值的伤害！`, 'enemy');
+          },
+        };
+      }
+
+      if (turn === 1) {
+        return {
+          name: '思考中', icon: '🤔', type: 'idle', displayValue: null,
+          execute(combat, e) { combat.log(`🤔 ${e.name} 正在观察你的动作……`, 'enemy'); },
+        };
+      }
+
+      const cycleTurn = turn - 1;
+      const phase = cycleTurn % 3;
+
+      if (phase === 1) {
+        const block = 12 + Math.floor(Math.random() * 9);
+        return {
+          name: '蓄力护盾', icon: '🛡️', type: 'defend', displayValue: block,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, block); combat.log(`🛡️ ${e.name} 获得 ${block} 点护盾（不随回合消失）`, 'enemy'); },
+        };
+      }
+      if (phase === 2) {
+        return {
+          name: '盾击反击', icon: '⚔️', type: 'attack', displayValue: 20,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 12); combat.dealDamageToPlayer(20, e.id); combat.log(`⚔️ ${e.name} 获得 12 护盾并造成 20 点伤害！`, 'enemy'); },
+        };
+      }
+      return {
+        name: '休息', icon: '😴', type: 'idle', displayValue: null,
+        execute(combat, e) { combat.log(`😴 ${e.name} 正在休息……`, 'enemy'); },
+      };
+    },
+  },
+
   // ---------------- Bosses ----------------
   abyss_lord: {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',

@@ -988,6 +988,16 @@ const ACHIEVEMENT_CARD_REWARDS = {
   'diverse_arsenal': 'diverse_blade',
   'card_master': 'shield_bash',
   'relic_hoarder': 'power_surge',
+  'flawless': 'survivor_instinct',
+  'elite_blitz': 'triple_strike',
+  'refuse_gambler': 'scavenger',
+  'no_money': 'treasure_map',
+  'noob': 'triple_strike',
+  'noob_plus': 'power_surge',
+  'fortress': 'shield_bash',
+  'sorry_noob': 'survivor_instinct',
+  'curse_breaker': 'diverse_blade',
+  'gold_rush': 'treasure_map',
 };
 
 function rollCardRarity() {

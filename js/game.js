@@ -324,7 +324,7 @@ function newRun(characterId, bonus = {}) {
     currentNodeId: null,
     removeCount: 0,
     act: 1,
-    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {} },
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {}, eventsEncountered: 0, eventsLeft: 0, shopsVisited: 0, shopSpent: false, noBlockKillNormal: false, noBlockKillElite: false, eliteKilledIn3Turns: false, fortress: false, killedByNormal: false },
   };
   if (bonus.bonusRelicId) addRelicToRun(run, bonus.bonusRelicId);
   deckIds.forEach(id => discover('discoveredCards', id));
@@ -413,6 +413,13 @@ function enterNode(node) {
 
 function backToMapOrVictory(node) {
   if (checkRunDeath()) return;
+  if (!node) {
+    showScreen('mapScreen');
+    renderMap();
+    renderDeck();
+    renderHud();
+    return;
+  }
   if (node.type === 'boss') {
     if (run.act < ACT_DEFS.length) {
       advanceToNextAct(node);
@@ -491,6 +498,7 @@ function renderCardEl(cardInstance, opts = {}) {
 // ---------------- Event screen ----------------
 function showEventScreenUI(node) {
   const evt = pickRandomEvent();
+  run.stats.eventsEncountered = (run.stats.eventsEncountered || 0) + 1;
   showScreen('eventScreen');
   el.eventIcon.textContent = evt.icon;
   el.eventName.textContent = evt.name;
@@ -518,6 +526,9 @@ function showEventScreenUI(node) {
     btn.disabled = !!isLocked;
     if (isLocked) { el.eventOptions.appendChild(btn); return; }
     btn.addEventListener('click', () => {
+      if (opt.label.includes('🚶') || opt.label.includes('离开') || opt.label.includes('绕道')) {
+        run.stats.eventsLeft = (run.stats.eventsLeft || 0) + 1;
+      }
       if (opt.selectCard) {
         if (opt.canPick && !opt.canPick(run)) {
           finishOption({ text: opt.blockedText || '无法选择。', cls: 'bad' });
@@ -612,6 +623,7 @@ function showRestScreen(node) {
 // ---------------- Shop screen ----------------
 function showShopScreen(node) {
   showScreen('shopScreen');
+  run.stats.shopsVisited = (run.stats.shopsVisited || 0) + 1;
   const actMul = 1 + (run.act - 1) * 0.3;
   currentShop = {
     cards: [0, 1, 2, 3, 4].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
@@ -647,6 +659,7 @@ function renderShop(node) {
       onClick: (c) => {
         run.gold -= cost;
         run.removeCount += 1;
+        run.stats.shopSpent = true;
         const idx = run.deck.findIndex(x => x.uid === c.uid);
         if (idx !== -1) run.deck.splice(idx, 1);
         renderHud();
@@ -678,6 +691,7 @@ function renderShop(node) {
         run.gold -= offer.cost;
         addCardToDeck(run, offer.id, false);
         currentShop.cards[i] = null;
+        run.stats.shopSpent = true;
         renderHud();
         renderShop(node);
       });
@@ -701,6 +715,7 @@ function renderShop(node) {
         run.gold -= offer.cost;
         addCardToDeck(run, offer.id, false);
         currentShop.ethereal[i] = null;
+        run.stats.shopSpent = true;
         renderHud();
         renderShop(node);
       });
@@ -720,6 +735,7 @@ function renderShop(node) {
         run.gold -= offer.cost;
         addRelicToRun(run, offer.id);
         currentShop.relics[i] = null;
+        run.stats.shopSpent = true;
         renderHud();
         renderShop(node);
       });
@@ -990,6 +1006,16 @@ function finishRun(victory, desc) {
     maxHp: run.player.maxHp,
     treasureFound: run.stats.treasureFound,
     uniqueCardIds: Object.keys(run.stats.uniqueCardIds || {}).length,
+    uniqueCardsUsed: Object.keys(run.stats.uniqueCardIds || {}).length,
+    eventsEncountered: run.stats.eventsEncountered || 0,
+    eventsLeft: run.stats.eventsLeft || 0,
+    shopsVisited: run.stats.shopsVisited || 0,
+    shopSpent: run.stats.shopSpent || false,
+    noBlockKillNormal: run.stats.noBlockKillNormal || false,
+    noBlockKillElite: run.stats.noBlockKillElite || false,
+    eliteKilledIn3Turns: run.stats.eliteKilledIn3Turns || false,
+    fortress: run.stats.fortress || false,
+    killedByNormal: run.stats.killedByNormal || false,
   };
   const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
 
