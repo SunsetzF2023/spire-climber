@@ -324,7 +324,7 @@ function newRun(characterId, bonus = {}) {
     currentNodeId: null,
     removeCount: 0,
     act: 1,
-    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {}, eventsEncountered: 0, eventsLeft: 0, shopsVisited: 0, shopSpent: false, noBlockKillNormal: false, noBlockKillElite: false, eliteKilledIn3Turns: false, fortress: false, killedByNormal: false },
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {}, eventsEncountered: 0, eventsLeft: 0, shopsVisited: 0, shopSpent: false, noBlockKillNormal: false, noBlockKillElite: false, eliteKilledIn3Turns: false, fortress: false, killedByNormal: false, goldStolen: 0, adventurerAttacks: 0, killedTypes: [] },
   };
   if (bonus.bonusRelicId) addRelicToRun(run, bonus.bonusRelicId);
   deckIds.forEach(id => discover('discoveredCards', id));
@@ -961,6 +961,10 @@ function showRewardScreen() {
   run.stats.goldEarned += goldReward;
   run.stats.enemiesDefeated += combat.enemies.length;
   if (tier === 'elite') run.stats.elitesDefeated += 1;
+  if (combat.combatStats.killedTypes) {
+    run.stats.killedTypes = (run.stats.killedTypes || []);
+    combat.combatStats.killedTypes.forEach(t => run.stats.killedTypes.push(t));
+  }
   let goldText = `获得 ${goldReward} 金币`;
   if (tier === 'elite') {
     const relicId = pickRandomRelic(run.relics);
@@ -1023,6 +1027,9 @@ function finishRun(victory, desc) {
     eliteKilledIn3Turns: run.stats.eliteKilledIn3Turns || false,
     fortress: run.stats.fortress || false,
     killedByNormal: run.stats.killedByNormal || false,
+    killedTypes: run.stats.killedTypes || [],
+    goldStolen: run.stats.goldStolen || 0,
+    adventurerAttacks: run.stats.adventurerAttacks || 0,
   };
   const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
 

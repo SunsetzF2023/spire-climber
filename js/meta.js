@@ -33,6 +33,19 @@ const ACHIEVEMENTS = [
   { id: 'sorry_noob', name: 'sorry noob~', icon: '😅', desc: '被一名普通敌人击败', check: (s) => !s.won && s.killedByNormal, rewardCard: 'survivor_instinct' },
   { id: 'curse_breaker', name: '破咒者', icon: '🔮', desc: '本局中打出过 100 张以上卡牌', check: (s) => s.cardsPlayed >= 100, rewardCard: 'diverse_blade' },
   { id: 'gold_rush', name: '淘金热', icon: '🪙', desc: '本局累计获得 300 枚以上金币', check: (s) => s.goldEarned >= 300, rewardCard: 'treasure_map' },
+  { id: 'abyss_new_king', name: '深渊新王', icon: '👹', desc: '击败深渊领主', check: (s) => (s.killedTypes || []).includes('abyss_lord'), rewardCard: 'power_surge' },
+  { id: 'slime_slayer', name: '史莱姆杀手', icon: '🟢', desc: '击败一只软泥怪', check: (s) => (s.killedTypes || []).some(t => t.startsWith('slime')), rewardCard: 'triple_strike' },
+  { id: 'bat_nemesis', name: '蝙蝠克星', icon: '🦇', desc: '累计击杀 10 只蝙蝠', check: (s) => ((s.lifetimeKills || {}).bat || 0) >= 10, rewardCard: 'diverse_blade' },
+  { id: 'true_demon_lord', name: '我才是魔王', icon: '😈', desc: '累计击败 3 次深渊领主', check: (s) => ((s.lifetimeKills || {}).abyss_lord || 0) >= 3, rewardCard: 'monster_hunter' },
+  { id: 'dog_is_innocent', name: '狗狗是无辜的', icon: '🐕', desc: '击败一只猎犬', check: (s) => (s.killedTypes || []).includes('rampaging_hound'), rewardCard: 'scavenger' },
+  { id: 'dog_lover', name: '爱狗人士', icon: '🐶', desc: '累计击败 5 只猎犬', check: (s) => ((s.lifetimeKills || {}).rampaging_hound || 0) >= 5, rewardCard: 'shield_bash' },
+  { id: 'animal_ambassador', name: '动物保护大使', icon: '🐾', desc: '累计击败 10 只猎犬', check: (s) => ((s.lifetimeKills || {}).rampaging_hound || 0) >= 10, rewardCard: 'survivor_instinct' },
+  { id: 'bug_killer', name: '你也要杀虫吗', icon: '🐝', desc: '击败 3 只蜂群', check: (s) => ((s.lifetimeKills || {}).hornet_swarm || 0) >= 3, rewardCard: 'triple_strike' },
+  { id: 'iron_heart', name: '钢铁之心', icon: '🗿', desc: '击败钢铁巨像', check: (s) => (s.killedTypes || []).includes('iron_colossus'), rewardCard: 'shield_bash' },
+  { id: 'i_am_god', name: '我才是神', icon: '🪐', desc: '击败虚空造物主', check: (s) => (s.killedTypes || []).includes('void_progenitor'), rewardCard: 'monster_hunter' },
+  { id: 'wanna_learn_magic', name: '我也想要学会魔法', icon: '🔮', desc: '击败死灵法师', check: (s) => (s.killedTypes || []).includes('necromancer'), rewardCard: 'diverse_blade' },
+  { id: 'gold_spender', name: '散财童子', icon: '💸', desc: '累计被偷窃超过 200 金币', check: (s) => (s.totalGoldStolen || 0) >= 200, rewardCard: 'treasure_map' },
+  { id: 'big_bully', name: '大恶人', icon: '😠', desc: '累计 3 次选择袭击冒险者', check: (s) => (s.totalAdventurerAttacks || 0) >= 3, rewardCard: 'power_surge' },
 ];
 
 function defaultMeta() {
@@ -47,6 +60,9 @@ function defaultMeta() {
     discoveredCards: [],
     discoveredRelics: [],
     discoveredEnemies: [],
+    lifetimeKills: {},
+    totalGoldStolen: 0,
+    totalAdventurerAttacks: 0,
   };
 }
 
@@ -91,12 +107,24 @@ function applyRunToMeta(meta, stats) {
   meta.bestFloorReached = Math.max(meta.bestFloorReached, stats.floorReached);
   meta.totalGoldEarned += stats.goldEarned;
   meta.totalEnemiesDefeated += stats.enemiesDefeated;
+  meta.lifetimeKills = meta.lifetimeKills || {};
+  if (stats.killedTypes) {
+    stats.killedTypes.forEach(t => { meta.lifetimeKills[t] = (meta.lifetimeKills[t] || 0) + 1; });
+  }
+  meta.totalGoldStolen = (meta.totalGoldStolen || 0) + (stats.goldStolen || 0);
+  meta.totalAdventurerAttacks = (meta.totalAdventurerAttacks || 0) + (stats.adventurerAttacks || 0);
   const score = computeScore(stats);
   meta.highScore = Math.max(meta.highScore, score);
 
+  const statsWithMeta = Object.assign({}, stats, {
+    lifetimeKills: meta.lifetimeKills,
+    totalGoldStolen: meta.totalGoldStolen,
+    totalAdventurerAttacks: meta.totalAdventurerAttacks,
+  });
+
   const newlyUnlocked = [];
   ACHIEVEMENTS.forEach(ach => {
-    if (!meta.achievements[ach.id] && ach.check(stats)) {
+    if (!meta.achievements[ach.id] && ach.check(statsWithMeta)) {
       meta.achievements[ach.id] = true;
       newlyUnlocked.push(ach);
     }

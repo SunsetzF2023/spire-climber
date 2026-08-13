@@ -413,6 +413,8 @@ class CombatEngine {
   handleEnemyDeath(enemy) {
     const def = ENEMIES[enemy.defId];
     if (def.splitInto) this.splitEnemy(enemy, def);
+    this.combatStats.killedTypes = this.combatStats.killedTypes || [];
+    this.combatStats.killedTypes.push(enemy.defId);
     this.runRelicHook('onEnemyKilled', enemy);
     this.checkVictory();
   }

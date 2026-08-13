@@ -560,6 +560,7 @@ const EVENT_POOL = [
             const gold = 20 + Math.floor(Math.random() * 20);
             run.gold += gold;
             run.stats.goldEarned += gold;
+            run.stats.goldStolen = (run.stats.goldStolen || 0) + gold;
             return { text: `你趁他不注意偷到了 ${gold} 金币。`, cls: 'good' };
           }
           if (roll < 0.75) {
@@ -580,6 +581,7 @@ const EVENT_POOL = [
       {
         label: '⚔️ 袭击他（进入战斗，有概率遭遇精英 Karen）',
         effect(run) {
+          run.stats.adventurerAttacks = (run.stats.adventurerAttacks || 0) + 1;
           if (Math.random() < 0.25) {
             startCombatFromEvent(['karen'], 'elite');
             return { text: `你发起了攻击，但这位冒险者竟然是传说中的 Karen！她冷笑着迎战！`, cls: 'bad' };

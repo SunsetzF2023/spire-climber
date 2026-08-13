@@ -1012,6 +1012,19 @@ const ACHIEVEMENT_CARD_REWARDS = {
   'sorry_noob': 'survivor_instinct',
   'curse_breaker': 'diverse_blade',
   'gold_rush': 'treasure_map',
+  'abyss_new_king': 'power_surge',
+  'slime_slayer': 'triple_strike',
+  'bat_nemesis': 'diverse_blade',
+  'true_demon_lord': 'monster_hunter',
+  'dog_is_innocent': 'scavenger',
+  'dog_lover': 'shield_bash',
+  'animal_ambassador': 'survivor_instinct',
+  'bug_killer': 'triple_strike',
+  'iron_heart': 'shield_bash',
+  'i_am_god': 'monster_hunter',
+  'wanna_learn_magic': 'diverse_blade',
+  'gold_spender': 'treasure_map',
+  'big_bully': 'power_surge',
 };
 
 function rollCardRarity() {
