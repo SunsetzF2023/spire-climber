@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
 
@@ -92,7 +92,11 @@
 <section id="shopScreen" class="screen hidden">
   <div class="panel shop-panel">
     <h2>商人 <span class="hint">花金币购买卡牌/遗物，或移除一张卡</span></h2>
+    <h3 class="shop-section-title">卡牌</h3>
     <div id="shopCards" class="card-grid"></div>
+    <h3 class="shop-section-title">虚无药剂 <span class="hint">（用完即消，回合结束未使用也会消失）</span></h3>
+    <div id="shopEthereal" class="card-grid"></div>
+    <h3 class="shop-section-title">遗物</h3>
     <div id="shopRelics" class="card-grid"></div>
     <button id="shopRemoveBtn" class="btn btn-ghost">🗑️ 移除一张卡牌（<span id="removeCost">15</span> 金币）</button>
     <button id="shopLeaveBtn" class="btn btn-primary">离开商店 ▶</button>
@@ -191,16 +195,16 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js?v=16"></script>
-<script src="js/cards.js?v=16"></script>
-<script src="js/relics.js?v=16"></script>
-<script src="js/enemies.js?v=16"></script>
-<script src="js/events.js?v=16"></script>
-<script src="js/map.js?v=16"></script>
-<script src="js/combat.js?v=16"></script>
-<script src="js/meta.js?v=16"></script>
-<script src="js/characters.js?v=16"></script>
-<script src="js/cloud-sync.js?v=16"></script>
-<script src="js/game.js?v=16"></script>
+<script src="js/supabase-config.js?v=17"></script>
+<script src="js/cards.js?v=17"></script>
+<script src="js/relics.js?v=17"></script>
+<script src="js/enemies.js?v=17"></script>
+<script src="js/events.js?v=17"></script>
+<script src="js/map.js?v=17"></script>
+<script src="js/combat.js?v=17"></script>
+<script src="js/meta.js?v=17"></script>
+<script src="js/characters.js?v=17"></script>
+<script src="js/cloud-sync.js?v=17"></script>
+<script src="js/game.js?v=17"></script>
 </body>
 </html>

@@ -61,6 +61,7 @@ class CombatEngine {
         aiState: {}, nextMove: null,
       };
       enemy.nextMove = def.chooseMove(enemy, this);
+      if (typeof def.onSpawn === 'function') def.onSpawn(enemy);
       return enemy;
     });
 
@@ -158,6 +159,10 @@ class CombatEngine {
       if (def.id === 'dazed' || def.id === 'void') {
         this.exhaustPile.push(c);
         this.log(`🌫️ ${def.name} 因虚无被消耗`, 'info');
+      } else if (def.ethereal) {
+        this.exhaustPile.push(c);
+        this.onCardExhausted();
+        this.log(`👻 ${def.name} 因虚无效果被消耗`, 'info');
       } else {
         toDiscard.push(c);
       }
@@ -195,6 +200,7 @@ class CombatEngine {
       enemy.statuses.vulnerable = Math.max(0, enemy.statuses.vulnerable - 1);
       if (enemy.hp > 0) enemy.nextMove = ENEMIES[enemy.defId].chooseMove(enemy, this);
     }
+    this.cleanupDeadEnemies();
     if (!this.finished) this.startTurn();
   }
 
@@ -363,6 +369,13 @@ class CombatEngine {
       this.log(`🛡️ ${enemy.name} 被护盾保护，免疫群体伤害！`, 'enemy');
       return 0;
     }
+    if (!opts.isAoE && !opts.bypassTaunt && !enemy.taunt) {
+      const tauntEnemies = this.enemies.filter(e => e.hp > 0 && e.taunt);
+      if (tauntEnemies.length > 0 && !tauntEnemies.some(e => e.id === enemyId)) {
+        this.log(`🛡️ 嘲讽敌人挡在前面，无法攻击 ${enemy.name}！`, 'enemy');
+        return 0;
+      }
+    }
     let dmg = baseAmount + (opts.noStrength ? 0 : (this.player.statuses.strength || 0));
     if (this.pendingAttackBonus) { dmg += this.pendingAttackBonus; this.pendingAttackBonus = 0; }
     if (!opts.ignoreWeak && this.player.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
@@ -394,6 +407,10 @@ class CombatEngine {
     this.checkVictory();
   }
 
+  cleanupDeadEnemies() {
+    this.enemies = this.enemies.filter(e => e.hp > 0);
+  }
+
   splitEnemy(enemy, def) {
     const childDef = ENEMIES[def.splitInto];
     const wasAttacking = !!(enemy.nextMove && enemy.nextMove.type === 'attack');
@@ -409,6 +426,7 @@ class CombatEngine {
         aiState: { confused: wasAttacking }, nextMove: null,
       };
       child.nextMove = childDef.chooseMove(child, this);
+      if (typeof childDef.onSpawn === 'function') childDef.onSpawn(child);
       this.enemies.push(child);
       if (discover) discover('discoveredEnemies', child.defId);
     }
@@ -428,6 +446,7 @@ class CombatEngine {
       aiState: {}, nextMove: null,
     };
     minion.nextMove = def.chooseMove(minion, this);
+    if (typeof def.onSpawn === 'function') def.onSpawn(minion);
     this.enemies.push(minion);
     if (discover) discover('discoveredEnemies', defId);
     if (opts.registerToSummoner) {

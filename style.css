@@ -96,6 +96,9 @@ body{
 .game-card.type-power{border-top:3px solid var(--purple);}
 .game-card.type-status{border-top:3px solid #555; background:linear-gradient(160deg,#2a2a2a,#1a1a1a);}
 .game-card.type-curse{border-top:3px solid #660066; background:linear-gradient(160deg,#2a1040,#1a0820);}
+.enemy-box.taunt-enemy{border-color:var(--amber) !important; box-shadow:0 0 8px rgba(255,200,0,.4);}
+.enemy-box.taunt-enemy::after{content:'🛡️嘲讽'; position:absolute; top:-10px; right:-4px; font-size:9px; background:var(--amber); color:#000; padding:1px 4px; border-radius:4px; font-weight:700;}
+.shop-section-title{font-size:14px; color:var(--amber); margin:12px 0 4px; border-bottom:1px solid var(--border); padding-bottom:4px;}
 .game-card .cost{
   position:absolute; top:6px; left:6px; width:22px; height:22px; border-radius:50%;
   background:var(--bg); border:1px solid var(--amber); color:var(--amber);

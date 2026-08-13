@@ -33,7 +33,7 @@ function cacheEls() {
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventCardSelect', 'eventResult', 'eventContinueBtn',
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
     'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
-    'shopScreen', 'shopCards', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
+    'shopScreen', 'shopCards', 'shopEthereal', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
     'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn',
     'combatScreen', 'enemyRow', 'drawCount', 'discardCount', 'playerHpFill', 'playerHpText', 'playerBlockBadge', 'playerStatusRow',
     'energyBadge', 'handRow', 'endTurnBtn', 'combatLog',
@@ -513,17 +513,25 @@ function showRestScreen(node) {
 // ---------------- Shop screen ----------------
 function showShopScreen(node) {
   showScreen('shopScreen');
+  const actMul = 1 + (run.act - 1) * 0.3;
   currentShop = {
-    cards: [0, 1, 2].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
-    relics: [0, 1].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
+    cards: [0, 1, 2, 3, 4].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
+    ethereal: [0, 1].map(() => {
+      const pool = SHOP_ETHEREAL_POOL.filter(id => !currentShop || true);
+      return { id: pool[Math.floor(Math.random() * pool.length)], cost: 0 };
+    }),
+    relics: [0, 1, 2].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
   };
   currentShop.cards.forEach(offer => {
     const rarity = CARDS[offer.id].rarity;
-    offer.cost = rarity === 'rare' ? 120 + Math.floor(Math.random() * 30) : rarity === 'uncommon' ? 65 + Math.floor(Math.random() * 20) : 40 + Math.floor(Math.random() * 15);
+    offer.cost = Math.round((rarity === 'rare' ? 140 + Math.floor(Math.random() * 40) : rarity === 'uncommon' ? 80 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 20)) * actMul);
+  });
+  currentShop.ethereal.forEach(offer => {
+    offer.cost = Math.round((35 + Math.floor(Math.random() * 15)) * actMul);
   });
   currentShop.relics.forEach(offer => {
     const rarity = RELICS[offer.id].rarity;
-    offer.cost = rarity === 'rare' ? 180 + Math.floor(Math.random() * 40) : rarity === 'uncommon' ? 120 + Math.floor(Math.random() * 30) : 80 + Math.floor(Math.random() * 20);
+    offer.cost = Math.round((rarity === 'rare' ? 200 + Math.floor(Math.random() * 50) : rarity === 'uncommon' ? 140 + Math.floor(Math.random() * 40) : 90 + Math.floor(Math.random() * 30)) * actMul);
   });
   renderShop(node);
   el.shopLeaveBtn.onclick = () => backToMapOrVictory(node);
@@ -578,6 +586,28 @@ function renderShop(node) {
     el.shopCards.appendChild(wrap);
   });
 
+  if (el.shopEthereal) el.shopEthereal.innerHTML = '';
+  currentShop.ethereal.forEach((offer, i) => {
+    if (!offer) return;
+    const inst = makeCardInstance(offer.id, false);
+    const card = renderCardEl(inst, { clickable: run.gold >= offer.cost, unplayable: run.gold < offer.cost });
+    const priceTag = document.createElement('div');
+    priceTag.className = 'hint';
+    priceTag.textContent = `💰 ${offer.cost}`;
+    const wrap = document.createElement('div');
+    wrap.appendChild(card);
+    wrap.appendChild(priceTag);
+    if (run.gold >= offer.cost) {
+      card.addEventListener('click', () => {
+        run.gold -= offer.cost;
+        addCardToDeck(run, offer.id, false);
+        currentShop.ethereal[i] = null;
+        renderHud();
+        renderShop(node);
+      });
+    }
+    if (el.shopEthereal) el.shopEthereal.appendChild(wrap);
+  });
   el.shopRelics.innerHTML = '';
   currentShop.relics.forEach((offer, i) => {
     if (!offer) return;
@@ -625,8 +655,9 @@ function buildStatusBadge(name, amount, showLabel) {
 }
 
 function patchEnemyBox(node, enemy) {
-  // 更新 class
-  node.className = 'enemy-box' + (enemy.hp > 0 && selectedCardUid ? ' targetable' : '');
+  const hasTauntAlive = combat.enemies.some(e => e.hp > 0 && e.taunt);
+  const canTarget = enemy.hp > 0 && selectedCardUid && (!hasTauntAlive || enemy.taunt);
+  node.className = 'enemy-box' + (canTarget ? ' targetable' : '') + (enemy.taunt && enemy.hp > 0 ? ' taunt-enemy' : '');
   node.style.opacity = enemy.hp <= 0 ? 0.25 : 1;
   // 更新 icon
   node.querySelector('.enemy-icon').innerHTML = artIcon('enemies', enemy.defId, enemy.icon);
@@ -668,7 +699,7 @@ function patchEnemyBox(node, enemy) {
   });
   // 更新点击事件
   node.onclick = null;
-  if (enemy.hp > 0 && selectedCardUid) {
+  if (enemy.hp > 0 && selectedCardUid && canTarget) {
     node.onclick = () => {
       const res = combat.playCard(selectedCardUid, enemy.id);
       selectedCardUid = null;
@@ -770,6 +801,7 @@ function renderCombat() {
 }
 
 function afterCombatAction() {
+  combat.cleanupDeadEnemies();
   renderHud();
   renderCombat();
   if (combat.finished && !combat.resultHandled) {

@@ -472,6 +472,88 @@ const ENEMIES = {
     },
   },
 
+  // ---------------- Summoner & Taunt enemies ----------------
+  cultist_summoner: {
+    id: 'cultist_summoner', name: '邪教召唤师', icon: '🧙', hpRange: [48, 56], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['summon', 'atk', 'atk', 'ritual'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'summon') {
+        return {
+          name: '召唤随从', icon: '🧟', type: 'summon', displayValue: null,
+          execute(combat, e) {
+            const minionCount = combat.enemies.filter(en => en.hp > 0 && en.defId === 'cultist_minion').length;
+            if (minionCount < 2) {
+              combat.summonEnemy(e, 'cultist_minion', { registerToSummoner: true });
+            } else {
+              combat.log(`🧙 ${e.name} 试图召唤，但随从已满！`, 'enemy');
+            }
+          },
+        };
+      }
+      if (pattern[step] === 'ritual') {
+        return {
+          name: '仪式', icon: '💪', type: 'buff', displayValue: 3,
+          execute(combat, e) { combat.applyStatusEnemy(e.id, 'strength', 3); combat.log(`🧙 ${e.name} 举行仪式：力量 +3`, 'enemy'); },
+        };
+      }
+      const dmg = 8 + (enemy.statuses.strength || 0);
+      return {
+        name: '暗影箭', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  cultist_minion: {
+    id: 'cultist_minion', name: '邪教随从', icon: '🧟', hpRange: [12, 18], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const dmg = 6 + (enemy.statuses.strength || 0);
+      return {
+        name: '撕咬', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  stone_guardian: {
+    id: 'stone_guardian', name: '石像守护者', icon: '🗿', hpRange: [55, 65], rarity: 'normal',
+    onSpawn(enemy) { enemy.taunt = true; },
+    chooseMove(enemy, combat) {
+      const pattern = ['guard', 'slam', 'guard', 'slam'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'guard') {
+        return {
+          name: '石化防御', icon: '🛡️', type: 'defend', displayValue: 15,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 15); combat.log(`🗿 ${e.name} 石化防御`, 'enemy'); },
+        };
+      }
+      return {
+        name: '巨石碾压', icon: '⚔️', type: 'attack', displayValue: 14,
+        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
+      };
+    },
+  },
+  shieldbearer: {
+    id: 'shieldbearer', name: '持盾卫士', icon: '🛡️', hpRange: [40, 48], rarity: 'normal',
+    onSpawn(enemy) { enemy.taunt = true; },
+    chooseMove(enemy, combat) {
+      const pattern = ['defend', 'atk', 'defend'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'defend') {
+        return {
+          name: '举盾', icon: '🛡️', type: 'defend', displayValue: 12,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 12); },
+        };
+      }
+      return {
+        name: '盾击', icon: '⚔️', type: 'attack', displayValue: 8,
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
+      };
+    },
+  },
+
   // ---------------- Elites ----------------
   iron_guard: {
     id: 'iron_guard', name: '钢铁卫兵', icon: '🤖', hpRange: [95, 105], rarity: 'elite',
@@ -671,9 +753,9 @@ const ENEMIES = {
   },
 };
 
-const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'fungi_beast', 'gremlin_nob'];
+const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'fungi_beast', 'gremlin_nob', 'shieldbearer', 'cultist_summoner'];
 
-const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin'];
+const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian', 'cultist_summoner'];
 
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its

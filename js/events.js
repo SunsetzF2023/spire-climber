@@ -290,6 +290,150 @@ const EVENT_POOL = [
       { label: '🚶 不需要新面孔', effect() { return { text: '你对自己的脸很满意。', cls: 'info' }; } },
     ],
   },
+  {
+    id: 'blood_ritual', name: '血祭仪式', icon: '🩸',
+    desc: '一个古老的血祭法阵仍在运作。献祭生命可以永久强化一张卡牌，但代价是更多的鲜血。',
+    options: [
+      {
+        label: '🩸 献祭 15 点生命，强化一张随机卡牌',
+        disabled(run) { return run.player.hp <= 15; },
+        effect(run) {
+          if (run.player.hp <= 15) return { text: '生命值不足以献祭！', cls: 'bad' };
+          damagePlayerRun(run, 15);
+          const upgraded = upgradeRandomCardInDeck(run);
+          return upgraded
+            ? { text: `血祭成功！${CARDS[upgraded.defId].name} 被永久强化了。`, cls: 'good' }
+            : { text: '血祭完成，但卡组中没有可强化的卡牌了。', cls: 'info' };
+        },
+      },
+      { label: '🚶 远离血祭', effect() { return { text: '你不想与黑暗力量打交道。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'ancient_fountain', name: '古老喷泉', icon: '⛲',
+    desc: '一座被遗忘的喷泉，泉水泛着奇异的光芒。饮用泉水可能治愈也可能伤害你。',
+    options: [
+      {
+        label: '🥤 饮用泉水（60% 回复 20% 生命，40% 损失 10% 生命）',
+        effect(run) {
+          if (Math.random() < 0.6) {
+            const amount = Math.round(run.player.maxHp * 0.2);
+            healPlayerRun(run, amount);
+            return { text: `泉水清凉甘甜，回复了 ${amount} 点生命。`, cls: 'good' };
+          }
+          const dmg = Math.round(run.player.maxHp * 0.1);
+          damagePlayerRun(run, dmg);
+          return { text: `泉水竟然有毒！损失了 ${dmg} 点生命。`, cls: 'bad' };
+        },
+      },
+      {
+        label: '💰 投入 30 金币净化泉水（必定回复 25% 生命）',
+        disabled(run) { return run.gold < 30; },
+        effect(run) {
+          if (run.gold < 30) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 30;
+          const amount = Math.round(run.player.maxHp * 0.25);
+          healPlayerRun(run, amount);
+          return { text: `净化后的泉水效果显著，回复了 ${amount} 点生命。`, cls: 'good' };
+        },
+      },
+      { label: '🚶 不喝陌生水', effect() { return { text: '你选择继续赶路。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'dark_blade', name: '暗黑之刃', icon: '🗡️',
+    desc: '一把散发着黑暗气息的匕首插在石头上。拔出它可能获得强大的力量，但也会受到诅咒。',
+    options: [
+      {
+        label: '🗡️ 拔出暗黑之刃（获得一张强力攻击牌，但损失 12 点生命）',
+        disabled(run) { return run.player.hp <= 12; },
+        effect(run) {
+          if (run.player.hp <= 12) return { text: '生命值过低，不敢尝试！', cls: 'bad' };
+          damagePlayerRun(run, 12);
+          addCardToDeck(run, 'bludgeon', false);
+          return { text: `你拔出了暗黑之刃！获得卡牌：${CARDS.bludgeon.name}（13点伤害，1费），但损失了 12 点生命。`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不碰暗黑之物', effect() { return { text: '你明智地离开了。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'mysterious_potion', name: '神秘药水', icon: '🧪',
+    desc: '路边有一个冒着彩色气泡的药水瓶，标签已经模糊不清。',
+    options: [
+      {
+        label: '🧪 喝下药水（随机效果：回血/获得能量遗物/获得诅咒牌）',
+        effect(run) {
+          const roll = Math.random();
+          if (roll < 0.35) {
+            const heal = 15 + Math.floor(Math.random() * 10);
+            healPlayerRun(run, heal);
+            return { text: `药水是治疗药剂！回复了 ${heal} 点生命。`, cls: 'good' };
+          }
+          if (roll < 0.65) {
+            const gold = 30 + Math.floor(Math.random() * 20);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `药水让你浑身充满力量！获得 ${gold} 金币。`, cls: 'good' };
+          }
+          if (roll < 0.85) {
+            const etherealPool = ['ether_potion', 'ether_strength', 'ether_block', 'ether_bomb', 'ether_draw', 'ether_cleanse'];
+            const id = etherealPool[Math.floor(Math.random() * etherealPool.length)];
+            addCardToDeck(run, id, false);
+            return { text: `药水化为一瓶虚无药剂！获得：${CARDS[id].name}`, cls: 'good' };
+          }
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'pain', 'shame', 'writhe'];
+          const curseId = curses[Math.floor(Math.random() * curses.length)];
+          addCardToDeck(run, curseId, false);
+          return { text: `药水是毒药！一张诅咒牌【${CARDS[curseId].name}】混入了你的卡组。`, cls: 'bad' };
+        },
+      },
+      { label: '💰 卖掉药水（获得 25 金币）',
+        effect(run) {
+          run.gold += 25;
+          run.stats.goldEarned += 25;
+          return { text: '你把药水卖给了路过的商人，获得 25 金币。', cls: 'good' };
+        },
+      },
+      { label: '🚶 不喝来路不明的药水', effect() { return { text: '你把药水留在了原地。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'sacrifice_altar', name: '献祭神殿', icon: '⛩️',
+    desc: '一座古老的神殿，这里可以献祭卡牌来换取其他资源。',
+    options: [
+      {
+        label: '📑 献祭一张卡牌，获得 50 金币',
+        selectCard: true,
+        canPick(run) { return run.deck.length > 5; },
+        pickHint: '选择一张要献祭的卡牌：',
+        blockedText: '你的卡组太精简了，不能再献祭。',
+        effect(run, cardUid) {
+          const idx = run.deck.findIndex(c => c.uid === cardUid);
+          if (idx === -1) return { text: '没有找到这张卡牌。', cls: 'bad' };
+          const [removed] = run.deck.splice(idx, 1);
+          run.gold += 50;
+          run.stats.goldEarned += 50;
+          return { text: `献祭了 ${CARDS[removed.defId].name}，获得 50 金币。`, cls: 'good' };
+        },
+      },
+      {
+        label: '📑 献祭一张卡牌，回复 15 点生命',
+        selectCard: true,
+        canPick(run) { return run.deck.length > 5; },
+        pickHint: '选择一张要献祭的卡牌：',
+        blockedText: '你的卡组太精简了，不能再献祭。',
+        effect(run, cardUid) {
+          const idx = run.deck.findIndex(c => c.uid === cardUid);
+          if (idx === -1) return { text: '没有找到这张卡牌。', cls: 'bad' };
+          const [removed] = run.deck.splice(idx, 1);
+          healPlayerRun(run, 15);
+          return { text: `献祭了 ${CARDS[removed.defId].name}，回复 15 点生命。`, cls: 'good' };
+        },
+      },
+      { label: '🚶 不愿献祭', effect() { return { text: '你离开了神殿。', cls: 'info' }; } },
+    ],
+  },
 ];
 
 function pickRandomEvent() {

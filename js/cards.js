@@ -824,6 +824,58 @@ const CARDS = {
     descTemplate() { return `不可打出`; },
     effect() {},
   },
+
+  // ================= 虚无卡牌（Ethereal — 商店特供，类似药水）==================
+  ether_potion: {
+    id: 'ether_potion', name: '虚无药水', icon: '🧪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars(up) { return { heal: up ? 12 : 8 }; },
+    descTemplate(v) { return `回复 ${v.heal} 点生命。虚无（回合结束仍在手牌则消耗）`; },
+    effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); },
+  },
+  ether_strength: {
+    id: 'ether_strength', name: '虚无力量药剂', icon: '💪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars(up) { return { str: up ? 3 : 2 }; },
+    descTemplate(v) { return `获得 ${v.str} 层力量。虚无`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
+  },
+  ether_block: {
+    id: 'ether_block', name: '虚无护盾药剂', icon: '🛡️', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars(up) { return { block: up ? 18 : 12 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡。虚无`; },
+    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
+  },
+  ether_bomb: {
+    id: 'ether_bomb', name: '虚无炸弹', icon: '💣', type: 'attack', cost: 0, target: 'all_enemies', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars(up) { return { dmg: up ? 12 : 8 }; },
+    descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害。虚无`; },
+    effect(ctx) { ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '虚无炸弹', isAoE: true, bypassTaunt: true }); }); },
+  },
+  ether_draw: {
+    id: 'ether_draw', name: '虚无洞察', icon: '🔮', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars(up) { return { draw: up ? 3 : 2 }; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌。虚无`; },
+    effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); },
+  },
+  ether_cleanse: {
+    id: 'ether_cleanse', name: '虚无净化', icon: '✨', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, ethereal: true,
+    vars() { return {}; },
+    descTemplate() { return `消耗手牌中所有状态牌和诅咒牌。虚无`; },
+    effect(ctx) {
+      const junk = ctx.combat.hand.filter(c => {
+        const d = CARDS[c.defId];
+        return d && (d.type === 'status' || d.type === 'curse') && c.uid !== ctx.card.uid;
+      });
+      junk.forEach(c => {
+        const idx = ctx.combat.hand.findIndex(h => h.uid === c.uid);
+        if (idx !== -1) {
+          ctx.combat.hand.splice(idx, 1);
+          ctx.combat.exhaustPile.push(c);
+          ctx.combat.onCardExhausted();
+        }
+      });
+      ctx.combat.log(`✨ 虚无净化：消耗了 ${junk.length} 张状态/诅咒牌`, 'player');
+    },
+  },
 };
 
 const REWARD_POOLS = {
@@ -843,6 +895,8 @@ const REWARD_POOLS = {
     huntress: ['thousand_cuts', 'assassinate', 'backstab', 'nightmare', 'adrenaline', 'snipe'],
   },
 };
+
+const SHOP_ETHEREAL_POOL = ['ether_potion', 'ether_strength', 'ether_block', 'ether_bomb', 'ether_draw', 'ether_cleanse'];
 
 function rollCardRarity() {
   const r = Math.random();
