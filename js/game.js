@@ -604,7 +604,8 @@ function renderShop(node) {
 // ---------------- Combat ----------------
 function startCombat(enemyDefIds, tier, node) {
   const hpScaling = ACT_DEFS[run.act - 1].scaling;
-  combat = new CombatEngine(run, enemyDefIds, hpScaling);
+  const dmgScaling = ACT_DEFS[run.act - 1].dmgScaling || 1.0;
+  combat = new CombatEngine(run, enemyDefIds, hpScaling, dmgScaling);
   combat.rewardTier = tier;
   combat.node = node;
   combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));

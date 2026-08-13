@@ -675,9 +675,9 @@ const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, doubleSpawnChance: 0.30, enemyPool: NORMAL_ENEMY_IDS },
-  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
-  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, doubleSpawnChance: 0.55, enemyPool: ACT2_ENEMY_IDS },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: NORMAL_ENEMY_IDS },
+  { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, dmgScaling: 1.2, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
+  { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, dmgScaling: 1.4, doubleSpawnChance: 0.55, enemyPool: ACT2_ENEMY_IDS },
 ];
 
 function spawnEnemyGroup(rarity, act = 1) {

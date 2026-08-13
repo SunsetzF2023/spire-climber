@@ -25,9 +25,10 @@ const STATUS_META = {
 };
 
 class CombatEngine {
-  constructor(run, enemyDefIds, hpScaling = 1) {
+  constructor(run, enemyDefIds, hpScaling = 1, dmgScaling = 1) {
     this.run = run; // { player:{hp,maxHp}, gold, relics:[], deck:[cardInstance] }
     this.hpScaling = hpScaling;
+    this.dmgScaling = dmgScaling;
     this.energyMax = 3;
     this.energy = 0;
     this.turnCount = 0;
@@ -369,7 +370,8 @@ class CombatEngine {
 
   dealDamageToPlayer(baseAmount, attackerEnemyId) {
     const attacker = attackerEnemyId ? this.enemies.find(e => e.id === attackerEnemyId) : null;
-    let dmg = baseAmount + (attacker ? (attacker.statuses.strength || 0) : 0);
+    const scaledBase = Math.round(baseAmount * this.dmgScaling);
+    let dmg = scaledBase + (attacker ? (attacker.statuses.strength || 0) : 0);
     if (attacker && attacker.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
     if (this.player.statuses.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
     dmg = Math.max(0, dmg);
