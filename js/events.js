@@ -568,7 +568,7 @@ const EVENT_POOL = [
             damagePlayerRun(run, dmg);
             return { text: `偷窃失败！冒险者反击了你，损失 ${dmg} 点生命。`, cls: 'bad' };
           }
-          if (Math.random() < 0.3) {
+          if (run.act >= 2 && Math.random() < 0.3) {
             startCombatFromEvent(['karen'], 'elite');
             return { text: `你试图偷窃，但这位冒险者竟然是传说中的 Karen！她愤怒地拔出了武器！`, cls: 'bad' };
           }
@@ -582,7 +582,7 @@ const EVENT_POOL = [
         label: '⚔️ 袭击他（进入战斗，有概率遭遇精英 Karen）',
         effect(run) {
           run.stats.adventurerAttacks = (run.stats.adventurerAttacks || 0) + 1;
-          if (Math.random() < 0.25) {
+          if (run.act >= 2 && Math.random() < 0.25) {
             startCombatFromEvent(['karen'], 'elite');
             return { text: `你发起了攻击，但这位冒险者竟然是传说中的 Karen！她冷笑着迎战！`, cls: 'bad' };
           }

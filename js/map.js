@@ -44,7 +44,7 @@ function generateMap(travelFloors = 6) {
       const n = 2 + Math.floor(Math.random() * 2); // 2-3 nodes
       for (let i = 0; i < n; i++) {
         const weights = { monster: 42, event: 20, shop: 12, treasure: 8, rest: 10 };
-        if (f >= 2) weights.elite = 14;
+        if (f >= 4) weights.elite = 10;
         const type = weightedPick(weights);
         nodes.push({ id: `${f}_${i}`, floor: f, idx: i, type, visited: false });
       }
