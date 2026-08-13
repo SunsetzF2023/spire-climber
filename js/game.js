@@ -31,7 +31,7 @@ function cacheEls() {
     'characterScreen', 'characterList', 'characterBackBtn',
     'mapScreen', 'mapContainer', 'mapActName', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventCardSelect', 'eventResult', 'eventContinueBtn',
-    'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restUpgradeList',
+    'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restLiftBtn', 'restUpgradeList',
     'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
     'shopScreen', 'shopCards', 'shopEthereal', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
     'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn',
@@ -585,9 +585,16 @@ function showRestScreen(node) {
   el.restUpgradePreview.classList.add('hidden');
   el.restHealBtn.disabled = false;
   el.restUpgradeBtn.disabled = false;
+  el.restLiftBtn.disabled = false;
   el.restHealBtn.onclick = () => {
     const amount = Math.round(run.player.maxHp * 0.3);
     healPlayerRun(run, amount);
+    renderHud();
+    backToMapOrVictory(node);
+  };
+  el.restLiftBtn.onclick = () => {
+    run.player.maxHp += 8;
+    run.player.hp += 8;
     renderHud();
     backToMapOrVictory(node);
   };

@@ -841,20 +841,20 @@ const ENEMIES = {
       }
       if (pattern[step] === 'breath') {
         return {
-          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 13, statusPreview: [{ name: 'vulnerable', amount: 2 }],
-          execute(combat, e) { combat.dealDamageToPlayer(13, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 10, statusPreview: [{ name: 'vulnerable', amount: 2 }],
+          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); combat.applyStatusPlayer('vulnerable', 2); },
         };
       }
       // slam
       if (enraged) {
         return {
-          name: '狂暴重击 x2', icon: '⚔️', type: 'attack', displayValue: 20, hitsCount: 2,
-          execute(combat, e) { combat.dealDamageToPlayer(20, e.id); combat.dealDamageToPlayer(20, e.id); },
+          name: '狂暴重击 x2', icon: '⚔️', type: 'attack', displayValue: 14, hitsCount: 2,
+          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.dealDamageToPlayer(14, e.id); },
         };
       }
       return {
-        name: '重击', icon: '⚔️', type: 'attack', displayValue: 20,
-        execute(combat, e) { combat.dealDamageToPlayer(20, e.id); },
+        name: '重击', icon: '⚔️', type: 'attack', displayValue: 14,
+        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
       };
     },
   },

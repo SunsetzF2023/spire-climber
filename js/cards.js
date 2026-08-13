@@ -30,6 +30,20 @@ const CARDS = {
     descTemplate(v) { return `回复 ${v.heal} 点生命（消耗）`; },
     effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); },
   },
+  purify: {
+    id: 'purify', name: '净化', icon: '🌿', type: 'skill', cost: 0, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+    vars(up) { return { heal: up ? 6 : 4 }; },
+    descTemplate(v) { return `移除所有负面状态（虚弱、易伤、脆弱、中毒、封印），回复 ${v.heal} 点生命。消耗`; },
+    effect(ctx) {
+      const s = ctx.combat.player.statuses;
+      let removed = 0;
+      ['weak', 'vulnerable', 'frail', 'poison', 'cardLock'].forEach(stat => {
+        if (s[stat] > 0) { s[stat] = 0; removed++; }
+      });
+      ctx.combat.log(`🌿 净化：移除了 ${removed} 种负面状态`, 'player');
+      ctx.combat.healPlayer(ctx.vars.heal);
+    },
+  },
   flash_strike: {
     id: 'flash_strike', name: '闪击', icon: '✨', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'neutral',
     vars(up) { return { dmg: up ? 9 : 6 }; },
@@ -960,7 +974,7 @@ const REWARD_POOLS = {
     huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll'],
   },
   uncommon: {
-    neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite'],
+    neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify'],
     warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
     huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror'],
   },
