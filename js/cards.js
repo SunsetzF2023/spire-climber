@@ -631,18 +631,117 @@ const CARDS = {
     descTemplate(v) { return `造成 ${v.dmg} 点巨额伤害（消耗）`; },
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '狙击' }); },
   },
+
+  // ================= 扩展卡牌（第三批）==================
+  // ---------------- Warrior new (batch 3) ----------------
+  armaments: {
+    id: 'armaments', name: '武装', icon: '🛡️', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
+    vars(up) { return { block: up ? 8 : 5 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡，随机升级手牌中一张牌`; },
+    effect(ctx) {
+      ctx.combat.gainBlockPlayer(ctx.vars.block);
+      const upgradable = ctx.combat.hand.filter(c => c.uid !== ctx.card.uid && !c.upgraded);
+      if (upgradable.length > 0) {
+        const target = upgradable[Math.floor(Math.random() * upgradable.length)];
+        target.upgraded = true;
+        ctx.combat.log(`🛡️ 武装升级了【${CARDS[target.defId].name}】`, 'player');
+      } else {
+        ctx.combat.log('🛡️ 没有可升级的卡牌', 'info');
+      }
+    },
+  },
+  clash: {
+    id: 'clash', name: '冲撞', icon: '⚔️', type: 'attack', cost: 0, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { dmg: up ? 17 : 14 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害（仅当手牌全为攻击牌时可打出）`; },
+    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '冲撞' }); },
+  },
+  headbutt: {
+    id: 'headbutt', name: '头槌', icon: '🤕', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { dmg: up ? 12 : 9 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，将弃牌堆顶一张牌放回抽牌堆顶`; },
+    effect(ctx) {
+      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '头槌' });
+      if (ctx.combat.discardPile.length > 0) {
+        const top = ctx.combat.discardPile.pop();
+        ctx.combat.drawPile.push(top);
+        ctx.combat.log(`🤕 头槌将【${CARDS[top.defId].name}】放回抽牌堆顶`, 'player');
+      }
+    },
+  },
+  heavy_blade: {
+    id: 'heavy_blade', name: '重刃', icon: '🗡️', type: 'attack', cost: 2, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { dmg: up ? 14 : 10, strMul: up ? 5 : 3 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，力量额外加成 x${v.strMul}`; },
+    effect(ctx) {
+      const str = ctx.combat.player.statuses.strength || 0;
+      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg + str * ctx.vars.strMul, { source: '重刃' });
+    },
+  },
+  perfected_strike: {
+    id: 'perfected_strike', name: '完美打击', icon: '💥', type: 'attack', cost: 2, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { base: up ? 12 : 8, perStrike: up ? 4 : 3 }; },
+    descTemplate(v) { return `造成 ${v.base} 点伤害，每张牌名含"打击"的牌额外 +${v.perStrike}`; },
+    effect(ctx) {
+      const strikeCount = ctx.combat.player.deck ? ctx.combat.player.deck.filter(c => CARDS[c.defId] && CARDS[c.defId].name.includes('打击')).length : 0;
+      const dmg = ctx.vars.base + strikeCount * ctx.vars.perStrike;
+      ctx.combat.dealDamageToEnemy(ctx.target.id, dmg, { source: '完美打击' });
+    },
+  },
+
+  // ---------------- Huntress new (batch 3) ----------------
+  backflip: {
+    id: 'backflip', name: '后空翻', icon: '🤸', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'huntress',
+    vars(up) { return { block: up ? 8 : 5, draw: 2 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡，抽 ${v.draw} 张牌`; },
+    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); ctx.combat.drawCards(ctx.vars.draw); },
+  },
+  blade_dance: {
+    id: 'blade_dance', name: '刀刃之舞', icon: '🗡️', type: 'skill', cost: 1, target: 'enemy', rarity: 'common', cls: 'huntress',
+    vars(up) { return { dmg: up ? 6 : 4, hits: 3 }; },
+    descTemplate(v) { return `对目标造成 ${v.hits} 次 ${v.dmg} 点伤害`; },
+    effect(ctx) {
+      for (let i = 0; i < ctx.vars.hits; i++) {
+        if (ctx.target.hp > 0) ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '刀刃之舞' });
+      }
+    },
+  },
+  dodge_roll: {
+    id: 'dodge_roll', name: '闪避翻滚', icon: '🌀', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'huntress',
+    vars(up) { return { block: up ? 12 : 9 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡，下回合再获得 ${v.block} 点格挡`; },
+    effect(ctx) {
+      ctx.combat.gainBlockPlayer(ctx.vars.block);
+      ctx.combat.bonusBlockNext = (ctx.combat.bonusBlockNext || 0) + ctx.vars.block;
+      ctx.combat.log(`🌀 下回合开始时额外获得 ${ctx.vars.block} 点格挡`, 'player');
+    },
+  },
+  piercing_wail: {
+    id: 'piercing_wail', name: '刺耳哀嚎', icon: '📢', type: 'skill', cost: 1, target: 'all_enemies', rarity: 'uncommon', cls: 'huntress', exhaust: true,
+    vars(up) { return { strLoss: up ? 4 : 3 }; },
+    descTemplate(v) { return `所有敌人永久失去 ${v.strLoss} 点力量（消耗）`; },
+    effect(ctx) {
+      ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.applyStatusEnemy(e.id, 'strength', -ctx.vars.strLoss); });
+    },
+  },
+  terror: {
+    id: 'terror', name: '恐惧', icon: '😱', type: 'skill', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'huntress', exhaust: true,
+    vars(up) { return { vuln: up ? 5 : 3 }; },
+    descTemplate(v) { return `使目标获得 ${v.vuln} 层易伤（消耗）`; },
+    effect(ctx) { ctx.combat.applyStatusEnemy(ctx.target.id, 'vulnerable', ctx.vars.vuln); },
+  },
 };
 
 const REWARD_POOLS = {
   common: {
     neutral: ['bandage_up', 'flash_strike', 'deflect'],
-    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge'],
-    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas'],
+    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike'],
+    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll'],
   },
   uncommon: {
     neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite'],
     warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
-    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst'],
+    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror'],
   },
   rare: {
     neutral: ['apex_form'],

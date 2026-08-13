@@ -108,6 +108,11 @@ class CombatEngine {
       this.drawCards(this.bonusDrawNext);
       this.bonusDrawNext = 0;
     }
+    if (this.bonusBlockNext) {
+      this.gainBlockPlayer(this.bonusBlockNext);
+      this.log(`🌀 闪避翻滚：额外获得 ${this.bonusBlockNext} 点格挡`, 'player');
+      this.bonusBlockNext = 0;
+    }
     if (this.player.statuses.toolsOfTrade > 0) {
       for (let i = 0; i < this.player.statuses.toolsOfTrade; i++) {
         this.drawCards(1);
@@ -176,7 +181,9 @@ class CombatEngine {
     if (this.player.statuses.corruption > 0) return true;
     const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
     const cost = (this.firstAttackFree && def.type === 'attack') ? 0 : baseCost;
-    return this.energy >= cost;
+    if (this.energy < cost) return false;
+    if (def.id === 'clash' && !this.hand.every(c => CARDS[c.defId].type === 'attack')) return false;
+    return true;
   }
 
   playCard(cardUid, targetEnemyId) {

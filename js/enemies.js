@@ -193,6 +193,135 @@ const ENEMIES = {
     },
   },
 
+  // ---------------- New Act 1 enemies (StS-inspired) ----------------
+  jaw_worm: {
+    id: 'jaw_worm', name: '颚虫', icon: '🪱', hpRange: [40, 46], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const r = Math.random();
+      if (r < 0.25) {
+        return {
+          name: '咆哮', icon: '💪', type: 'buff', displayValue: 3,
+          execute(combat, e) { combat.applyStatusEnemy(e.id, 'strength', 3); combat.gainBlockEnemy(e.id, 6); combat.log(`${e.name} 咆哮：力量 +3，格挡 +6`, 'enemy'); },
+        };
+      }
+      if (r < 0.55) {
+        return {
+          name: '啃咬', icon: '⚔️', type: 'attack', displayValue: 11,
+          execute(combat, e) { combat.dealDamageToPlayer(11, e.id); },
+        };
+      }
+      return {
+        name: '撕扯', icon: '⚔️', type: 'attack', displayValue: 7, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); },
+      };
+    },
+  },
+  fungi_beast: {
+    id: 'fungi_beast', name: '真菌兽', icon: '🍄', hpRange: [22, 28], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['atk', 'grow', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'grow') {
+        return {
+          name: '菌丝生长', icon: '🛡️', type: 'defend', displayValue: 6, statusPreview: [{ name: 'strength', amount: 2 }],
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 6); combat.applyStatusEnemy(e.id, 'strength', 2); combat.log(`${e.name} 菌丝生长：格挡 +6，力量 +2`, 'enemy'); },
+        };
+      }
+      return {
+        name: '孢子喷吐', icon: '⚔️', type: 'attack', displayValue: 6,
+        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
+      };
+    },
+  },
+  gremlin_nob: {
+    id: 'gremlin_nob', name: '哥布林首领', icon: '👺', hpRange: [50, 56], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['rage', 'atk', 'atk', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'rage') {
+        return {
+          name: '狂怒', icon: '💪', type: 'buff', displayValue: 4,
+          execute(combat, e) { combat.applyStatusEnemy(e.id, 'strength', 4); combat.log(`${e.name} 进入狂怒：力量 +4`, 'enemy'); },
+        };
+      }
+      const dmg = 10 + (enemy.statuses.strength || 0);
+      return {
+        name: '重棍', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+
+  // ---------------- New Act 2 enemies (StS-inspired) ----------------
+  chosen: {
+    id: 'chosen', name: '被选者', icon: '🀄', hpRange: [60, 68], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['poke', 'drain', 'debilitate', 'zap'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'drain') {
+        return {
+          name: '汲取', icon: '💪', type: 'buff', displayValue: 3, statusPreview: [{ name: 'weak', amount: 2 }],
+          execute(combat, e) { combat.applyStatusPlayer('weak', 2); combat.applyStatusEnemy(e.id, 'strength', 3); combat.log(`${e.name} 汲取你的力量！`, 'enemy'); },
+        };
+      }
+      if (pattern[step] === 'debilitate') {
+        return {
+          name: '削弱', icon: '⚔️', type: 'attack', displayValue: 10, statusPreview: [{ name: 'vulnerable', amount: 2 }],
+          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+        };
+      }
+      if (pattern[step] === 'zap') {
+        return {
+          name: '电击', icon: '⚔️', type: 'attack', displayValue: 18,
+          execute(combat, e) { combat.dealDamageToPlayer(18, e.id); },
+        };
+      }
+      return {
+        name: '戳刺', icon: '⚔️', type: 'attack', displayValue: 5, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); if (e.hp > 0) combat.dealDamageToPlayer(5, e.id); },
+      };
+    },
+  },
+  spheric_guardian: {
+    id: 'spheric_guardian', name: '球形守护者', icon: '🔮', hpRange: [48, 54], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['slam', 'guard', 'slam', 'slam'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'guard') {
+        return {
+          name: '力场护盾', icon: '🛡️', type: 'defend', displayValue: 20,
+          execute(combat, e) { combat.gainBlockEnemy(e.id, 20); combat.log(`${e.name} 展开力场护盾`, 'enemy'); },
+        };
+      }
+      return {
+        name: '冲撞', icon: '⚔️', type: 'attack', displayValue: 12,
+        execute(combat, e) { combat.dealDamageToPlayer(12, e.id); },
+      };
+    },
+  },
+  snake_plant: {
+    id: 'snake_plant', name: '蛇花', icon: '🐍', hpRange: [52, 60], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['chomp', 'atk', 'chomp'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'chomp') {
+        return {
+          name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 7, hitsCount: 3,
+          execute(combat, e) { combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); },
+        };
+      }
+      return {
+        name: '缠绕', icon: '⚔️', type: 'attack', displayValue: 15,
+        execute(combat, e) { combat.dealDamageToPlayer(15, e.id); },
+      };
+    },
+  },
+
   // ---------------- Dimension 2 enemies (special mechanics) ----------------
   card_reactor: {
     id: 'card_reactor', name: '符文反应堆', icon: '⚙️', hpRange: [50, 60], rarity: 'normal',
@@ -536,9 +665,9 @@ const ENEMIES = {
   },
 };
 
-const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin'];
+const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'fungi_beast', 'gremlin_nob'];
 
-const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'slime', 'gargoyle', 'shadow_assassin'];
+const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin'];
 
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its
