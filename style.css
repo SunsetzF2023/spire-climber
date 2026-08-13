@@ -106,7 +106,9 @@ body{
 .game-card .desc{font-size:10px; color:var(--dim); margin-top:6px; line-height:1.4; flex:1;}
 .game-card.upgraded{border-color:var(--gold);}
 .game-card.upgraded .name::after{content:'+'; color:var(--gold); margin-left:2px;}
-.game-card.unplayable{opacity:.45; cursor:not-allowed;}
+.game-card.unplayable{opacity:.5; cursor:not-allowed; filter:grayscale(.6) brightness(.7);}
+.game-card.unplayable .cost{border-color:var(--red); color:var(--red);}
+.game-card.unplayable:hover{transform:none; border-color:var(--border);}
 
 .relic-card{
   width:64px; height:64px; border-radius:10px; border:2px solid var(--border);
