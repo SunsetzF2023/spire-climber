@@ -280,18 +280,15 @@ const CARDS = {
   // ================= 女猎手（Huntress）=================
   dagger_throw: {
     id: 'dagger_throw', name: '飞刀', icon: '🔪', type: 'attack', cost: 1, target: 'enemy', rarity: 'starter', cls: 'huntress',
-    vars(up) { return { dmg: up ? 6 : 4, poison: up ? 2 : 1 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害，施加 ${v.poison} 层中毒`; },
-    effect(ctx) {
-      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '飞刀' });
-      ctx.combat.applyStatusEnemy(ctx.target.id, 'poison', ctx.vars.poison);
-    },
+    vars(up) { return { dmg: up ? 9 : 6 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害`; },
+    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '飞刀' }); },
   },
   footwork: {
     id: 'footwork', name: '脚步', icon: '🦶', type: 'skill', cost: 1, target: 'self', rarity: 'starter', cls: 'huntress',
-    vars(up) { return { block: up ? 8 : 5, dex: 1 }; },
-    descTemplate(v) { return `获得 ${v.block} 点格挡，永久获得 ${v.dex} 点敏捷（本场战斗）`; },
-    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); ctx.combat.applyStatusPlayer('dexterity', ctx.vars.dex); },
+    vars(up) { return { block: up ? 8 : 5 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡`; },
+    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   venom_strike: {
     id: 'venom_strike', name: '毒刃突击', icon: '🗡️', type: 'attack', cost: 2, target: 'enemy', rarity: 'starter', cls: 'huntress',
