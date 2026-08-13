@@ -217,7 +217,7 @@ class CombatEngine {
       }
     });
 
-    if (def.exhaust || isCorrupted) { this.exhaustPile.push(card); this.onCardExhausted(); }
+    if (def.exhaust || isCorrupted || def.type === 'power') { this.exhaustPile.push(card); this.onCardExhausted(); }
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
