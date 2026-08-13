@@ -144,76 +144,175 @@ function renderCharacterSelect() {
 }
 
 function selectCharacterAndStart(characterId) {
-  const bonusOptions = [];
-  if (meta.achievements['card_master']) bonusOptions.push('card');
-  if (meta.achievements['relic_hoarder']) bonusOptions.push('relic');
-  if (bonusOptions.length === 0) { newRun(characterId); return; }
-  showBonusSelectScreen(characterId, bonusOptions);
+  showDeckConfigScreen(characterId);
 }
 
-function showBonusSelectScreen(characterId, bonusOptions) {
+function getUnlockedAchievementCards() {
+  const cards = [];
+  ACHIEVEMENTS.forEach(ach => {
+    if (meta.achievements[ach.id] && ach.rewardCard && !cards.includes(ach.rewardCard)) {
+      cards.push(ach.rewardCard);
+    }
+  });
+  return cards;
+}
+
+function showDeckConfigScreen(characterId) {
+  const character = CHARACTERS[characterId];
+  const achCards = getUnlockedAchievementCards();
   showScreen('eventScreen');
-  el.eventIcon.textContent = '🎁';
-  el.eventName.textContent = '出征前的准备';
-  el.eventDesc.textContent = '你过往的成就为本次冒险带来了额外奖励，请选择：';
+  el.eventIcon.textContent = character.icon;
+  el.eventName.textContent = `${character.name} — 牌组配置`;
+  el.eventDesc.textContent = achCards.length > 0
+    ? '你可以用成就奖励卡牌替换初始牌组中的卡牌（每张成就卡可替换一张初始牌）。也可以跳过直接出发。'
+    : '暂无可用的成就奖励卡牌。完成成就后可解锁特殊卡牌用于替换初始牌组。直接出发即可。';
   el.eventOptions.innerHTML = '';
-  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.className = 'card-grid';
   el.eventCardSelect.innerHTML = '';
   el.eventResult.className = 'event-result hidden';
   el.eventContinueBtn.classList.add('hidden');
 
-  const options = [];
-  if (bonusOptions.includes('card')) options.push({ label: '🎴 选择一张额外的初始卡牌', action: 'card' });
-  if (bonusOptions.includes('relic')) options.push({ label: '💎 选择一件额外的初始遗物', action: 'relic' });
-  options.push({ label: '⏭️ 跳过奖励，直接出发', action: 'skip' });
-
-  options.forEach(opt => {
+  if (achCards.length === 0) {
     const btn = document.createElement('button');
-    btn.className = 'event-option-btn';
-    btn.textContent = opt.label;
-    btn.addEventListener('click', () => {
-      Array.from(el.eventOptions.children).forEach(b => b.disabled = true);
-      if (opt.action === 'skip') { newRun(characterId); return; }
-      el.eventCardSelect.className = 'card-grid';
-      el.eventCardSelect.innerHTML = '';
-      if (opt.action === 'card') {
-        const offered = [];
-        while (offered.length < 3) {
-          const id = pickRandomCardId(characterId, offered);
-          if (!offered.includes(id)) offered.push(id);
-        }
-        offered.forEach(id => {
-          const inst = makeCardInstance(id, false);
-          el.eventCardSelect.appendChild(renderCardEl(inst, {
-            clickable: true,
-            onClick: () => newRun(characterId, { bonusCardId: id }),
-          }));
-        });
-      } else if (opt.action === 'relic') {
-        const offered = [];
-        while (offered.length < 3) {
-          const id = pickRandomRelic(offered);
-          if (!offered.includes(id)) offered.push(id);
-        }
-        offered.forEach(id => {
-          const relic = RELICS[id];
-          const box = document.createElement('div');
-          box.className = 'relic-card';
-          box.textContent = relic.icon;
-          attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}`);
-          box.addEventListener('click', () => newRun(characterId, { bonusRelicId: id }));
-          el.eventCardSelect.appendChild(box);
-        });
-      }
-    });
+    btn.className = 'btn btn-primary';
+    btn.textContent = '▶ 直接出发';
+    btn.addEventListener('click', () => proceedToRelicSelect(characterId, character.startingDeck.slice()));
     el.eventOptions.appendChild(btn);
+    return;
+  }
+
+  let pendingSwaps = [];
+  const starterDeck = character.startingDeck.slice();
+
+  const renderConfig = () => {
+    el.eventCardSelect.innerHTML = '';
+    const hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.style.width = '100%';
+    hint.textContent = '点击一张成就卡牌选择要替换的初始牌：';
+    el.eventCardSelect.appendChild(hint);
+
+    achCards.forEach(cardId => {
+      const inst = makeCardInstance(cardId, false);
+      const card = renderCardEl(inst, {
+        clickable: true,
+        onClick: () => {
+          showSwapPicker(characterId, cardId, starterDeck, pendingSwaps, renderConfig);
+        },
+      });
+      const label = document.createElement('div');
+      label.className = 'hint';
+      const alreadyUsed = pendingSwaps.some(s => s.achCardId === cardId);
+      label.textContent = alreadyUsed ? '✅ 已选用' : '点击替换初始牌';
+      const wrap = document.createElement('div');
+      wrap.appendChild(card);
+      wrap.appendChild(label);
+      el.eventCardSelect.appendChild(wrap);
+    });
+
+    el.eventOptions.innerHTML = '';
+    const startBtn = document.createElement('button');
+    startBtn.className = 'btn btn-primary';
+    startBtn.textContent = `▶ 出发！（${pendingSwaps.length} 张替换）`;
+    startBtn.addEventListener('click', () => {
+      const finalDeck = starterDeck.slice();
+      pendingSwaps.forEach(s => {
+        const idx = finalDeck.indexOf(s.starterCardId);
+        if (idx !== -1) finalDeck[idx] = s.achCardId;
+      });
+      proceedToRelicSelect(characterId, finalDeck);
+    });
+    el.eventOptions.appendChild(startBtn);
+
+    if (pendingSwaps.length > 0) {
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn btn-ghost';
+      resetBtn.textContent = '↩ 重置替换';
+      resetBtn.addEventListener('click', () => { pendingSwaps = []; renderConfig(); });
+      el.eventOptions.appendChild(resetBtn);
+    }
+  };
+  renderConfig();
+}
+
+function showSwapPicker(characterId, achCardId, starterDeck, pendingSwaps, onDone) {
+  el.eventCardSelect.innerHTML = '';
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+  hint.style.width = '100%';
+  hint.textContent = `选择要用 ${CARDS[achCardId].name} 替换的初始牌：`;
+  el.eventCardSelect.appendChild(hint);
+
+  const usedIndices = pendingSwaps.map(s => starterDeck.indexOf(s.starterCardId)).filter(i => i !== -1);
+  const uniqueStarters = [...new Set(starterDeck)];
+  uniqueStarters.forEach(starterId => {
+    const inst = makeCardInstance(starterId, false);
+    const card = renderCardEl(inst, {
+      clickable: true,
+      onClick: () => {
+        if (pendingSwaps.some(s => s.achCardId === achCardId)) {
+          const existing = pendingSwaps.find(s => s.achCardId === achCardId);
+          existing.starterCardId = starterId;
+        } else {
+          pendingSwaps.push({ achCardId, starterCardId: starterId });
+        }
+        onDone();
+      },
+    });
+    el.eventCardSelect.appendChild(card);
   });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-ghost';
+  cancelBtn.textContent = '↩ 返回';
+  cancelBtn.addEventListener('click', onDone);
+  el.eventOptions.innerHTML = '';
+  el.eventOptions.appendChild(cancelBtn);
+}
+
+function proceedToRelicSelect(characterId, deckIds) {
+  const hasRelicUnlock = meta.achievements['relic_hoarder'];
+  if (!hasRelicUnlock) { newRun(characterId, { customDeck: deckIds }); return; }
+  showRelicSelectScreen(characterId, deckIds);
+}
+
+function showRelicSelectScreen(characterId, deckIds) {
+  showScreen('eventScreen');
+  el.eventIcon.textContent = '💎';
+  el.eventName.textContent = '出征遗物选择';
+  el.eventDesc.textContent = '你过往的成就为本次冒险带来了一件额外的初始遗物，请选择：';
+  el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid';
+  el.eventCardSelect.innerHTML = '';
+  el.eventResult.className = 'event-result hidden';
+  el.eventContinueBtn.classList.add('hidden');
+
+  const offered = [];
+  while (offered.length < 3) {
+    const id = pickRandomRelic(offered);
+    if (!offered.includes(id)) offered.push(id);
+  }
+  offered.forEach(id => {
+    const relic = RELICS[id];
+    const box = document.createElement('div');
+    box.className = 'relic-card';
+    box.textContent = relic.icon;
+    attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}`);
+    box.addEventListener('click', () => newRun(characterId, { customDeck: deckIds, bonusRelicId: id }));
+    el.eventCardSelect.appendChild(box);
+  });
+
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'btn btn-ghost';
+  skipBtn.textContent = '⏭️ 不需要额外遗物，直接出发';
+  skipBtn.addEventListener('click', () => newRun(characterId, { customDeck: deckIds }));
+  el.eventOptions.appendChild(skipBtn);
 }
 
 // ---------------- Run lifecycle ----------------
 function newRun(characterId, bonus = {}) {
   const character = CHARACTERS[characterId] || CHARACTERS.warrior;
-  const deckIds = character.startingDeck.slice();
+  const deckIds = bonus.customDeck ? bonus.customDeck.slice() : character.startingDeck.slice();
   if (bonus.bonusCardId) deckIds.push(bonus.bonusCardId);
   run = {
     characterId: character.id,
@@ -645,6 +744,20 @@ function startCombat(enemyDefIds, tier, node) {
   renderCombat();
 }
 
+function startCombatFromEvent(enemyDefIds, tier) {
+  const hpScaling = ACT_DEFS[run.act - 1].scaling;
+  const dmgScaling = ACT_DEFS[run.act - 1].dmgScaling || 1.0;
+  combat = new CombatEngine(run, enemyDefIds, hpScaling, dmgScaling);
+  combat.rewardTier = tier;
+  combat.node = null;
+  combat.fromEvent = true;
+  combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));
+  combat.start();
+  selectedCardUid = null;
+  showScreen('combatScreen');
+  renderCombat();
+}
+
 function buildStatusBadge(name, amount, showLabel) {
   const meta = STATUS_META[name];
   const span = document.createElement('span');
@@ -874,6 +987,7 @@ function finishRun(victory, desc) {
     relicsHeld: run.relics.length,
     deckSize: run.deck.length,
     finalHp: run.player.hp,
+    maxHp: run.player.maxHp,
     treasureFound: run.stats.treasureFound,
     uniqueCardIds: Object.keys(run.stats.uniqueCardIds || {}).length,
   };

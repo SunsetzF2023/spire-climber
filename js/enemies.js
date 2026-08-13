@@ -472,6 +472,104 @@ const ENEMIES = {
     },
   },
 
+  // ---------------- Adventurer enemies (from dying_adventurer event) ----------------
+  adventurer_guardian: {
+    id: 'adventurer_guardian', name: '冒险者·守护', icon: '🛡️', hpRange: [45, 55], rarity: 'normal',
+    onSpawn(enemy) { enemy.taunt = true; },
+    chooseMove(enemy, combat) {
+      const pattern = ['guard', 'guard', 'burst', 'guard'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'guard') {
+        return {
+          name: '蓄力防御', icon: '🛡️', type: 'defend', displayValue: 18,
+          execute(combat, e) {
+            combat.gainBlockEnemy(e.id, 18);
+            combat.applyStatusEnemy(e.id, 'strength', 2);
+            combat.log(`🛡️ ${e.name} 蓄力防御：格挡 +18，力量 +2`, 'enemy');
+          },
+        };
+      }
+      const dmg = 16 + (enemy.statuses.strength || 0) * 2;
+      return {
+        name: '爆发重击', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); combat.log(`💥 ${e.name} 蓄力完毕，爆发重击！`, 'enemy'); },
+      };
+    },
+  },
+  adventurer_thief: {
+    id: 'adventurer_thief', name: '冒险者·盗贼', icon: '🥷', hpRange: [30, 38], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['steal', 'stab', 'flee'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'steal') {
+        return {
+          name: '偷窃', icon: '🥷', type: 'debuff', displayValue: null,
+          execute(combat, e) {
+            const stolen = 10 + Math.floor(Math.random() * 10);
+            combat.run.gold = Math.max(0, combat.run.gold - stolen);
+            combat.log(`🥷 ${e.name} 偷走了你 ${stolen} 金币！`, 'enemy');
+          },
+        };
+      }
+      if (pattern[step] === 'flee') {
+        return {
+          name: '逃跑', icon: '🏃', type: 'idle', displayValue: null,
+          execute(combat, e) {
+            e.hp = 0;
+            combat.log(`🏃 ${e.name} 逃跑了！`, 'info');
+            combat.handleEnemyDeath(e);
+          },
+        };
+      }
+      const dmg = 8 + (enemy.statuses.strength || 0);
+      return {
+        name: '匕首刺击', icon: '⚔️', type: 'attack', displayValue: dmg, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); if (e.hp > 0) combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  adventurer_fragile: {
+    id: 'adventurer_fragile', name: '冒险者·虚弱', icon: '🤕', hpRange: [15, 22], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const dmg = 6 + (enemy.statuses.strength || 0);
+      return {
+        name: '虚弱反击', icon: '⚔️', type: 'attack', displayValue: dmg,
+        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+      };
+    },
+  },
+  adventurer_disguised: {
+    id: 'adventurer_disguised', name: '冒险者·伪装', icon: '🎭', hpRange: [40, 50], rarity: 'normal',
+    onSpawn(enemy) {
+      const pool = ['slime', 'bat', 'rampaging_hound', 'skeleton_guard', 'jaw_worm', 'gremlin_nob'];
+      const realId = pool[Math.floor(Math.random() * pool.length)];
+      enemy.aiState.disguiseAs = realId;
+      enemy.aiState.revealed = false;
+    },
+    chooseMove(enemy, combat) {
+      if (!enemy.aiState.revealed) {
+        enemy.aiState.revealed = true;
+        const realDef = ENEMIES[enemy.aiState.disguiseAs];
+        return {
+          name: '撕下伪装', icon: '🎭', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            e.name = realDef.name;
+            e.icon = realDef.icon;
+            e.defId = enemy.aiState.disguiseAs;
+            combat.applyStatusEnemy(e.id, 'strength', 2);
+            combat.log(`🎭 ${e.name} 撕下伪装，露出了真面目：${realDef.name}！`, 'enemy');
+          },
+        };
+      }
+      const realDef = ENEMIES[enemy.aiState.disguiseAs];
+      enemy.name = realDef.name;
+      enemy.icon = realDef.icon;
+      return realDef.chooseMove(enemy, combat);
+    },
+  },
+
   // ---------------- Summoner & Taunt enemies ----------------
   cultist_summoner: {
     id: 'cultist_summoner', name: '邪教召唤师', icon: '🧙', hpRange: [48, 56], rarity: 'normal',

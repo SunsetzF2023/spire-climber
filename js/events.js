@@ -434,6 +434,96 @@ const EVENT_POOL = [
       { label: '🚶 不愿献祭', effect() { return { text: '你离开了神殿。', cls: 'info' }; } },
     ],
   },
+  {
+    id: 'alchemist', name: '炼金术士', icon: '⚗️',
+    desc: '一位疯狂的炼金术士正在路边摆弄他的药剂。他声称能把你的卡牌"变化"成完全不同的东西。',
+    options: [
+      {
+        label: '⚗️ 变化一张卡牌（变为同稀有度的随机卡牌）',
+        selectCard: true,
+        canPick(run) { return run.deck.length > 1; },
+        pickHint: '选择一张要变化的卡牌：',
+        blockedText: '你的卡组太精简了，不能再变化。',
+        effect(run, cardUid) {
+          const idx = run.deck.findIndex(c => c.uid === cardUid);
+          if (idx === -1) return { text: '没有找到这张卡牌。', cls: 'bad' };
+          const oldCard = run.deck[idx];
+          const oldDef = CARDS[oldCard.defId];
+          const oldRarity = oldDef.rarity || 'common';
+          const charPool = run.characterId || 'warrior';
+          let newId = null;
+          const tiers = REWARD_POOLS[oldRarity] || REWARD_POOLS.common;
+          const charCards = tiers[charPool] || [];
+          const neutralCards = tiers.neutral || [];
+          const pool = [...charCards, ...neutralCards];
+          if (pool.length > 0) {
+            newId = pool[Math.floor(Math.random() * pool.length)];
+          }
+          if (!newId) newId = 'strike';
+          run.deck[idx] = makeCardInstance(newId, false);
+          return { text: `炼金术士将 ${oldDef.name} 变化为 ${CARDS[newId].name}！`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不信任炼金术', effect() { return { text: '你快步离开了。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'dying_adventurer', name: '奄奄一息的冒险者', icon: '🧝',
+    desc: '路边躺着一名奄奄一息的冒险者，身上似乎还有些值钱的东西。你可以选择掠夺、救助或了结他。',
+    options: [
+      {
+        label: '💰 掠夺他的财物（获得金币，但可能遭到反击）',
+        effect(run) {
+          const roll = Math.random();
+          if (roll < 0.55) {
+            const gold = 25 + Math.floor(Math.random() * 25);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `你搜刮了冒险者的遗物，获得 ${gold} 金币。`, cls: 'good' };
+          }
+          if (roll < 0.8) {
+            const dmg = 5 + Math.floor(Math.random() * 5);
+            damagePlayerRun(run, dmg);
+            return { text: `冒险者拼死反击！你损失了 ${dmg} 点生命，什么也没捞到。`, cls: 'bad' };
+          }
+          const dmg = 3 + Math.floor(Math.random() * 4);
+          damagePlayerRun(run, dmg);
+          const gold = 15 + Math.floor(Math.random() * 15);
+          run.gold += gold;
+          run.stats.goldEarned += gold;
+          return { text: `冒险者挣扎了一下，你受了 ${dmg} 点伤但还是抢到了 ${gold} 金币。`, cls: 'info' };
+        },
+      },
+      {
+        label: '🩹 救助他（消耗金币回复生命，可能获得遗物）',
+        disabled(run) { return run.gold < 20; },
+        effect(run) {
+          if (run.gold < 20) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 20;
+          const heal = 12 + Math.floor(Math.random() * 8);
+          healPlayerRun(run, heal);
+          if (Math.random() < 0.3) {
+            const relicId = pickRandomRelic(run.relics);
+            if (relicId) {
+              addRelicToRun(run, relicId);
+              return { text: `你救助了冒险者，回复 ${heal} 生命。他感激地赠予你：${RELICS[relicId].icon} ${RELICS[relicId].name}！`, cls: 'good' };
+            }
+          }
+          return { text: `你救助了冒险者，消耗 20 金币，回复 ${heal} 点生命。他虚弱地道谢后离去了。`, cls: 'good' };
+        },
+      },
+      {
+        label: '⚔️ 了结他的痛苦（进入战斗）',
+        effect(run) {
+          const types = ['adventurer_guardian', 'adventurer_thief', 'adventurer_fragile', 'adventurer_disguised'];
+          const enemyId = types[Math.floor(Math.random() * types.length)];
+          startCombatFromEvent([enemyId], 'normal');
+          return { text: `你举起了武器……冒险者突然暴起，原来是个陷阱！`, cls: 'bad' };
+        },
+      },
+      { label: '🚶 绕道而行', effect() { return { text: '你选择不惹麻烦，绕道而行。', cls: 'info' }; } },
+    ],
+  },
 ];
 
 function pickRandomEvent() {
