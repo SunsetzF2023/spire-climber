@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>?���??��??????��??��? Demo</title>
+<title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
 <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
 <header class="topbar">
-  <h1>?���??��???<span>?��??��??��? Demo</span></h1>
+  <h1>🗡️ 爬塔者 <span>原创卡牌爬塔 Demo</span></h1>
   <div class="run-hud" id="runHud">
-    <span>?��? <b id="hudHp">-</b></span>
-    <span>?�� <b id="hudGold">-</b></span>
-    <span>??�?<b id="hudFloor">-</b></span>
+    <span>❤️ <b id="hudHp">-</b></span>
+    <span>💰 <b id="hudGold">-</b></span>
+    <span>🏔️ <b id="hudFloor">-</b></span>
     <span id="hudRelics" class="hud-relics"></span>
   </div>
 </header>
@@ -21,32 +21,32 @@
 <!-- ============ MAIN MENU ============ -->
 <section id="menuScreen" class="screen">
   <div class="panel menu-panel">
-    <h2>?���??��???/h2>
-    <p class="hint">一局定�?负�??��??��??��?游�?：选�??��??��??�拿?�物，�?路爬?��?顶击败Boss??/p>
-    <button id="startRunBtn" class="btn btn-primary">开始新?��?�???/button>
-    <button id="openProfileBtn" class="btn btn-ghost">???��??个人中�?</button>
-    <button id="openHistoryBtn" class="btn btn-ghost">?? ?�险?�史</button>
-    <button id="openLeaderboardBtn" class="btn btn-ghost">?? ?��?�?/button>
+    <h2>🗡️ 爬塔者</h2>
+    <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
+    <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
+    <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
+    <button id="openHistoryBtn" class="btn btn-ghost">📜 冒险历史</button>
+    <button id="openLeaderboardBtn" class="btn btn-ghost">🏆 排行榜</button>
   </div>
 </section>
 
 <!-- ============ CHARACTER SELECT ============ -->
 <section id="characterScreen" class="screen hidden">
   <div class="panel character-panel">
-    <h2>?�择你�?角色 <span class="hint">· 不�?角色?��??��??�卡?��?派�??��??��?</span></h2>
+    <h2>选择你的角色 <span class="hint">· 不同角色拥有独立的卡牌流派与初始牌组</span></h2>
     <div id="characterList" class="character-grid"></div>
-    <button id="characterBackBtn" class="btn btn-ghost">?� 返�?主�???/button>
+    <button id="characterBackBtn" class="btn btn-ghost">◀ 返回主菜单</button>
   </div>
 </section>
 
 <!-- ============ MAP SCREEN ============ -->
 <section id="mapScreen" class="screen hidden">
   <div class="panel map-panel">
-    <h2>?�图 <span id="mapActName" class="hint"></span> <span class="hint">· ?�击?�到达�??�点?��?</span></h2>
+    <h2>地图 <span id="mapActName" class="hint"></span> <span class="hint">· 点击可到达的节点前进</span></h2>
     <div id="mapContainer" class="map-container"></div>
   </div>
   <div class="panel deck-panel">
-    <h2>?��??��? <span id="deckCount" class="hint"></span></h2>
+    <h2>我的卡组 <span id="deckCount" class="hint"></span></h2>
     <div id="deckList" class="card-grid small"></div>
   </div>
 </section>
@@ -54,38 +54,38 @@
 <!-- ============ EVENT SCREEN ============ -->
 <section id="eventScreen" class="screen hidden">
   <div class="panel event-panel">
-    <div class="event-icon" id="eventIcon">??/div>
+    <div class="event-icon" id="eventIcon">❓</div>
     <h2 id="eventName">事件</h2>
     <p class="event-desc" id="eventDesc"></p>
     <div id="eventOptions" class="event-options"></div>
     <div id="eventCardSelect" class="card-grid hidden"></div>
     <div id="eventResult" class="event-result hidden"></div>
-    <button id="eventContinueBtn" class="btn btn-primary hidden">继续?��? ??/button>
+    <button id="eventContinueBtn" class="btn btn-primary hidden">继续前进 ▶</button>
   </div>
 </section>
 
 <!-- ============ REST SITE SCREEN ============ -->
 <section id="restScreen" class="screen hidden">
   <div class="panel rest-panel">
-    <div class="event-icon">?��</div>
-    <h2>?�地</h2>
-    <p class="event-desc">?��??�可以�?伤�??�是?�磨一张卡?�使?�更强大??/p>
+    <div class="event-icon">🔥</div>
+    <h2>营地</h2>
+    <p class="event-desc">在这里可以疗伤，或是打磨一张卡牌使其更强大。</p>
     <div class="rest-options">
-      <button id="restHealBtn" class="btn btn-primary">?? 休息（恢�?30% ?�大�??��?</button>
-      <button id="restUpgradeBtn" class="btn btn-primary">?�� ?�磨一张卡?��?永�?强�?�?/button>
-      <button id="restLiftBtn" class="btn btn-primary">?�� ?�炼（�?大�???+8�?/button>
+      <button id="restHealBtn" class="btn btn-primary">🛌 休息（恢复 30% 最大生命）</button>
+      <button id="restUpgradeBtn" class="btn btn-primary">🔨 打磨一张卡牌（永久强化）</button>
+      <button id="restLiftBtn" class="btn btn-primary">💪 锻炼（最大生命 +8）</button>
     </div>
     <div id="restUpgradeList" class="card-grid hidden"></div>
     <div id="restUpgradePreview" class="upgrade-preview hidden">
-      <p class="hint">强�?预�?�?/p>
+      <p class="hint">强化预览：</p>
       <div class="upgrade-compare">
         <div id="restPreviewBefore"></div>
-        <div class="upgrade-arrow">??/div>
+        <div class="upgrade-arrow">➜</div>
         <div id="restPreviewAfter"></div>
       </div>
       <div class="rest-options">
-        <button id="restConfirmUpgradeBtn" class="btn btn-primary">??确认强�?</button>
-        <button id="restCancelUpgradeBtn" class="btn btn-ghost">???�择?��??��?</button>
+        <button id="restConfirmUpgradeBtn" class="btn btn-primary">✅ 确认强化</button>
+        <button id="restCancelUpgradeBtn" class="btn btn-ghost">↩ 选择其他卡牌</button>
       </div>
     </div>
   </div>
@@ -94,26 +94,26 @@
 <!-- ============ SHOP SCREEN ============ -->
 <section id="shopScreen" class="screen hidden">
   <div class="panel shop-panel">
-    <h2>?�人 <span class="hint">?��?币购买卡???�物，�?移除一张卡</span></h2>
-    <h3 class="shop-section-title">?��?</h3>
+    <h2>商人 <span class="hint">花金币购买卡牌/遗物，或移除一张卡</span></h2>
+    <h3 class="shop-section-title">卡牌</h3>
     <div id="shopCards" class="card-grid"></div>
-    <h3 class="shop-section-title">?��??��? <span class="hint">（用完即消�??��?结�??�使?��?会�?失�?</span></h3>
+    <h3 class="shop-section-title">虚无药剂 <span class="hint">（用完即消，回合结束未使用也会消失）</span></h3>
     <div id="shopEthereal" class="card-grid"></div>
-    <h3 class="shop-section-title">?�物</h3>
+    <h3 class="shop-section-title">遗物</h3>
     <div id="shopRelics" class="card-grid"></div>
-    <button id="shopRemoveBtn" class="btn btn-ghost">??�?移除一张卡?��?<span id="removeCost">15</span> ?��?�?/button>
-    <button id="shopLeaveBtn" class="btn btn-primary">离�??��? ??/button>
+    <button id="shopRemoveBtn" class="btn btn-ghost">🗑️ 移除一张卡牌（<span id="removeCost">15</span> 金币）</button>
+    <button id="shopLeaveBtn" class="btn btn-primary">离开商店 ▶</button>
   </div>
 </section>
 
 <!-- ============ CARD REWARD SCREEN ============ -->
 <section id="rewardScreen" class="screen hidden">
   <div class="panel reward-panel">
-    <h2 id="rewardTitle">?��??�利�?/h2>
+    <h2 id="rewardTitle">战斗胜利！</h2>
     <p id="rewardGold" class="hint"></p>
-    <p class="hint">?�择一张卡?��??�卡组�?也可以跳过�?�?/p>
+    <p class="hint">选择一张卡牌加入卡组（也可以跳过）：</p>
     <div id="rewardCards" class="card-grid"></div>
-    <button id="rewardSkipBtn" class="btn btn-ghost">跳�?，�??�卡</button>
+    <button id="rewardSkipBtn" class="btn btn-ghost">跳过，不选卡</button>
   </div>
 </section>
 
@@ -122,20 +122,20 @@
   <div class="enemy-row" id="enemyRow"></div>
 
   <div class="combat-mid">
-    <div class="pile-box" id="drawPileBox">?��???br><b id="drawCount">0</b></div>
+    <div class="pile-box" id="drawPileBox">抽牌堆<br><b id="drawCount">0</b></div>
     <div class="player-box">
-      <div class="player-name">?? �?/div>
+      <div class="player-name">🧙 你</div>
       <div class="hp-bar"><div class="hp-fill" id="playerHpFill"></div><div class="hp-text" id="playerHpText">70/70</div></div>
       <div class="block-badge" id="playerBlockBadge"></div>
       <div class="status-row" id="playerStatusRow"></div>
     </div>
-    <div class="pile-box" id="discardPileBox">弃�???br><b id="discardCount">0</b></div>
+    <div class="pile-box" id="discardPileBox">弃牌堆<br><b id="discardCount">0</b></div>
   </div>
 
   <div class="combat-bottom">
     <div class="energy-badge" id="energyBadge">3/3</div>
     <div id="handRow" class="hand-row"></div>
-    <button id="endTurnBtn" class="btn btn-primary end-turn-btn">结�??��? ??/button>
+    <button id="endTurnBtn" class="btn btn-primary end-turn-btn">结束回合 ▶</button>
   </div>
 
   <div id="combatLog" class="combat-log"></div>
@@ -144,16 +144,16 @@
 <!-- ============ GAME OVER / VICTORY ============ -->
 <section id="endScreen" class="screen hidden">
   <div class="panel summary-panel">
-    <h2 id="endTitle">游�?结�?</h2>
+    <h2 id="endTitle">游戏结束</h2>
     <p id="endDesc" class="hint"></p>
     <div id="endStatsGrid" class="stats-grid"></div>
     <div id="endNewAchievements" class="hidden">
-      <h3>?? ?�解?��?�?/h3>
+      <h3>🏅 新解锁成就</h3>
       <div id="endAchievementList" class="achievement-grid"></div>
     </div>
     <div class="rest-options">
-      <button id="endRestartBtn" class="btn btn-primary">?? 返�?主�???/button>
-      <button id="endProfileBtn" class="btn btn-ghost">???��???��?个人中�?</button>
+      <button id="endRestartBtn" class="btn btn-primary">🔁 返回主菜单</button>
+      <button id="endProfileBtn" class="btn btn-ghost">🧑‍💼 查看个人中心</button>
     </div>
   </div>
 </section>
@@ -161,57 +161,57 @@
 <!-- ============ PROFILE / PERSONAL CENTER ============ -->
 <section id="profileScreen" class="screen hidden">
   <div class="panel cloud-sync-panel">
-    <div id="cloudSyncStatus" class="hint">?��? ?�登�???进度仅�?存在?�设�?/div>
-    <button id="cloudLoginBtn" class="btn btn-ghost">?? 使用 GitHub ?��?，跨设�??�步进度</button>
-    <button id="cloudLogoutBtn" class="btn btn-ghost hidden">?�� ?�?�登�?/button>
+    <div id="cloudSyncStatus" class="hint">☁️ 未登录 — 进度仅保存在本设备</div>
+    <button id="cloudLoginBtn" class="btn btn-ghost">🔗 使用 GitHub 登录，跨设备同步进度</button>
+    <button id="cloudLogoutBtn" class="btn btn-ghost hidden">🚪 退出登录</button>
   </div>
   <div class="panel profile-panel">
-    <h2>???��??个人中�? <span class="hint">跨�??��?保�??��??�记�?/span></h2>
+    <h2>🧑‍💼 个人中心 <span class="hint">跨局持久保存的成长记录</span></h2>
     <div id="profileStatsGrid" class="stats-grid"></div>
   </div>
   <div class="panel">
-    <h2>?? ?�就</h2>
+    <h2>🏅 成就</h2>
     <div id="profileAchievements" class="achievement-grid"></div>
   </div>
   <div class="panel">
-    <h2>?�� ?��??�鉴 <span id="profileCardProgress" class="hint"></span></h2>
+    <h2>🎴 卡牌图鉴 <span id="profileCardProgress" class="hint"></span></h2>
     <div id="profileCards" class="collection-grid"></div>
   </div>
   <div class="panel">
-    <h2>?? ?�物?�鉴 <span id="profileRelicProgress" class="hint"></span></h2>
+    <h2>💎 遗物图鉴 <span id="profileRelicProgress" class="hint"></span></h2>
     <div id="profileRelics" class="collection-grid"></div>
   </div>
   <div class="panel">
-    <h2>?�� ?�人?�鉴 <span id="profileEnemyProgress" class="hint"></span></h2>
+    <h2>👹 敌人图鉴 <span id="profileEnemyProgress" class="hint"></span></h2>
     <div id="profileEnemies" class="collection-grid"></div>
   </div>
-  <button id="profileBackBtn" class="btn btn-primary">?� 返�?主�???/button>
+  <button id="profileBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
 <!-- ============ ADVENTURE HISTORY ============ -->
 <section id="historyScreen" class="screen hidden">
   <div class="panel">
-    <h2>?? ?�险?�史 <span class="hint">· ?��?2 次游?�记�?/span></h2>
+    <h2>📜 冒险历史 <span class="hint">· 最近 2 次游玩记录</span></h2>
     <div id="historyList"></div>
   </div>
-  <button id="historyBackBtn" class="btn btn-primary">?� 返�?主�???/button>
+  <button id="historyBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
 <!-- ============ LEADERBOARD ============ -->
 <section id="leaderboardScreen" class="screen hidden">
   <div class="panel">
-    <h2>?? ?��??��?�?<span class="hint">· ?�家?�近游?��?�?/span></h2>
-    <div id="cloudSyncStatus2" class="hint">?��? ?�登�???仅显示本?�记�?/div>
+    <h2>🏆 全球排行榜 <span class="hint">· 玩家最近游玩成绩</span></h2>
+    <div id="cloudSyncStatus2" class="hint">☁️ 未登录 — 仅显示本地记录</div>
     <div id="leaderboardList"></div>
   </div>
-  <button id="leaderboardBackBtn" class="btn btn-primary">?� 返�?主�???/button>
+  <button id="leaderboardBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
 <div class="tooltip" id="tooltip"></div>
 
 <div id="infoModal" class="modal-overlay hidden">
   <div class="modal-box">
-    <button id="infoModalClose" class="modal-close">??/button>
+    <button id="infoModalClose" class="modal-close">✕</button>
     <div id="infoModalContent"></div>
   </div>
 </div>
