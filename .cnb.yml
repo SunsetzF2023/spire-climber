@@ -1,0 +1,6 @@
+main:
+  push:
+    - stages:
+        - name: 部署到 EdgeOne Pages
+          image: tencentcom/deploy-eopages:latest
+          script: edgeone pages deploy . -n abyss-walker -t $EO_SECRET
