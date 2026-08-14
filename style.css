@@ -402,6 +402,7 @@ body{
 
   /* Modals */
   .modal-box { max-width: 300px; padding: 18px 14px 14px; }
+  .modal-close { width: 36px; height: 36px; font-size: 20px; top: 4px; right: 4px; display: flex; align-items: center; justify-content: center; }
 }
 
 /* Phone screens (WeChat browser, small phones) */
@@ -507,6 +508,10 @@ body{
   /* Card grid in shop/reward */
   .card-grid { gap: 8px; }
   .card-grid.small .game-card { transform: scale(0.72); margin: -18px -12px; }
+
+  /* Modal close button — large touch target */
+  .modal-close { width: 40px; height: 40px; font-size: 22px; top: 2px; right: 2px; }
+  .modal-overlay { padding: 10px; }
 }
 
 /* Very small screens (iPhone SE, older phones) */

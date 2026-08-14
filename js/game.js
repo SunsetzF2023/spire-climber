@@ -50,15 +50,40 @@ function cacheEls() {
 }
 
 // ---------------- Tooltip (hover) + info modal (click) ----------------
+let tooltipTouchTimer = null;
 function positionTooltip(e) {
-  el.tooltip.style.left = (e.clientX + 14) + 'px';
-  el.tooltip.style.top = (e.clientY + 14) + 'px';
+  const x = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX) + 14;
+  const y = (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY) + 14;
+  // Keep tooltip on screen
+  const tw = el.tooltip.offsetWidth || 200;
+  const th = el.tooltip.offsetHeight || 60;
+  const maxX = window.innerWidth - tw - 10;
+  const maxY = window.innerHeight - th - 10;
+  el.tooltip.style.left = Math.min(x, maxX) + 'px';
+  el.tooltip.style.top = Math.min(y, maxY) + 'px';
 }
 function attachTooltip(elm, html) {
   elm.addEventListener('mouseenter', (e) => { el.tooltip.innerHTML = html; el.tooltip.style.display = 'block'; positionTooltip(e); });
   elm.addEventListener('mousemove', positionTooltip);
   elm.addEventListener('mouseleave', () => { el.tooltip.style.display = 'none'; });
+  // Mobile: tap to show, auto-hide after 3s
+  elm.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    el.tooltip.innerHTML = html;
+    el.tooltip.style.display = 'block';
+    positionTooltip(e);
+    if (tooltipTouchTimer) clearTimeout(tooltipTouchTimer);
+    tooltipTouchTimer = setTimeout(() => { el.tooltip.style.display = 'none'; }, 3000);
+  }, { passive: false });
 }
+// Global touch to dismiss tooltip
+document.addEventListener('touchstart', (e) => {
+  if (el.tooltip.style.display === 'block' && !e.target.closest('.status-badge') && !e.target.closest('.intent') && !e.target.closest('.hud-relics span') && !e.target.closest('.intent-preview')) {
+    el.tooltip.style.display = 'none';
+    if (tooltipTouchTimer) clearTimeout(tooltipTouchTimer);
+  }
+}, { passive: true });
+
 function showInfoModal(html) {
   el.infoModalContent.innerHTML = html;
   el.infoModal.classList.remove('hidden');
@@ -1214,6 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   el.infoModalClose.addEventListener('click', hideInfoModal);
   el.infoModal.addEventListener('click', (e) => { if (e.target === el.infoModal) hideInfoModal(); });
+  el.infoModal.addEventListener('touchstart', (e) => { if (e.target === el.infoModal) { e.preventDefault(); hideInfoModal(); } }, { passive: false });
   el.cloudLoginBtn.addEventListener('click', signInWithGitHub);
   el.cloudLogoutBtn.addEventListener('click', signOutCloud);
   initCloudSync();
