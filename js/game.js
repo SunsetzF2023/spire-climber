@@ -1230,7 +1230,7 @@ async function fetchLeaderboard() {
         .from('leaderboard')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(20);
       if (!error && data) entries = data;
     } catch (e) { /* fall back to local */ }
   }
