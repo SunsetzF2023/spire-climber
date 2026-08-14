@@ -174,12 +174,35 @@ const RELICS = {
     desc: '每场战斗开始时对所有敌人施加 1 层虚弱',
     onCombatStart(combat) { combat.enemies.forEach(e => { if (e.hp > 0) combat.applyStatusEnemy(e.id, 'weak', 1); }); },
   },
+
+  // ---------------- Shop-exclusive relics ----------------
+  energy_core: {
+    id: 'energy_core', name: '能量核心', icon: '🔋', rarity: 'shop',
+    desc: '每回合开始时拥有 4 点能量（而非 3 点）',
+    onPickup(run) { run.flags = run.flags || {}; run.flags.energyMax = 4; },
+  },
+  gemini_left: {
+    id: 'gemini_left', name: '双子星（左）', icon: '♊', rarity: 'shop',
+    desc: '每回合打出的第一张卡牌消耗为 0',
+    onCombatStart(combat) { combat.geminiLeftActive = true; },
+    onCardPlayed(combat) { combat.geminiLeftActive = false; },
+    onTurnStart(combat) { combat.geminiLeftActive = true; },
+  },
+  gemini_right: {
+    id: 'gemini_right', name: '双子星（右）', icon: '♊', rarity: 'shop',
+    desc: '每回合未使用的能量将会继承到下一回合',
+    onTurnEnd(combat) {
+      combat.carryEnergy = Math.max(0, combat.energy);
+      if (combat.carryEnergy > 0) combat.log(`♊ 双子星（右）：${combat.carryEnergy} 点能量将继承到下回合`, 'info');
+    },
+  },
 };
 
 const RELIC_LIST_COMMON = ['whetstone', 'hourglass', 'hunters_badge', 'greedy_badge', 'marbled_pouch', 'first_strike_fang', 'ceramic_fish'];
 const RELIC_LIST_UNCOMMON = ['calm_heart', 'thorns', 'eagle_eye', 'vengeful_heart', 'serpent_breath', 'gremlin_horn', 'centennial_puzzle'];
 const RELIC_LIST_RARE = ['turbo_heart', 'cracked_shield', 'bloodstone', 'ashen_charm'];
 const RELIC_LIST_EVENT = ['mark_of_bloom', 'gremlin_visage', 'mutagenic_strength', 'cursed_key', 'brimstone', 'golden_idol', 'red_mask'];
+const RELIC_LIST_SHOP = ['energy_core', 'gemini_left', 'gemini_right'];
 
 function pickRandomRelic(excludeIds = []) {
   const r = Math.random();
@@ -188,4 +211,10 @@ function pickRandomRelic(excludeIds = []) {
   const filtered = pool.filter(id => !excludeIds.includes(id));
   const src = filtered.length > 0 ? filtered : pool;
   return src[Math.floor(Math.random() * src.length)];
+}
+
+function pickShopRelic(excludeIds = []) {
+  const filtered = RELIC_LIST_SHOP.filter(id => !excludeIds.includes(id));
+  if (filtered.length === 0) return null;
+  return filtered[Math.floor(Math.random() * filtered.length)];
 }

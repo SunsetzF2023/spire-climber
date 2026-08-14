@@ -20,6 +20,13 @@ const CHARACTERS = {
     startingDeck: ['dagger_throw', 'dagger_throw', 'dagger_throw', 'dagger_throw', 'dagger_throw', 'footwork', 'footwork', 'footwork', 'footwork', 'venom_strike'],
     unlockAchievement: 'diverse_arsenal',
   },
+  automaton: {
+    id: 'automaton', name: '机器人', icon: '🤖',
+    desc: '由双子星能量驱动的古代机械，擅长充能爆发与连锁电击，以精密的攻防节奏碾压敌人。',
+    startingHp: 68,
+    startingDeck: ['spark', 'spark', 'spark', 'spark', 'static_field', 'static_field', 'static_field', 'static_field', 'charge_up', 'thunder_strike'],
+    unlockAchievement: 'gemini_twins',
+  },
 };
 
 function isCharacterUnlocked(character, metaObj) {

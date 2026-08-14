@@ -688,9 +688,18 @@ const ENEMIES = {
           execute(combat, e) { combat.healEnemy(e.id, 15); combat.log(`${e.name} 吸收暗影能量，回复 15 点生命`, 'enemy'); },
         };
       }
+      if (turn % 3 === 1) {
+        return {
+          name: '暗影诅咒', icon: '💀', type: 'debuff', displayValue: null,
+          execute(combat, e) {
+            combat.shuffleStatusIntoDrawPile('necro_curse', 1);
+            combat.log(`💀 ${e.name} 施放暗影诅咒！1 张死灵诅咒洗入抽牌堆`, 'enemy');
+          },
+        };
+      }
       return {
-        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 9, statusPreview: [{ name: 'vulnerable', amount: 2 }],
-        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 9,
+        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
       };
     },
   },
@@ -698,7 +707,7 @@ const ENEMIES = {
   plague_bearer: {
     id: 'plague_bearer', name: '瘟疫使者', icon: '🧌', hpRange: [110, 120], rarity: 'elite',
     chooseMove(enemy, combat) {
-      const pattern = ['toxic_slam', 'regenerate'];
+      const pattern = ['toxic_slam', 'regenerate', 'plague'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'regenerate') {
@@ -711,20 +720,38 @@ const ENEMIES = {
           },
         };
       }
+      if (pattern[step] === 'plague') {
+        return {
+          name: '瘟疫散播', icon: '🦠', type: 'debuff', displayValue: null,
+          execute(combat, e) {
+            combat.shuffleStatusIntoDrawPile('gravity', 1);
+            combat.log(`🦠 ${e.name} 散播瘟疫！1 张重力压制洗入抽牌堆`, 'enemy');
+          },
+        };
+      }
       return {
-        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 16, statusPreview: [{ name: 'frail', amount: 2 }],
-        execute(combat, e) { combat.dealDamageToPlayer(16, e.id); combat.applyStatusPlayer('frail', 2); },
+        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 16,
+        execute(combat, e) { combat.dealDamageToPlayer(16, e.id); },
       };
     },
   },
   void_reaver: {
     id: 'void_reaver', name: '虚空掠夺者', icon: '👽', hpRange: [130, 145], rarity: 'elite',
     chooseMove(enemy, combat) {
-      const pattern = ['rend', 'drain', 'meditate'];
+      const pattern = ['rend', 'drain', 'meditate', 'void_curse'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'meditate') {
         return idleMove('虚空冥想', '🌀', '陷入虚空冥想，暂时按兵不动');
+      }
+      if (pattern[step] === 'void_curse') {
+        return {
+          name: '虚空灌注', icon: '🕳️', type: 'debuff', displayValue: null,
+          execute(combat, e) {
+            combat.shuffleStatusIntoDrawPile('void', 2);
+            combat.log(`🕳️ ${e.name} 注入虚空能量！2 张虚空洗入抽牌堆`, 'enemy');
+          },
+        };
       }
       if (pattern[step] === 'drain') {
         return {
@@ -736,8 +763,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '虚空撕裂', icon: '⚔️', type: 'attack', displayValue: 18, statusPreview: [{ name: 'vulnerable', amount: 2 }],
-        execute(combat, e) { combat.dealDamageToPlayer(18, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+        name: '虚空撕裂', icon: '⚔️', type: 'attack', displayValue: 18,
+        execute(combat, e) { combat.dealDamageToPlayer(18, e.id); },
       };
     },
   },

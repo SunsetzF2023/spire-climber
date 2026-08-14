@@ -30,8 +30,10 @@ class CombatEngine {
     this.run = run; // { player:{hp,maxHp}, gold, relics:[], deck:[cardInstance] }
     this.hpScaling = hpScaling;
     this.dmgScaling = dmgScaling;
-    this.energyMax = 3;
+    this.energyMax = (run.flags && run.flags.energyMax) ? run.flags.energyMax : 3;
     this.energy = 0;
+    this.carryEnergy = 0;
+    this.geminiLeftActive = false;
     this.turnCount = 0;
     this.finished = false;
     this.winner = null;
@@ -95,7 +97,8 @@ class CombatEngine {
       this.log(`☠️ 中毒发作，损失 ${this.player.statuses.poison} 点生命`, 'enemy');
       this.player.statuses.poison -= 1;
     }
-    this.energy = this.energyMax;
+    this.energy = this.energyMax + (this.carryEnergy || 0);
+    this.carryEnergy = 0;
     this.runRelicHook('onTurnStart');
     if (this.player.statuses.battleHymn > 0) {
       this.enemies.forEach(e => { if (e.hp > 0) this.dealDamageToEnemy(e.id, this.player.statuses.battleHymn, { source: '战歌', noStrength: true, bypassProtected: true }); });
@@ -142,6 +145,8 @@ class CombatEngine {
       return sum + v.dmg;
     }, 0);
     if (decayDmg > 0) { this.damagePlayerDirect(decayDmg); this.log(`🪦 腐朽：受到 ${decayDmg} 点伤害`, 'enemy'); }
+    const gravityDmg = this.hand.filter(c => c.defId === 'gravity').reduce((sum) => sum + 3, 0);
+    if (gravityDmg > 0) { this.damagePlayerDirect(gravityDmg); this.log(`🪨 重力压制：受到 ${gravityDmg} 点伤害`, 'enemy'); }
     this.runRelicHook('onTurnEnd');
     this.player.statuses.weak = Math.max(0, this.player.statuses.weak - 1);
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
@@ -213,7 +218,8 @@ class CombatEngine {
     if (this.player.statuses.normalityLock > 0 && def.type === 'attack') return false;
     if (this.player.statuses.corruption > 0) return true;
     const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
-    const cost = (this.firstAttackFree && def.type === 'attack') ? 0 : baseCost;
+    const geminiFree = this.geminiLeftActive && def.type !== 'status' && def.type !== 'curse';
+    const cost = geminiFree ? 0 : ((this.firstAttackFree && def.type === 'attack') ? 0 : baseCost);
     if (this.energy < cost) return false;
     if (def.id === 'clash' && !this.hand.every(c => CARDS[c.defId].type === 'attack')) return false;
     return true;
@@ -228,8 +234,9 @@ class CombatEngine {
     const def = CARDS[card.defId];
     const isCorrupted = this.player.statuses.corruption > 0;
     const isFreeAttack = this.firstAttackFree && def.type === 'attack';
+    const isGeminiFree = this.geminiLeftActive && def.type !== 'status' && def.type !== 'curse';
     const baseCost = (card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
-    const cost = isCorrupted ? 0 : (isFreeAttack ? 0 : baseCost);
+    const cost = isCorrupted ? 0 : (isGeminiFree ? 0 : (isFreeAttack ? 0 : baseCost));
     if (this.energy < cost) return { success: false, reason: 'no-energy' };
 
     let target = null;
@@ -290,6 +297,11 @@ class CombatEngine {
     if (!def) return;
     if (def.id === 'void') {
       if (this.energy > 0) { this.energy -= 1; this.log(`🕳️ 虚空：失去 1 点能量`, 'enemy'); }
+    }
+    if (def.id === 'necro_curse') {
+      const dmg = 2;
+      this.damagePlayerDirect(dmg);
+      this.log(`💀 死灵诅咒：受到 ${dmg} 点伤害`, 'enemy');
     }
     if (def.id === 'pain') {
       const loss = card.vars && card.vars.dmg ? card.vars.dmg : 2;

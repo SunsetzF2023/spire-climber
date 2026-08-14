@@ -46,6 +46,7 @@ const ACHIEVEMENTS = [
   { id: 'wanna_learn_magic', name: '我也想要学会魔法', icon: '🔮', desc: '击败死灵法师', check: (s) => (s.killedTypes || []).includes('necromancer') },
   { id: 'gold_spender', name: '散财童子', icon: '💸', desc: '累计被偷窃超过 200 金币', check: (s) => (s.totalGoldStolen || 0) >= 200 },
   { id: 'big_bully', name: '大恶人', icon: '😠', desc: '累计 3 次选择袭击冒险者', check: (s) => (s.totalAdventurerAttacks || 0) >= 3 },
+  { id: 'gemini_twins', name: '双子星合璧', icon: '♊', desc: '同时持有双子星（左）与双子星（右）完成一局游戏 —— 解锁新角色·机器人', check: (s) => (s.relicIds || []).includes('gemini_left') && (s.relicIds || []).includes('gemini_right') },
 ];
 
 function defaultMeta() {

@@ -467,7 +467,7 @@ function patchCardEl(node, card, combat) {
     + (card.upgraded ? ' upgraded' : '')
     + (unplayable ? ' unplayable' : '')
     + (selected ? ' selected' : '');
-  node.querySelector('.cost').textContent = (combat && combat.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
+  node.querySelector('.cost').textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : def.cost;
   node.querySelector('.rarity-tag').textContent = def.rarity;
   node.querySelector('.icon').innerHTML = def.icon;
   node.querySelector('.name').textContent = def.name;
@@ -482,7 +482,7 @@ function renderCardEl(cardInstance, opts = {}) {
   if (opts.selected) div.classList.add('selected');
   if (opts.unplayable) div.classList.add('unplayable');
   const liveCombat = opts.liveCombat || null;
-  const cost = (liveCombat && liveCombat.firstAttackFree && def.type === 'attack') ? 0 : def.cost;
+  const cost = (liveCombat && ((liveCombat.firstAttackFree && def.type === 'attack') || (liveCombat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : def.cost;
   div.innerHTML = `
     <div class="cost">${cost}</div>
     <div class="rarity-tag">${def.rarity}</div>
@@ -638,7 +638,8 @@ function showShopScreen(node) {
       const pool = SHOP_ETHEREAL_POOL.filter(id => !currentShop || true);
       return { id: pool[Math.floor(Math.random() * pool.length)], cost: 0 };
     }),
-    relics: [0, 1, 2].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
+    relics: [0, 1].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
+    shopRelic: { id: pickShopRelic(run.relics), cost: 0 },
   };
   currentShop.cards.forEach(offer => {
     const rarity = CARDS[offer.id].rarity;
@@ -651,6 +652,9 @@ function showShopScreen(node) {
     const rarity = RELICS[offer.id].rarity;
     offer.cost = Math.round((rarity === 'rare' ? 200 + Math.floor(Math.random() * 50) : rarity === 'uncommon' ? 140 + Math.floor(Math.random() * 40) : 90 + Math.floor(Math.random() * 30)) * actMul);
   });
+  if (currentShop.shopRelic) {
+    currentShop.shopRelic.cost = 300 + Math.floor(Math.random() * 75);
+  }
   renderShop(node);
   el.shopLeaveBtn.onclick = () => backToMapOrVictory(node);
 }
@@ -751,6 +755,27 @@ function renderShop(node) {
     }
     el.shopRelics.appendChild(box);
   });
+  if (currentShop.shopRelic) {
+    const offer = currentShop.shopRelic;
+    const relic = RELICS[offer.id];
+    const box = document.createElement('div');
+    box.className = 'relic-card shop-relic-card';
+    box.innerHTML = artIcon('relics', offer.id, relic.icon);
+    attachTooltip(box, `<b>${relic.name}</b> 🏪<br>${relic.desc}<br>💰 ${offer.cost}`);
+    if (run.gold >= offer.cost) {
+      box.addEventListener('click', () => {
+        run.gold -= offer.cost;
+        addRelicToRun(run, offer.id);
+        currentShop.shopRelic = null;
+        run.stats.shopSpent = true;
+        renderHud();
+        renderShop(node);
+      });
+    } else {
+      box.style.opacity = 0.4;
+    }
+    el.shopRelics.appendChild(box);
+  }
 }
 
 // ---------------- Combat ----------------
@@ -1012,6 +1037,7 @@ function finishRun(victory, desc) {
     elitesDefeated: run.stats.elitesDefeated,
     cardsPlayed: run.stats.cardsPlayed,
     relicsHeld: run.relics.length,
+    relicIds: run.relics.slice(),
     deckSize: run.deck.length,
     finalHp: run.player.hp,
     maxHp: run.player.maxHp,

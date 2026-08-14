@@ -794,6 +794,99 @@ const CARDS = {
     },
   },
 
+  // ================= 机器人（Automaton）卡牌 =================
+  // ---------------- Starter cards ----------------
+  spark: {
+    id: 'spark', name: '电火花', icon: '⚡', type: 'attack', cost: 1, target: 'enemy', rarity: 'starter', cls: 'automaton',
+    vars(up) { return { dmg: up ? 9 : 6 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害`; },
+    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '电火花' }); },
+  },
+  static_field: {
+    id: 'static_field', name: '静电场', icon: '🛡️', type: 'skill', cost: 1, target: 'self', rarity: 'starter', cls: 'automaton',
+    vars(up) { return { block: up ? 8 : 5 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡`; },
+    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
+  },
+  charge_up: {
+    id: 'charge_up', name: '蓄能', icon: '🔋', type: 'skill', cost: 0, target: 'none', rarity: 'starter', cls: 'automaton',
+    vars(up) { return { str: up ? 2 : 1 }; },
+    descTemplate(v) { return `获得 ${v.str} 层力量`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
+  },
+  thunder_strike: {
+    id: 'thunder_strike', name: '雷霆一击', icon: '⛈️', type: 'attack', cost: 2, target: 'enemy', rarity: 'starter', cls: 'automaton',
+    vars(up) { return { dmg: up ? 14 : 10 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害`; },
+    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '雷霆一击' }); },
+  },
+
+  // ---------------- Automaton reward pool ----------------
+  chain_lightning: {
+    id: 'chain_lightning', name: '连锁闪电', icon: '🔗', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'automaton',
+    vars(up) { return { dmg: up ? 8 : 6, bounce: up ? 4 : 3 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，对另一随机敌人造成 ${v.bounce} 点伤害`; },
+    effect(ctx) {
+      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '连锁闪电' });
+      const living = ctx.combat.enemies.filter(e => e.hp > 0 && e.id !== ctx.target.id);
+      if (living.length > 0) {
+        const t = living[Math.floor(Math.random() * living.length)];
+        ctx.combat.dealDamageToEnemy(t.id, ctx.vars.bounce, { source: '连锁闪电' });
+      }
+    },
+  },
+  emp: {
+    id: 'emp', name: '电磁脉冲', icon: '💢', type: 'skill', cost: 1, target: 'all_enemies', rarity: 'common', cls: 'automaton',
+    vars(up) { return { weak: up ? 2 : 1, vuln: up ? 2 : 1 }; },
+    descTemplate(v) { return `对所有敌人施加 ${v.weak} 层虚弱和 ${v.vuln} 层易伤`; },
+    effect(ctx) {
+      ctx.combat.enemies.forEach(e => {
+        if (e.hp > 0) {
+          ctx.combat.applyStatusEnemy(e.id, 'weak', ctx.vars.weak);
+          ctx.combat.applyStatusEnemy(e.id, 'vulnerable', ctx.vars.vuln);
+        }
+      });
+    },
+  },
+  overclock: {
+    id: 'overclock', name: '超频', icon: '⚙️', type: 'skill', cost: 0, target: 'none', rarity: 'common', cls: 'automaton',
+    vars(up) { return { draw: up ? 3 : 2, dmg: up ? 3 : 2 }; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌，受到 ${v.dmg} 点伤害`; },
+    effect(ctx) {
+      ctx.combat.drawCards(ctx.vars.draw);
+      ctx.combat.damagePlayerDirect(ctx.vars.dmg);
+      ctx.combat.log(`⚙️ 超频：抽 ${ctx.vars.draw} 张牌，受到 ${ctx.vars.dmg} 点伤害`, 'player');
+    },
+  },
+  force_field: {
+    id: 'force_field', name: '力场护盾', icon: '🛡️', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'automaton',
+    vars(up) { return { block: up ? 14 : 10, str: up ? 2 : 1 }; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡，获得 ${v.str} 层力量`; },
+    effect(ctx) {
+      ctx.combat.gainBlockPlayer(ctx.vars.block);
+      ctx.combat.applyStatusPlayer('strength', ctx.vars.str);
+    },
+  },
+  storm_surge: {
+    id: 'storm_surge', name: '风暴涌动', icon: '🌩️', type: 'attack', cost: 2, target: 'all_enemies', rarity: 'uncommon', cls: 'automaton',
+    vars(up) { return { dmg: up ? 12 : 8, weak: up ? 2 : 1 }; },
+    descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害，施加 ${v.weak} 层虚弱`; },
+    effect(ctx) {
+      ctx.combat.enemies.forEach(e => {
+        if (e.hp > 0) {
+          ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '风暴涌动', isAoE: true });
+          ctx.combat.applyStatusEnemy(e.id, 'weak', ctx.vars.weak);
+        }
+      });
+    },
+  },
+  core_overload: {
+    id: 'core_overload', name: '核心过载', icon: '☢️', type: 'power', cost: 3, upgradedCost: 2, target: 'none', rarity: 'rare', cls: 'automaton',
+    vars(up) { return { str: up ? 3 : 2 }; },
+    descTemplate(v) { return `永久获得核心过载：每回合开始时获得 ${v.str} 层力量`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('demonForm', ctx.vars.str); },
+  },
+
   // ================= 状态牌（Status）==================
   wound: {
     id: 'wound', name: '伤口', icon: '🩹', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
@@ -823,6 +916,18 @@ const CARDS = {
     id: 'void', name: '虚空', icon: '🕳️', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
     vars() { return {}; },
     descTemplate() { return `抽到时失去 1 点能量。虚无。不可打出`; },
+    effect() {},
+  },
+  necro_curse: {
+    id: 'necro_curse', name: '死灵诅咒', icon: '💀', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    vars() { return { dmg: 2 }; },
+    descTemplate(v) { return `抽到时受到 ${v.dmg} 点伤害。不可打出`; },
+    effect() {},
+  },
+  gravity: {
+    id: 'gravity', name: '重力压制', icon: '🪨', type: 'status', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
+    vars() { return { dmg: 3 }; },
+    descTemplate(v) { return `回合结束时仍在手牌中则受到 ${v.dmg} 点伤害。消耗`; },
     effect() {},
   },
 
@@ -1021,16 +1126,19 @@ const REWARD_POOLS = {
     neutral: ['bandage_up', 'flash_strike', 'deflect'],
     warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike', 'intimidating_roar', 'sunder'],
     huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll', 'corrosive_spit'],
+    automaton: ['chain_lightning', 'emp', 'overclock'],
   },
   uncommon: {
     neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify', 'weakening_mist'],
     warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
     huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror', 'hex'],
+    automaton: ['force_field', 'storm_surge'],
   },
   rare: {
     neutral: ['apex_form'],
     warrior: ['reaper', 'immolate', 'offering', 'bludgeon', 'barricade', 'juggernaut', 'demon_form', 'fiend_fire', 'limit_break', 'corruption'],
     huntress: ['thousand_cuts', 'assassinate', 'backstab', 'nightmare', 'adrenaline', 'snipe'],
+    automaton: ['core_overload'],
   },
 };
 
