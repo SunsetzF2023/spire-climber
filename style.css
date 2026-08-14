@@ -355,6 +355,25 @@ body{
 
 /* ================= Mobile Responsive ================= */
 
+/* Zoom controls */
+.zoom-controls {
+  display: none; /* hidden on desktop, shown on mobile */
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 150;
+  gap: 4px;
+  align-items: center;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+.zoom-controls { display: none; }
+.zoom-btn { padding: 4px 8px; font-size: 12px; min-width: 32px; }
+.zoom-level { font-size: 11px; color: var(--dim); min-width: 36px; text-align: center; }
+#combatScreen { transform-origin: top center; transition: transform 0.2s; }
+
 /* Tablet and small screens */
 @media (max-width: 768px) {
   .screen { padding: 10px; }
@@ -379,13 +398,16 @@ body{
   .player-box { width: 200px; padding: 10px; }
   .pile-box { width: 64px; padding: 6px; font-size: 10px; }
 
-  /* Hand area — compact */
-  .combat-bottom { gap: 8px; padding: 6px 0 16px; flex-wrap: wrap; }
-  .energy-badge { width: 44px; height: 44px; font-size: 13px; flex-shrink: 0; }
-  .hand-row { min-height: 155px; gap: 0; }
-  .hand-row .game-card { margin-left: -30px; }
+  /* Hand area — compact, stack controls above hand */
+  .combat-bottom { flex-direction: column; gap: 6px; padding: 6px 0 16px; }
+  .combat-bottom > .energy-badge { width: 40px; height: 40px; font-size: 12px; flex-shrink: 0; align-self: center; }
+  .combat-bottom > .end-turn-btn { font-size: 12px; padding: 8px 14px; align-self: center; }
+  .hand-row { min-height: 155px; gap: 0; overflow-x: auto; overflow-y: hidden; justify-content: center; padding: 0 4px; }
+  .hand-row .game-card { margin-left: -30px; flex-shrink: 0; }
   .hand-row .game-card:first-child { margin-left: 0; }
-  .end-turn-btn { font-size: 12px; padding: 8px 12px; }
+
+  /* Show zoom controls on mobile */
+  .zoom-controls { display: flex; }
 
   .combat-log { max-height: 80px; font-size: 10px; padding: 6px 8px; }
 
@@ -444,11 +466,11 @@ body{
 
   /* Hand — fit 5 cards on narrow screens */
   .combat-bottom { gap: 4px; padding: 4px 0 12px; }
-  .energy-badge { width: 36px; height: 36px; font-size: 11px; border-width: 1px; }
-  .hand-row { min-height: 132px; }
-  .hand-row .game-card { margin-left: -34px; }
+  .combat-bottom > .energy-badge { width: 36px; height: 36px; font-size: 11px; }
+  .combat-bottom > .end-turn-btn { font-size: 11px; padding: 6px 12px; }
+  .hand-row { min-height: 132px; overflow-x: auto; }
+  .hand-row .game-card { margin-left: -34px; flex-shrink: 0; }
   .hand-row .game-card:first-child { margin-left: 0; }
-  .end-turn-btn { font-size: 11px; padding: 6px 10px; }
 
   .combat-log { max-height: 60px; font-size: 9px; padding: 4px 6px; }
 
@@ -520,7 +542,7 @@ body{
   .hand-row .game-card { margin-left: -38px; }
   .enemy-box { width: 90px; }
   .player-box { width: 140px; }
-  .energy-badge { width: 32px; height: 32px; font-size: 10px; }
+  .combat-bottom > .energy-badge { width: 32px; height: 32px; font-size: 10px; }
   .map-node { width: 32px; height: 32px; font-size: 13px; }
   .map-row { gap: 10px; }
 }

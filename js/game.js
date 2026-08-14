@@ -45,6 +45,7 @@ function cacheEls() {
     'openHistoryBtn', 'openLeaderboardBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
+    'zoomControls', 'zoomInBtn', 'zoomOutBtn', 'zoomResetBtn', 'zoomLevel',
     'cloudSyncStatus', 'cloudLoginBtn', 'cloudLogoutBtn',
   ].forEach(id => { el[id] = document.getElementById(id); });
 }
@@ -1221,6 +1222,17 @@ function renderLeaderboard(entries) {
   el.leaderboardList.appendChild(table);
 }
 
+// ---------------- Zoom control (mobile) ----------------
+let combatZoom = 1.0;
+function applyCombatZoom() {
+  el.combatScreen.style.transform = `scale(${combatZoom})`;
+  el.zoomLevel.textContent = Math.round(combatZoom * 100) + '%';
+}
+function setCombatZoom(z) {
+  combatZoom = Math.max(0.6, Math.min(1.6, z));
+  applyCombatZoom();
+}
+
 // ---------------- init ----------------
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
@@ -1240,6 +1252,28 @@ document.addEventListener('DOMContentLoaded', () => {
   el.infoModalClose.addEventListener('click', hideInfoModal);
   el.infoModal.addEventListener('click', (e) => { if (e.target === el.infoModal) hideInfoModal(); });
   el.infoModal.addEventListener('touchstart', (e) => { if (e.target === el.infoModal) { e.preventDefault(); hideInfoModal(); } }, { passive: false });
+  el.zoomInBtn.addEventListener('click', () => setCombatZoom(combatZoom + 0.1));
+  el.zoomOutBtn.addEventListener('click', () => setCombatZoom(combatZoom - 0.1));
+  el.zoomResetBtn.addEventListener('click', () => setCombatZoom(1.0));
+  // Pinch-to-zoom on combat screen
+  let pinchDist = 0;
+  el.combatScreen.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: true });
+  el.combatScreen.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchDist > 0) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const ratio = dist / pinchDist;
+      setCombatZoom(combatZoom * ratio);
+      pinchDist = dist;
+    }
+  }, { passive: true });
   el.cloudLoginBtn.addEventListener('click', signInWithGitHub);
   el.cloudLogoutBtn.addEventListener('click', signOutCloud);
   initCloudSync();
