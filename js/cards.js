@@ -745,6 +745,55 @@ const CARDS = {
     effect(ctx) { ctx.combat.applyStatusEnemy(ctx.target.id, 'vulnerable', ctx.vars.vuln); },
   },
 
+  // ---------------- 新增负面状态卡牌 ----------------
+  intimidating_roar: {
+    id: 'intimidating_roar', name: '威吓怒吼', icon: '📢', type: 'skill', cost: 1, target: 'all_enemies', rarity: 'common', cls: 'warrior',
+    vars(up) { return { weak: up ? 2 : 1 }; },
+    descTemplate(v) { return `对所有敌人施加 ${v.weak} 层虚弱`; },
+    effect(ctx) { ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.applyStatusEnemy(e.id, 'weak', ctx.vars.weak); }); },
+  },
+  sunder: {
+    id: 'sunder', name: '裂甲', icon: '⛏️', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'warrior',
+    vars(up) { return { dmg: up ? 8 : 6, vuln: up ? 3 : 2 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，施加 ${v.vuln} 层易伤`; },
+    effect(ctx) {
+      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '裂甲' });
+      ctx.combat.applyStatusEnemy(ctx.target.id, 'vulnerable', ctx.vars.vuln);
+    },
+  },
+  weakening_mist: {
+    id: 'weakening_mist', name: '虚弱之雾', icon: '🌫️', type: 'skill', cost: 0, target: 'all_enemies', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+    vars(up) { return { weak: up ? 3 : 2, vuln: 1 }; },
+    descTemplate(v) { return `对所有敌人施加 ${v.weak} 层虚弱和 ${v.vuln} 层易伤（消耗）`; },
+    effect(ctx) {
+      ctx.combat.enemies.forEach(e => {
+        if (e.hp > 0) {
+          ctx.combat.applyStatusEnemy(e.id, 'weak', ctx.vars.weak);
+          ctx.combat.applyStatusEnemy(e.id, 'vulnerable', ctx.vars.vuln);
+        }
+      });
+    },
+  },
+  hex: {
+    id: 'hex', name: '诅咒术', icon: '🔮', type: 'skill', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'huntress',
+    vars(up) { return { weak: up ? 3 : 2, vuln: up ? 3 : 2 }; },
+    descTemplate(v) { return `使目标获得 ${v.weak} 层虚弱和 ${v.vuln} 层易伤`; },
+    effect(ctx) {
+      ctx.combat.applyStatusEnemy(ctx.target.id, 'weak', ctx.vars.weak);
+      ctx.combat.applyStatusEnemy(ctx.target.id, 'vulnerable', ctx.vars.vuln);
+    },
+  },
+  corrosive_spit: {
+    id: 'corrosive_spit', name: '腐蚀唾液', icon: '🧪', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'huntress',
+    vars(up) { return { dmg: up ? 5 : 3, weak: up ? 2 : 1, poison: up ? 3 : 2 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，施加 ${v.weak} 层虚弱和 ${v.poison} 层中毒`; },
+    effect(ctx) {
+      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '腐蚀唾液' });
+      ctx.combat.applyStatusEnemy(ctx.target.id, 'weak', ctx.vars.weak);
+      ctx.combat.applyStatusEnemy(ctx.target.id, 'poison', ctx.vars.poison);
+    },
+  },
+
   // ================= 状态牌（Status）==================
   wound: {
     id: 'wound', name: '伤口', icon: '🩹', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
@@ -970,13 +1019,13 @@ const CARDS = {
 const REWARD_POOLS = {
   common: {
     neutral: ['bandage_up', 'flash_strike', 'deflect'],
-    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike'],
-    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll'],
+    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike', 'intimidating_roar', 'sunder'],
+    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll', 'corrosive_spit'],
   },
   uncommon: {
-    neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify'],
+    neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify', 'weakening_mist'],
     warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
-    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror'],
+    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror', 'hex'],
   },
   rare: {
     neutral: ['apex_form'],

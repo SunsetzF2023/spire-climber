@@ -824,25 +824,33 @@ const ENEMIES = {
   abyss_lord: {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',
     chooseMove(enemy, combat) {
-      const pattern = ['slam', 'shield', 'breath'];
+      const pattern = ['slam', 'shield', 'breath', 'rest'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
 
       if (pattern[step] === 'shield') {
         return {
-          name: '护盾力场', icon: '🛡️', type: 'defend', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }],
+          name: '护盾力场', icon: '🛡️', type: 'defend', displayValue: 20,
           execute(combat, e) {
             combat.log(`${e.name} 张开护盾力场！`, 'enemy');
             combat.gainBlockEnemy(e.id, 20);
-            combat.applyStatusPlayer('weak', 2);
           },
         };
       }
       if (pattern[step] === 'breath') {
         return {
-          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 10, statusPreview: [{ name: 'vulnerable', amount: 2 }],
-          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); combat.applyStatusPlayer('vulnerable', 2); },
+          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 10,
+          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); },
+        };
+      }
+      if (pattern[step] === 'rest') {
+        return {
+          name: '蓄力', icon: '😴', type: 'idle', displayValue: null,
+          execute(combat, e) {
+            combat.log(`😴 ${e.name} 正在蓄力，往你的牌组塞了一张灼烧！`, 'enemy');
+            combat.shuffleStatusIntoDrawPile('burn', 1);
+          },
         };
       }
       // slam
@@ -861,7 +869,7 @@ const ENEMIES = {
   iron_colossus: {
     id: 'iron_colossus', name: '钢铁巨像', icon: '🗿', hpRange: [240, 260], rarity: 'boss',
     chooseMove(enemy, combat) {
-      const pattern = ['crush', 'overload', 'stomp'];
+      const pattern = ['crush', 'overload', 'stomp', 'rest'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
@@ -878,8 +886,17 @@ const ENEMIES = {
       }
       if (pattern[step] === 'stomp') {
         return {
-          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14, statusPreview: [{ name: 'frail', amount: 2 }],
-          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('frail', 2); },
+          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14,
+          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
+        };
+      }
+      if (pattern[step] === 'rest') {
+        return {
+          name: '散热', icon: '😴', type: 'idle', displayValue: null,
+          execute(combat, e) {
+            combat.log(`😴 ${e.name} 正在散热，往你的牌组塞了一张伤口！`, 'enemy');
+            combat.shuffleStatusIntoDrawPile('wound', 1);
+          },
         };
       }
       const dmg = enraged ? 32 : 24;
@@ -892,26 +909,33 @@ const ENEMIES = {
   void_progenitor: {
     id: 'void_progenitor', name: '虚空造物主', icon: '🪐', hpRange: [300, 330], rarity: 'boss',
     chooseMove(enemy, combat) {
-      const pattern = ['annihilate', 'corrupt', 'reality_tear'];
+      const pattern = ['annihilate', 'corrupt', 'reality_tear', 'rest'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
 
       if (pattern[step] === 'corrupt') {
         return {
-          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }, { name: 'vulnerable', amount: 2 }],
+          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20,
           execute(combat, e) {
             combat.log(`${e.name} 释放虚空侵蚀！`, 'enemy');
             combat.gainBlockEnemy(e.id, 20);
-            combat.applyStatusPlayer('weak', 2);
-            combat.applyStatusPlayer('vulnerable', 2);
           },
         };
       }
       if (pattern[step] === 'reality_tear') {
         return {
-          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 20, statusPreview: [{ name: 'weak', amount: 2 }, { name: 'vulnerable', amount: 2 }],
-          execute(combat, e) { combat.dealDamageToPlayer(20, e.id); combat.applyStatusPlayer('weak', 2); combat.applyStatusPlayer('vulnerable', 2); },
+          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 20,
+          execute(combat, e) { combat.dealDamageToPlayer(20, e.id); },
+        };
+      }
+      if (pattern[step] === 'rest') {
+        return {
+          name: '虚空凝视', icon: '😴', type: 'idle', displayValue: null,
+          execute(combat, e) {
+            combat.log(`😴 ${e.name} 凝视虚空，往你的牌组塞了一张虚空！`, 'enemy');
+            combat.shuffleStatusIntoDrawPile('void', 1);
+          },
         };
       }
       // annihilate
