@@ -352,3 +352,170 @@ body{
 .lb-act { color: var(--dim); }
 .lb-kills { color: var(--dim); }
 .lb-death { width: 100%; padding-left: 28px; }
+
+/* ================= Mobile Responsive ================= */
+
+/* Tablet and small screens */
+@media (max-width: 768px) {
+  .screen { padding: 10px; }
+  .topbar { padding: 8px 12px; }
+  .topbar h1 { font-size: 15px; }
+  .topbar h1 span { display: none; }
+  .run-hud { gap: 10px; font-size: 12px; }
+
+  /* Cards smaller */
+  .game-card { width: 110px; min-height: 150px; padding: 6px; }
+  .game-card .icon { font-size: 24px; margin-top: 18px; }
+  .game-card .name { font-size: 11px; }
+  .game-card .desc { font-size: 9px; }
+  .game-card .cost { width: 18px; height: 18px; font-size: 10px; }
+
+  /* Combat layout */
+  #combatScreen { max-width: 100%; padding: 8px; }
+  .enemy-row { gap: 12px; padding: 10px 0; }
+  .enemy-box { width: 120px; padding: 8px; }
+  .enemy-box .enemy-icon { font-size: 32px; }
+  .combat-mid { gap: 16px; padding: 6px 0; }
+  .player-box { width: 200px; padding: 10px; }
+  .pile-box { width: 64px; padding: 6px; font-size: 10px; }
+
+  /* Hand area — compact */
+  .combat-bottom { gap: 8px; padding: 6px 0 16px; flex-wrap: wrap; }
+  .energy-badge { width: 44px; height: 44px; font-size: 13px; flex-shrink: 0; }
+  .hand-row { min-height: 155px; gap: 0; }
+  .hand-row .game-card { margin-left: -30px; }
+  .hand-row .game-card:first-child { margin-left: 0; }
+  .end-turn-btn { font-size: 12px; padding: 8px 12px; }
+
+  .combat-log { max-height: 80px; font-size: 10px; padding: 6px 8px; }
+
+  /* Map nodes smaller */
+  .map-node { width: 42px; height: 42px; font-size: 18px; }
+  .map-row { gap: 18px; }
+
+  /* Character cards */
+  .character-card { width: 160px; padding: 12px 10px; }
+  .character-icon { font-size: 32px; }
+
+  /* Achievement badges */
+  .achievement-badge { width: 130px; }
+
+  /* Modals */
+  .modal-box { max-width: 300px; padding: 18px 14px 14px; }
+}
+
+/* Phone screens (WeChat browser, small phones) */
+@media (max-width: 480px) {
+  .screen { padding: 6px; }
+  .topbar { padding: 6px 10px; }
+  .topbar h1 { font-size: 14px; }
+  .run-hud { gap: 8px; font-size: 11px; }
+  .hud-relics { font-size: 14px; gap: 3px; }
+
+  /* Cards even smaller */
+  .game-card { width: 92px; min-height: 128px; padding: 5px; border-radius: 8px; }
+  .game-card .icon { font-size: 20px; margin-top: 14px; }
+  .game-card .icon .art-icon, .game-card .icon .art-icon-fallback { width: 36px; height: 36px; font-size: 24px; }
+  .game-card .name { font-size: 10px; }
+  .game-card .desc { font-size: 8px; line-height: 1.3; }
+  .game-card .cost { width: 16px; height: 16px; font-size: 9px; top: 4px; left: 4px; }
+  .game-card .rarity-tag { font-size: 8px; top: 4px; right: 4px; }
+  .game-card .type-label { font-size: 8px; }
+
+  /* Combat — very compact */
+  #combatScreen { padding: 4px; }
+  .enemy-row { gap: 8px; padding: 6px 0; }
+  .enemy-box { width: 100px; padding: 6px; border-radius: 8px; }
+  .enemy-box .enemy-icon { font-size: 28px; }
+  .enemy-box .enemy-icon .art-icon, .enemy-box .enemy-icon .art-icon-fallback { width: 44px; height: 44px; font-size: 28px; }
+  .enemy-box .enemy-name { font-size: 10px; }
+  .enemy-box .intent { font-size: 9px; padding: 2px 4px; }
+  .enemy-box .status-row { font-size: 8px; gap: 2px; }
+  .status-badge { font-size: 8px; padding: 1px 4px; }
+
+  .hp-bar { height: 12px; }
+  .hp-text { font-size: 8px; }
+
+  .combat-mid { gap: 10px; padding: 4px 0; }
+  .player-box { width: 160px; padding: 8px; }
+  .player-name { font-size: 11px; }
+  .pile-box { width: 52px; padding: 4px; font-size: 9px; }
+
+  /* Hand — fit 5 cards on narrow screens */
+  .combat-bottom { gap: 4px; padding: 4px 0 12px; }
+  .energy-badge { width: 36px; height: 36px; font-size: 11px; border-width: 1px; }
+  .hand-row { min-height: 132px; }
+  .hand-row .game-card { margin-left: -34px; }
+  .hand-row .game-card:first-child { margin-left: 0; }
+  .end-turn-btn { font-size: 11px; padding: 6px 10px; }
+
+  .combat-log { max-height: 60px; font-size: 9px; padding: 4px 6px; }
+
+  /* Map */
+  .map-node { width: 36px; height: 36px; font-size: 15px; border-width: 1px; }
+  .map-row { gap: 14px; }
+  .map-container { gap: 16px; padding: 10px 0; }
+
+  /* Panels */
+  .panel { padding: 10px 12px; margin-bottom: 10px; border-radius: 8px; }
+  .panel h2 { font-size: 13px; }
+  .menu-panel { margin: 30px auto; }
+  .menu-panel h2 { font-size: 20px; }
+  .event-panel, .rest-panel, .reward-panel, .summary-panel { margin: 16px auto; }
+  .event-icon { font-size: 32px; }
+  .event-desc { font-size: 12px; }
+  .event-option-btn { padding: 10px 12px; font-size: 12px; }
+
+  /* Buttons */
+  .btn { padding: 8px 14px; font-size: 12px; }
+
+  /* Character select */
+  .character-card { width: 140px; padding: 10px 8px; }
+  .character-icon { font-size: 28px; }
+  .character-name { font-size: 13px; }
+  .character-desc { font-size: 10px; }
+
+  /* Achievement badges */
+  .achievement-badge { width: 110px; padding: 8px; }
+  .achievement-badge .ach-icon { font-size: 22px; }
+  .achievement-badge .ach-name { font-size: 11px; }
+  .achievement-badge .ach-desc { font-size: 9px; }
+
+  /* Collection */
+  .collection-item { width: 44px; height: 44px; font-size: 20px; }
+  .collection-item .art-icon, .collection-item .art-icon-fallback { width: 32px; height: 32px; font-size: 20px; }
+
+  /* Relic cards */
+  .relic-card { width: 52px; height: 52px; font-size: 22px; }
+  .relic-card .art-icon, .relic-card .art-icon-fallback { width: 32px; height: 32px; font-size: 22px; }
+
+  /* Stats grid */
+  .stats-grid { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
+  .stat-box { padding: 8px 6px; }
+  .stat-box .stat-value { font-size: 15px; }
+  .stat-box .stat-label { font-size: 10px; }
+
+  /* Tooltip */
+  .tooltip { max-width: 180px; font-size: 10px; padding: 6px 8px; }
+
+  /* History & leaderboard */
+  .history-card { padding: 0.6rem 0.8rem; margin-bottom: 0.6rem; }
+  .history-stats { gap: 0.6rem; font-size: 0.8rem; }
+  .leaderboard-row { padding: 0.4rem 0.6rem; font-size: 0.8rem; gap: 0.4rem; }
+  .lb-char, .lb-player { min-width: 60px; }
+
+  /* Card grid in shop/reward */
+  .card-grid { gap: 8px; }
+  .card-grid.small .game-card { transform: scale(0.72); margin: -18px -12px; }
+}
+
+/* Very small screens (iPhone SE, older phones) */
+@media (max-width: 360px) {
+  .game-card { width: 82px; min-height: 116px; }
+  .hand-row .game-card { margin-left: -38px; }
+  .enemy-box { width: 90px; }
+  .player-box { width: 140px; }
+  .energy-badge { width: 32px; height: 32px; font-size: 10px; }
+  .map-node { width: 32px; height: 32px; font-size: 13px; }
+  .map-row { gap: 10px; }
+}
