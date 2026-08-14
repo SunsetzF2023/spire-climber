@@ -367,6 +367,7 @@ function renderMap() {
   if (el.mapActName) el.mapActName.textContent = `第 ${run.act} 维度 · ${ACT_DEFS[run.act - 1].name}`;
   const reachable = new Set(getReachableNodeIds(run.map, run.currentNodeId));
   el.mapContainer.innerHTML = '';
+  let currentNodeEl = null;
   run.map.floors.forEach(floorNodes => {
     const row = document.createElement('div');
     row.className = 'map-row';
@@ -379,6 +380,7 @@ function renderMap() {
       btn.className = classes.join(' ');
       btn.textContent = MAP_TYPE_ICON[node.type];
       btn.title = nodeLabel(node.type);
+      if (node.id === run.currentNodeId) currentNodeEl = btn;
       if (classes.includes('reachable')) {
         btn.addEventListener('click', () => enterNode(node));
       }
@@ -386,6 +388,7 @@ function renderMap() {
     });
     el.mapContainer.appendChild(row);
   });
+  if (currentNodeEl) currentNodeEl.scrollIntoView({ block: 'center', behavior: 'instant' });
 }
 
 function nodeLabel(type) {
@@ -635,6 +638,7 @@ function showShopScreen(node) {
   showScreen('shopScreen');
   run.stats.shopsVisited = (run.stats.shopsVisited || 0) + 1;
   const actMul = 1 + (run.act - 1) * 0.3;
+  const shopRelicId = pickShopRelic(run.relics);
   currentShop = {
     cards: [0, 1, 2, 3, 4].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
     ethereal: [0, 1].map(() => {
@@ -642,7 +646,7 @@ function showShopScreen(node) {
       return { id: pool[Math.floor(Math.random() * pool.length)], cost: 0 };
     }),
     relics: [0, 1].map(() => ({ id: pickRandomRelic(run.relics), cost: 0 })),
-    shopRelic: { id: pickShopRelic(run.relics), cost: 0 },
+    shopRelic: shopRelicId ? { id: shopRelicId, cost: 0 } : null,
   };
   currentShop.cards.forEach(offer => {
     const rarity = CARDS[offer.id].rarity;
