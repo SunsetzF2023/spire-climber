@@ -1214,8 +1214,8 @@ function showLeaderboardScreen() {
   showScreen('leaderboardScreen');
   if (el.cloudSyncStatus2) {
     el.cloudSyncStatus2.textContent = cloudUser
-      ? `☁️ 已登录 — 显示全球玩家最近成绩`
-      : `☁️ 未登录 — 仅显示本地记录。登录后可查看全球排行榜`;
+      ? `☁️ 已登录 — 显示全球玩家最近游玩记录`
+      : `☁️ 未登录 — 仅显示本地记录。登录后可查看全球玩家记录`;
   }
   el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">加载中…</div>';
   fetchLeaderboard();
@@ -1230,7 +1230,7 @@ async function fetchLeaderboard() {
         .from('leaderboard')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(5);
       if (!error && data) entries = data;
     } catch (e) { /* fall back to local */ }
   }
@@ -1258,7 +1258,7 @@ async function fetchLeaderboard() {
 
 function renderLeaderboard(entries) {
   if (!entries || entries.length === 0) {
-    el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">暂无排行榜数据。</div>';
+    el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">暂无玩家记录。</div>';
     return;
   }
   const table = document.createElement('div');
@@ -1270,7 +1270,6 @@ function renderLeaderboard(entries) {
     const date = e.created_at ? new Date(e.created_at).toLocaleDateString('zh-CN') : '';
     const floorStr = e.floor ? floorToActFloorStr(e.floor) : `维度${e.act || 1}`;
     row.innerHTML = `
-      <span class="lb-rank">${i + 1}</span>
       <span class="lb-char">${e.character_icon || ''} ${e.character_name || '?'}</span>
       <span class="lb-player">${name}</span>
       <span class="lb-result ${e.victory ? 'victory' : 'defeat'}">${e.victory ? '🏆' : '💀'}</span>
