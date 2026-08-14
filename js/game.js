@@ -566,7 +566,7 @@ function showShopScreen(node) {
     offer.cost = Math.round((rarity === 'rare' ? 200 + Math.floor(Math.random() * 50) : rarity === 'uncommon' ? 140 + Math.floor(Math.random() * 40) : 90 + Math.floor(Math.random() * 30)) * actMul);
   });
   if (currentShop.shopRelic) {
-    currentShop.shopRelic.cost = 300 + Math.floor(Math.random() * 75);
+    currentShop.shopRelic.cost = 180 + Math.floor(Math.random() * 75);
   }
   renderShop(node);
   el.shopLeaveBtn.onclick = () => backToMapOrVictory(node);
