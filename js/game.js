@@ -233,7 +233,7 @@ function newRun(characterId, bonus = {}) {
     currentNodeId: null,
     removeCount: 0,
     act: 1,
-    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {}, eventsEncountered: 0, eventsLeft: 0, shopsVisited: 0, shopSpent: false, noBlockKillNormal: false, noBlockKillElite: false, eliteKilledIn3Turns: false, fortress: false, killedByNormal: false, goldStolen: 0, adventurerAttacks: 0, killedTypes: [] },
+    stats: { goldEarned: 0, enemiesDefeated: 0, elitesDefeated: 0, bossesDefeated: 0, cardsPlayed: 0, floorReached: 0, actsCleared: 0, actOffset: 0, treasureFound: false, uniqueCardIds: {}, eventsEncountered: 0, eventsLeft: 0, shopsVisited: 0, shopSpent: false, noBlockKillNormal: false, noBlockKillElite: false, eliteKilledIn3Turns: false, fortress: false, killedByNormal: false, goldStolen: 0, adventurerAttacks: 0, killedTypes: [] },
   };
   if (bonus.bonusRelicId) addRelicToRun(run, bonus.bonusRelicId);
   deckIds.forEach(id => discover('discoveredCards', id));
@@ -905,6 +905,7 @@ function showRewardScreen() {
   run.stats.goldEarned += goldReward;
   run.stats.enemiesDefeated += combat.enemies.length;
   if (tier === 'elite') run.stats.elitesDefeated += 1;
+  if (tier === 'boss') run.stats.bossesDefeated = (run.stats.bossesDefeated || 0) + 1;
   if (combat.combatStats.killedTypes) {
     run.stats.killedTypes = (run.stats.killedTypes || []);
     combat.combatStats.killedTypes.forEach(t => run.stats.killedTypes.push(t));
@@ -994,6 +995,7 @@ function finishRun(victory, desc) {
     deckIds: run.deck.map(c => c.defId + (c.upgraded ? '+' : '')),
     enemiesDefeated: run.stats.enemiesDefeated,
     elitesDefeated: run.stats.elitesDefeated,
+    bossesDefeated: run.stats.bossesDefeated || 0,
     goldEarned: run.stats.goldEarned,
     timestamp: Date.now(),
   };
@@ -1014,6 +1016,7 @@ function finishRun(victory, desc) {
     statBoxHtml('获得金币', stats.goldEarned),
     statBoxHtml('击败敌人', stats.enemiesDefeated),
     statBoxHtml('击败精英', stats.elitesDefeated),
+    statBoxHtml('击败Boss', stats.bossesDefeated || 0),
     statBoxHtml('持有遗物', stats.relicsHeld),
     statBoxHtml('卡组大小', stats.deckSize),
     statBoxHtml('打出卡牌', stats.cardsPlayed),
@@ -1168,7 +1171,7 @@ function showHistoryScreen() {
         <div class="modal-desc">
           📊 得分：${rec.score}<br>
           🏔️ 到达：${floorStr}<br>
-          ⚔️ 击败：${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英<br>
+          ⚔️ 击败：${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英 / ${rec.bossesDefeated || 0}Boss<br>
           💰 金币：${rec.goldEarned}<br>
           ❤️ 生命：${rec.finalHp}/${rec.maxHp}<br>
           ${!rec.victory && rec.deathCause ? `☠️ 死因：${rec.deathCause}<br>` : ''}
@@ -1189,7 +1192,7 @@ function showHistoryScreen() {
       <div class="history-stats">
         <span>🏔️ ${floorStr}</span>
         <span>📊 得分 ${rec.score}</span>
-        <span>⚔️ 击败${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英</span>
+        <span>⚔️ 击败${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英 / ${rec.bossesDefeated || 0}Boss</span>
         <span>💰 ${rec.goldEarned}金</span>
         <span>❤️ ${rec.finalHp}/${rec.maxHp}</span>
       </div>
@@ -1247,6 +1250,7 @@ async function fetchLeaderboard() {
       score: r.score,
       enemies_defeated: r.enemiesDefeated,
       elites_defeated: r.elitesDefeated,
+      bosses_defeated: r.bossesDefeated || 0,
       relic_ids: r.relicIds,
       deck_ids: r.deckIds,
       created_at: new Date(r.timestamp).toISOString(),
@@ -1275,7 +1279,7 @@ function renderLeaderboard(entries) {
       <span class="lb-result ${e.victory ? 'victory' : 'defeat'}">${e.victory ? '🏆' : '💀'}</span>
       <span class="lb-score">${e.score || 0}</span>
       <span class="lb-act">${floorStr}</span>
-      <span class="lb-kills">⚔️${e.enemies_defeated || 0}</span>
+      <span class="lb-kills">⚔️${e.enemies_defeated || 0} 💀${e.elites_defeated || 0} 👑${e.bosses_defeated || 0}</span>
       <span class="lb-date hint">${date}</span>
       ${!e.victory && e.death_cause ? `<span class="lb-death hint">☠️ ${e.death_cause}</span>` : ''}
     `;
@@ -1302,7 +1306,7 @@ function renderLeaderboard(entries) {
         <div class="modal-desc">
           📊 得分：${e.score || 0}<br>
           🏔️ 到达：${floorStr}<br>
-          ⚔️ 击败：${e.enemies_defeated || 0}敌 / ${e.elites_defeated || 0}精英<br>
+          ⚔️ 击败：${e.enemies_defeated || 0}敌 / ${e.elites_defeated || 0}精英 / ${e.bosses_defeated || 0}Boss<br>
           ${!e.victory && e.death_cause ? `☠️ 死因：${e.death_cause}<br>` : ''}
         </div>
         ${relicList ? `<div class="modal-meta">💎 遗物</div><div class="modal-desc">${relicList}</div>` : ''}

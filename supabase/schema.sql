@@ -55,6 +55,7 @@ create table if not exists public.leaderboard (
   max_hp int not null default 0,
   enemies_defeated int not null default 0,
   elites_defeated int not null default 0,
+  bosses_defeated int not null default 0,
   gold_earned int not null default 0,
   relic_ids jsonb,
   deck_ids jsonb,

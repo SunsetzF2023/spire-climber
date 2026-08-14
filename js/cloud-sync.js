@@ -116,6 +116,7 @@ async function uploadRunToLeaderboard(record) {
         max_hp: record.maxHp,
         enemies_defeated: record.enemiesDefeated,
         elites_defeated: record.elitesDefeated,
+        bosses_defeated: record.bossesDefeated || 0,
         gold_earned: record.goldEarned,
         relic_ids: record.relicIds,
         deck_ids: record.deckIds,
