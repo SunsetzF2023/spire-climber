@@ -905,11 +905,11 @@ const CARDS = {
   },
   shield_bash: {
     id: 'shield_bash', name: '盾击', icon: '🛡️', type: 'attack', cost: 0, target: 'enemy', rarity: 'special', cls: 'neutral', exhaust: true,
-    vars(up) { return { dmg: up ? 10 : 8 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害，额外获得 ${up ? 6 : 5} 点格挡。消耗`; },
+    vars(up) { return { dmg: up ? 10 : 8, block: up ? 6 : 5 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，额外获得 ${v.block} 点格挡。消耗`; },
     effect(ctx) {
       if (ctx.target) ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '盾击' });
-      ctx.combat.gainBlockPlayer(ctx.vars.up ? 6 : 5);
+      ctx.combat.gainBlockPlayer(ctx.vars.block);
     },
   },
   scavenger: {
