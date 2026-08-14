@@ -1046,11 +1046,11 @@ const CARDS = {
   },
 
   // ================= 成就奖励卡牌（Achievement Reward Cards）==================
-  // Each is tied to an achievement, balanced, 0-cost exhaust
+  // Tied to achievements; only appear in reward/shop/event pools after unlock
   triple_strike: {
-    id: 'triple_strike', name: '三连击', icon: '⚡', type: 'attack', cost: 0, target: 'enemy', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'triple_strike', name: '三连击', icon: '⚡', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'neutral',
     vars(up) { return { dmg: up ? 5 : 4 }; },
-    descTemplate(v) { return `对目标造成 3 次 ${v.dmg} 点伤害。消耗`; },
+    descTemplate(v) { return `对目标造成 3 次 ${v.dmg} 点伤害`; },
     effect(ctx) {
       for (let i = 0; i < 3; i++) {
         if (ctx.target && ctx.target.hp > 0) ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '三连击' });
@@ -1058,45 +1058,45 @@ const CARDS = {
     },
   },
   shield_bash: {
-    id: 'shield_bash', name: '盾击', icon: '🛡️', type: 'attack', cost: 0, target: 'enemy', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'shield_bash', name: '盾击', icon: '🛡️', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'neutral',
     vars(up) { return { dmg: up ? 10 : 8, block: up ? 6 : 5 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害，额外获得 ${v.block} 点格挡。消耗`; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，额外获得 ${v.block} 点格挡`; },
     effect(ctx) {
       if (ctx.target) ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '盾击' });
       ctx.combat.gainBlockPlayer(ctx.vars.block);
     },
   },
   scavenger: {
-    id: 'scavenger', name: '拾荒者', icon: '🎒', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'scavenger', name: '拾荒者', icon: '🎒', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { draw: up ? 3 : 2, block: up ? 6 : 5 }; },
-    descTemplate(v) { return `抽 ${v.draw} 张牌，获得 ${v.block} 点格挡。消耗`; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌，获得 ${v.block} 点格挡`; },
     effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   power_surge: {
-    id: 'power_surge', name: '力量涌动', icon: '💪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'power_surge', name: '力量涌动', icon: '💪', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { str: up ? 2 : 1, dmg: up ? 8 : 6 }; },
-    descTemplate(v) { return `获得 ${v.str} 层力量，对所有敌人造成 ${v.dmg} 点伤害。消耗`; },
+    descTemplate(v) { return `获得 ${v.str} 层力量，对所有敌人造成 ${v.dmg} 点伤害`; },
     effect(ctx) {
       ctx.combat.applyStatusPlayer('strength', ctx.vars.str);
       ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '力量涌动', isAoE: true, bypassTaunt: true }); });
     },
   },
   survivor_instinct: {
-    id: 'survivor_instinct', name: '求生本能', icon: '🩸', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'survivor_instinct', name: '求生本能', icon: '🩸', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { heal: up ? 8 : 6, block: up ? 8 : 6 }; },
-    descTemplate(v) { return `回复 ${v.heal} 点生命，获得 ${v.block} 点格挡。消耗`; },
+    descTemplate(v) { return `回复 ${v.heal} 点生命，获得 ${v.block} 点格挡`; },
     effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   treasure_map: {
-    id: 'treasure_map', name: '藏宝图', icon: '🗺️', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'treasure_map', name: '藏宝图', icon: '🗺️', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { gold: up ? 15 : 10, draw: 1 }; },
-    descTemplate(v) { return `获得 ${v.gold} 金币，抽 ${v.draw} 张牌。消耗`; },
+    descTemplate(v) { return `获得 ${v.gold} 金币，抽 ${v.draw} 张牌`; },
     effect(ctx) { ctx.combat.run.gold += ctx.vars.gold; ctx.combat.log(`🗺️ 藏宝图：+${ctx.vars.gold} 金币`, 'info'); ctx.combat.drawCards(ctx.vars.draw); },
   },
   monster_hunter: {
-    id: 'monster_hunter', name: '猎魔人', icon: '⚔️', type: 'attack', cost: 0, target: 'enemy', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'monster_hunter', name: '猎魔人', icon: '⚔️', type: 'attack', cost: 2, target: 'enemy', rarity: 'rare', cls: 'neutral',
     vars(up) { return { dmg: up ? 14 : 12 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害。若目标生命值低于 50%，额外造成 ${v.dmg} 点伤害。消耗`; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害。若目标生命值低于 50%，额外造成 ${v.dmg} 点伤害`; },
     effect(ctx) {
       if (!ctx.target) return;
       ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '猎魔人' });
@@ -1106,9 +1106,9 @@ const CARDS = {
     },
   },
   diverse_blade: {
-    id: 'diverse_blade', name: '万象之刃', icon: '🌈', type: 'attack', cost: 0, target: 'enemy', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'diverse_blade', name: '万象之刃', icon: '🌈', type: 'attack', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { dmg: up ? 7 : 5, hits: 2 }; },
-    descTemplate(v) { return `对随机 2 名敌人各造成 ${v.dmg} 点伤害。消耗`; },
+    descTemplate(v) { return `对随机 2 名敌人各造成 ${v.dmg} 点伤害`; },
     effect(ctx) {
       const living = ctx.combat.enemies.filter(e => e.hp > 0);
       for (let i = 0; i < 2 && living.length > 0; i++) {
@@ -1183,10 +1183,28 @@ function rollCardRarity() {
   return 'rare';
 }
 
+function getUnlockedAchievementCardIds(metaObj) {
+  if (!metaObj || !metaObj.achievements) return [];
+  const ids = [];
+  ACHIEVEMENTS.forEach(ach => {
+    if (metaObj.achievements[ach.id] && ach.rewardCard && !ids.includes(ach.rewardCard)) {
+      ids.push(ach.rewardCard);
+    }
+  });
+  return ids;
+}
+
 function pickRandomCardId(characterId = 'warrior', excludeIds = []) {
   const rarity = rollCardRarity();
   const tierPools = REWARD_POOLS[rarity];
   const pool = [...tierPools.neutral, ...(tierPools[characterId] || tierPools.warrior)];
+  // Inject unlocked achievement cards matching this rarity
+  if (typeof meta !== 'undefined' && meta) {
+    getUnlockedAchievementCardIds(meta).forEach(id => {
+      const def = CARDS[id];
+      if (def && def.rarity === rarity && !pool.includes(id)) pool.push(id);
+    });
+  }
   const filtered = pool.filter(id => !excludeIds.includes(id));
   const src = filtered.length > 0 ? filtered : pool;
   return src[Math.floor(Math.random() * src.length)];

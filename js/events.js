@@ -231,6 +231,12 @@ const EVENT_POOL = [
           if (run.player.hp <= 6) return { text: '生命值过低，不敢冒险！', cls: 'bad' };
           damagePlayerRun(run, 6);
           const rarePool = [...REWARD_POOLS.rare.neutral, ...(REWARD_POOLS.rare[run.characterId] || REWARD_POOLS.rare.warrior)];
+          if (typeof getUnlockedAchievementCardIds === 'function' && meta) {
+            getUnlockedAchievementCardIds(meta).forEach(id => {
+              const def = CARDS[id];
+              if (def && def.rarity === 'rare' && !rarePool.includes(id)) rarePool.push(id);
+            });
+          }
           const id = rarePool[Math.floor(Math.random() * rarePool.length)];
           addCardToDeck(run, id, false);
           return { text: `获得了稀有卡牌：${CARDS[id].name}`, cls: 'good' };
@@ -456,6 +462,13 @@ const EVENT_POOL = [
           const charCards = tiers[charPool] || [];
           const neutralCards = tiers.neutral || [];
           const pool = [...charCards, ...neutralCards];
+          // Inject unlocked achievement cards matching the same rarity
+          if (typeof getUnlockedAchievementCardIds === 'function' && meta) {
+            getUnlockedAchievementCardIds(meta).forEach(id => {
+              const def = CARDS[id];
+              if (def && def.rarity === oldRarity && !pool.includes(id)) pool.push(id);
+            });
+          }
           if (pool.length > 0) {
             newId = pool[Math.floor(Math.random() * pool.length)];
           }
