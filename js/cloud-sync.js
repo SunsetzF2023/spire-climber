@@ -94,3 +94,34 @@ async function initCloudSync() {
     }
   });
 }
+
+async function uploadRunToLeaderboard(record) {
+  if (!cloudSyncEnabled || !cloudUser) return;
+  try {
+    const playerName = (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
+    const { error } = await supabaseClient
+      .from('leaderboard')
+      .insert({
+        user_id: cloudUser.id,
+        player_name: playerName,
+        character_id: record.characterId,
+        character_name: record.characterName,
+        character_icon: record.characterIcon,
+        victory: record.victory,
+        death_cause: record.deathCause,
+        act: record.act,
+        floor: record.floor,
+        score: record.score,
+        final_hp: record.finalHp,
+        max_hp: record.maxHp,
+        enemies_defeated: record.enemiesDefeated,
+        elites_defeated: record.elitesDefeated,
+        gold_earned: record.goldEarned,
+        relic_ids: record.relicIds,
+        deck_ids: record.deckIds,
+      });
+    if (error) console.error('[cloud-sync] leaderboard upload failed:', error.message);
+  } catch (e) {
+    console.error('[cloud-sync] leaderboard upload error:', e);
+  }
+}

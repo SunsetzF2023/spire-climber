@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -25,6 +25,8 @@
     <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
     <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
     <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
+    <button id="openHistoryBtn" class="btn btn-ghost">📜 冒险历史</button>
+    <button id="openLeaderboardBtn" class="btn btn-ghost">🏆 排行榜</button>
   </div>
 </section>
 
@@ -186,6 +188,25 @@
   <button id="profileBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
+<!-- ============ ADVENTURE HISTORY ============ -->
+<section id="historyScreen" class="screen hidden">
+  <div class="panel">
+    <h2>📜 冒险历史 <span class="hint">· 最近 2 次游玩记录</span></h2>
+    <div id="historyList"></div>
+  </div>
+  <button id="historyBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
+</section>
+
+<!-- ============ LEADERBOARD ============ -->
+<section id="leaderboardScreen" class="screen hidden">
+  <div class="panel">
+    <h2>🏆 全球排行榜 <span class="hint">· 玩家最近游玩成绩</span></h2>
+    <div id="cloudSyncStatus2" class="hint">☁️ 未登录 — 仅显示本地记录</div>
+    <div id="leaderboardList"></div>
+  </div>
+  <button id="leaderboardBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
+</section>
+
 <div class="tooltip" id="tooltip"></div>
 
 <div id="infoModal" class="modal-overlay hidden">
@@ -196,16 +217,16 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js?v=25"></script>
-<script src="js/cards.js?v=25"></script>
-<script src="js/relics.js?v=25"></script>
-<script src="js/enemies.js?v=25"></script>
-<script src="js/events.js?v=25"></script>
-<script src="js/map.js?v=25"></script>
-<script src="js/combat.js?v=25"></script>
-<script src="js/meta.js?v=25"></script>
-<script src="js/characters.js?v=25"></script>
-<script src="js/cloud-sync.js?v=25"></script>
-<script src="js/game.js?v=25"></script>
+<script src="js/supabase-config.js?v=26"></script>
+<script src="js/cards.js?v=26"></script>
+<script src="js/relics.js?v=26"></script>
+<script src="js/enemies.js?v=26"></script>
+<script src="js/events.js?v=26"></script>
+<script src="js/map.js?v=26"></script>
+<script src="js/combat.js?v=26"></script>
+<script src="js/meta.js?v=26"></script>
+<script src="js/characters.js?v=26"></script>
+<script src="js/cloud-sync.js?v=26"></script>
+<script src="js/game.js?v=26"></script>
 </body>
 </html>

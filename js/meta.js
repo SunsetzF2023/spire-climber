@@ -64,6 +64,7 @@ function defaultMeta() {
     lifetimeKills: {},
     totalGoldStolen: 0,
     totalAdventurerAttacks: 0,
+    runHistory: [],
   };
 }
 

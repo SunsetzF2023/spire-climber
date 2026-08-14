@@ -40,6 +40,9 @@ function cacheEls() {
     'endScreen', 'endTitle', 'endDesc', 'endStatsGrid', 'endNewAchievements', 'endAchievementList', 'endRestartBtn', 'endProfileBtn',
     'profileScreen', 'profileStatsGrid', 'profileAchievements', 'profileCards', 'profileRelics', 'profileEnemies',
     'profileCardProgress', 'profileRelicProgress', 'profileEnemyProgress', 'profileBackBtn',
+    'historyScreen', 'historyList', 'historyBackBtn',
+    'leaderboardScreen', 'leaderboardList', 'leaderboardBackBtn', 'cloudSyncStatus2',
+    'openHistoryBtn', 'openLeaderboardBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
     'cloudSyncStatus', 'cloudLoginBtn', 'cloudLogoutBtn',
@@ -120,7 +123,7 @@ function addCardToDeck(run, defId, upgraded) {
 
 // ---------------- Screen switching ----------------
 function showScreen(name) {
-  ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen']
+  ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen']
     .forEach(s => el[s].classList.toggle('hidden', s !== name));
 }
 
@@ -1059,6 +1062,33 @@ function finishRun(victory, desc) {
   };
   const { score, newlyUnlocked } = applyRunToMeta(meta, stats);
 
+  // Save run history (keep last 2)
+  const historyRecord = {
+    characterId: run.characterId,
+    characterName: (CHARACTERS[run.characterId] || {}).name || run.characterId,
+    characterIcon: (CHARACTERS[run.characterId] || {}).icon || '❓',
+    victory,
+    deathCause: desc || '',
+    act: run.act,
+    floor: run.stats.floorReached,
+    score,
+    finalHp: run.player.hp,
+    maxHp: run.player.maxHp,
+    relicIds: run.relics.slice(),
+    deckIds: run.deck.map(c => c.defId + (c.upgraded ? '+' : '')),
+    enemiesDefeated: run.stats.enemiesDefeated,
+    elitesDefeated: run.stats.elitesDefeated,
+    goldEarned: run.stats.goldEarned,
+    timestamp: Date.now(),
+  };
+  meta.runHistory = meta.runHistory || [];
+  meta.runHistory.unshift(historyRecord);
+  if (meta.runHistory.length > 2) meta.runHistory = meta.runHistory.slice(0, 2);
+  saveMeta(meta);
+
+  // Upload to cloud leaderboard if logged in
+  if (typeof uploadRunToLeaderboard === 'function') uploadRunToLeaderboard(historyRecord);
+
   el.endTitle.textContent = victory ? '🏆 通关成功！' : '💀 游戏结束';
   el.endDesc.textContent = desc || '';
   el.endStatsGrid.innerHTML = [
@@ -1161,6 +1191,127 @@ function showProfileScreen() {
   buildCollectionGrid(el.profileEnemies, enemyIds, meta.discoveredEnemies, { icon: (id) => artIcon('enemies', id, ENEMIES[id].icon), html: enemyInfoHtml }, '敌人');
 }
 
+// ---------------- Adventure History ----------------
+function showHistoryScreen() {
+  showScreen('historyScreen');
+  const history = meta.runHistory || [];
+  if (history.length === 0) {
+    el.historyList.innerHTML = '<div class="hint" style="padding:1rem">暂无游玩记录。开始你的第一轮冒险吧！</div>';
+    return;
+  }
+  el.historyList.innerHTML = '';
+  history.forEach((rec, i) => {
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    const dateStr = new Date(rec.timestamp).toLocaleString('zh-CN');
+    const relicIcons = (rec.relicIds || []).map(id => {
+      const r = RELICS[id];
+      return r ? `<span title="${r.name}">${r.icon}</span>` : '';
+    }).join(' ');
+    const deckSummary = (rec.deckIds || []).reduce((acc, id) => {
+      const key = id.replace(/\+$/, '');
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    const deckStr = Object.entries(deckSummary).map(([id, count]) => {
+      const def = CARDS[id];
+      return def ? `${def.icon}×${count}` : '';
+    }).filter(s => s).join(' ');
+
+    card.innerHTML = `
+      <div class="history-header">
+        <span class="history-char">${rec.characterIcon} ${rec.characterName}</span>
+        <span class="history-result ${rec.victory ? 'victory' : 'defeat'}">${rec.victory ? '🏆 通关' : '💀 阵亡'}</span>
+        <span class="hint">${dateStr}</span>
+      </div>
+      <div class="history-stats">
+        <span>🏔️ 维度${rec.act}</span>
+        <span>📊 得分 ${rec.score}</span>
+        <span>⚔️ 击败${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英</span>
+        <span>💰 ${rec.goldEarned}金</span>
+        <span>❤️ ${rec.finalHp}/${rec.maxHp}</span>
+      </div>
+      ${!rec.victory && rec.deathCause ? `<div class="history-death">☠️ 死因：${rec.deathCause}</div>` : ''}
+      <div class="history-relics">💎 遗物：${relicIcons || '无'}</div>
+      <div class="history-deck">🎴 牌组：${deckStr || '空'}</div>
+    `;
+    el.historyList.appendChild(card);
+  });
+}
+
+// ---------------- Leaderboard ----------------
+function showLeaderboardScreen() {
+  showScreen('leaderboardScreen');
+  if (el.cloudSyncStatus2) {
+    el.cloudSyncStatus2.textContent = cloudUser
+      ? `☁️ 已登录 — 显示全球玩家最近成绩`
+      : `☁️ 未登录 — 仅显示本地记录。登录后可查看全球排行榜`;
+  }
+  el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">加载中…</div>';
+  fetchLeaderboard();
+}
+
+async function fetchLeaderboard() {
+  let entries = [];
+  // Try cloud fetch
+  if (cloudUser && typeof supabaseClient !== 'undefined') {
+    try {
+      const { data, error } = await supabaseClient
+        .from('leaderboard')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (!error && data) entries = data;
+    } catch (e) { /* fall back to local */ }
+  }
+  // Fallback: show local history as leaderboard
+  if (entries.length === 0) {
+    const local = (meta.runHistory || []).map(r => ({
+      player_name: '你',
+      character_name: r.characterName,
+      character_icon: r.characterIcon,
+      victory: r.victory,
+      death_cause: r.deathCause,
+      act: r.act,
+      score: r.score,
+      enemies_defeated: r.enemiesDefeated,
+      elites_defeated: r.elitesDefeated,
+      created_at: new Date(r.timestamp).toISOString(),
+    }));
+    entries = local;
+  }
+  renderLeaderboard(entries);
+}
+
+function renderLeaderboard(entries) {
+  if (!entries || entries.length === 0) {
+    el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">暂无排行榜数据。</div>';
+    return;
+  }
+  const table = document.createElement('div');
+  table.className = 'leaderboard-table';
+  entries.forEach((e, i) => {
+    const row = document.createElement('div');
+    row.className = 'leaderboard-row';
+    const name = e.player_name || e.user_id || '匿名玩家';
+    const date = e.created_at ? new Date(e.created_at).toLocaleDateString('zh-CN') : '';
+    row.innerHTML = `
+      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-char">${e.character_icon || ''} ${e.character_name || '?'}</span>
+      <span class="lb-player">${name}</span>
+      <span class="lb-result ${e.victory ? 'victory' : 'defeat'}">${e.victory ? '🏆' : '💀'}</span>
+      <span class="lb-score">${e.score || 0}</span>
+      <span class="lb-act">维度${e.act || 1}</span>
+      <span class="lb-kills">⚔️${e.enemies_defeated || 0}</span>
+      <span class="lb-date hint">${date}</span>
+      ${!e.victory && e.death_cause ? `<span class="lb-death hint">☠️ ${e.death_cause}</span>` : ''}
+    `;
+    table.appendChild(row);
+  });
+  el.leaderboardList.innerHTML = '';
+  el.leaderboardList.appendChild(table);
+}
+
 // ---------------- init ----------------
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
@@ -1169,6 +1320,10 @@ document.addEventListener('DOMContentLoaded', () => {
   el.characterBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.openProfileBtn.addEventListener('click', () => showProfileScreen());
   el.profileBackBtn.addEventListener('click', () => showScreen('menuScreen'));
+  el.openHistoryBtn.addEventListener('click', () => showHistoryScreen());
+  el.historyBackBtn.addEventListener('click', () => showScreen('menuScreen'));
+  el.openLeaderboardBtn.addEventListener('click', () => showLeaderboardScreen());
+  el.leaderboardBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.endTurnBtn.addEventListener('click', () => {
     combat.endTurn();
     afterCombatAction();

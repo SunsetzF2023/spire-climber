@@ -36,3 +36,44 @@ drop trigger if exists trg_profiles_updated_at on public.profiles;
 create trigger trg_profiles_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
+
+-- ================= LEADERBOARD =================
+-- Stores individual run results for the global leaderboard.
+create table if not exists public.leaderboard (
+  id bigint generated always as identity primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  player_name text not null default '匿名玩家',
+  character_id text,
+  character_name text,
+  character_icon text,
+  victory boolean not null default false,
+  death_cause text not null default '',
+  act int not null default 1,
+  floor int not null default 0,
+  score int not null default 0,
+  final_hp int not null default 0,
+  max_hp int not null default 0,
+  enemies_defeated int not null default 0,
+  elites_defeated int not null default 0,
+  gold_earned int not null default 0,
+  relic_ids jsonb,
+  deck_ids jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.leaderboard enable row level security;
+
+-- Anyone (even anonymous) can read the leaderboard.
+create policy "Anyone can view leaderboard"
+  on public.leaderboard for select
+  using (true);
+
+-- Only authenticated users can insert their own runs.
+create policy "Users can insert their own runs"
+  on public.leaderboard for insert
+  with check (auth.uid() = user_id);
+
+-- Users can delete their own runs (optional, for cleanup).
+create policy "Users can delete their own runs"
+  on public.leaderboard for delete
+  using (auth.uid() = user_id);
