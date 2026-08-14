@@ -494,13 +494,13 @@ class CombatEngine {
     if (remaining > 0) this.combatStats.damageTakenByTurn[this.turnCount] = (this.combatStats.damageTakenByTurn[this.turnCount] || 0) + remaining;
     this.log(`💥 ${attacker ? attacker.name : '未知敌人'} 对你造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'enemy');
     this.runRelicHook('onDamageTaken', dmg, attackerEnemyId);
-    this.checkPlayerDeath();
+    this.checkPlayerDeath(attacker ? attacker.name : null);
     return remaining;
   }
 
   damagePlayerDirect(amount) {
     this.run.player.hp -= amount;
-    this.checkPlayerDeath();
+    this.checkPlayerDeath(null);
   }
 
   gainBlockPlayer(amount) {
@@ -568,11 +568,12 @@ class CombatEngine {
     }
   }
 
-  checkPlayerDeath() {
+  checkPlayerDeath(killerName) {
     if (this.run.player.hp <= 0 && !this.finished) {
       this.run.player.hp = 0;
       this.finished = true;
       this.winner = 'enemy';
+      this.killerName = killerName;
       this.log('💀 你倒下了……', 'info');
       if (this.run.stats && this.rewardTier === 'normal') {
         this.run.stats.killedByNormal = true;

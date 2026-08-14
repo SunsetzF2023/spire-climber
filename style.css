@@ -314,6 +314,26 @@ body{
 .history-result { font-weight: 700; padding: 2px 10px; border-radius: 6px; }
 .history-result.victory { background: rgba(74,222,128,0.15); color: var(--green); }
 .history-result.defeat { background: rgba(255,92,92,0.15); color: var(--red); }
+.history-relic-tag, .history-card-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.history-relic-tag:hover, .history-card-tag:hover {
+  background: var(--bg3, #3a3a4a);
+  border-color: var(--accent, #6c8aff);
+}
+.history-detail-btn {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+}
 .history-stats {
   display: flex;
   gap: 1rem;

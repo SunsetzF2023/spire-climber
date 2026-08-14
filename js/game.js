@@ -882,7 +882,13 @@ function afterCombatAction() {
     combat.resultHandled = true;
     setTimeout(() => {
       if (combat.winner === 'player') showRewardScreen();
-      else finishRun(false, '你在战斗中被击败了……');
+      else {
+        const killer = combat.killerName;
+        const deathDesc = killer
+          ? `你被${killer}击败了……`
+          : '你在战斗中被击败了……';
+        finishRun(false, deathDesc);
+      }
     }, 400);
   }
 }
@@ -1102,6 +1108,14 @@ function showProfileScreen() {
 }
 
 // ---------------- Adventure History ----------------
+function floorToActFloorStr(globalFloor) {
+  if (!globalFloor || globalFloor <= 0) return '维度1 第1层';
+  const actSize = ACT_FLOOR_COUNT + 1; // floors per act including boss
+  const act = Math.floor((globalFloor - 1) / actSize) + 1;
+  const floorInAct = ((globalFloor - 1) % actSize) + 1;
+  return `维度${act} 第${floorInAct}层`;
+}
+
 function showHistoryScreen() {
   showScreen('historyScreen');
   const history = meta.runHistory || [];
@@ -1114,19 +1128,57 @@ function showHistoryScreen() {
     const card = document.createElement('div');
     card.className = 'history-card';
     const dateStr = new Date(rec.timestamp).toLocaleString('zh-CN');
-    const relicIcons = (rec.relicIds || []).map(id => {
-      const r = RELICS[id];
-      return r ? `<span title="${r.name}">${r.icon}</span>` : '';
-    }).join(' ');
+    const floorStr = floorToActFloorStr(rec.floor || rec.act * (ACT_FLOOR_COUNT + 1));
+
+    // Relics — clickable spans with names (build as HTML, attach listeners after)
+    const relicIds = (rec.relicIds || []).filter(id => RELICS[id]);
+    const relicHtml = relicIds.map(id =>
+      `<span class="history-relic-tag" data-relic-id="${id}">${RELICS[id].icon} ${RELICS[id].name}</span>`
+    ).join(' ');
+
+    // Deck — clickable tags with names and counts
     const deckSummary = (rec.deckIds || []).reduce((acc, id) => {
       const key = id.replace(/\+$/, '');
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
-    const deckStr = Object.entries(deckSummary).map(([id, count]) => {
+    const deckEntries = Object.entries(deckSummary).filter(([id]) => CARDS[id]);
+    const deckTags = deckEntries.map(([id, count]) => {
       const def = CARDS[id];
-      return def ? `${def.icon}×${count}` : '';
-    }).filter(s => s).join(' ');
+      const upgraded = rec.deckIds.some(d => d === id + '+');
+      return `<span class="history-card-tag" data-card-id="${id}">${def.icon} ${def.name}${upgraded ? '+' : ''}×${count}</span>`;
+    }).join(' ');
+
+    // Detail button — shows full run info in modal
+    const detailBtn = document.createElement('button');
+    detailBtn.className = 'btn btn-ghost history-detail-btn';
+    detailBtn.textContent = '📋 详情';
+    detailBtn.addEventListener('click', () => {
+      const relicList = (rec.relicIds || []).map(id => {
+        const r = RELICS[id];
+        return r ? `${r.icon} ${r.name} — ${r.desc}` : '';
+      }).filter(s => s).join('<br>');
+      const deckList = Object.entries(deckSummary).map(([id, count]) => {
+        const def = CARDS[id];
+        return def ? `${def.icon} ${def.name}×${count}` : '';
+      }).filter(s => s).join('、');
+      showInfoModal(`
+        <div class="modal-name">${rec.characterIcon} ${rec.characterName} — ${rec.victory ? '🏆 通关' : '💀 阵亡'}</div>
+        <div class="modal-meta">${dateStr}</div>
+        <div class="modal-desc">
+          📊 得分：${rec.score}<br>
+          🏔️ 到达：${floorStr}<br>
+          ⚔️ 击败：${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英<br>
+          💰 金币：${rec.goldEarned}<br>
+          ❤️ 生命：${rec.finalHp}/${rec.maxHp}<br>
+          ${!rec.victory && rec.deathCause ? `☠️ 死因：${rec.deathCause}<br>` : ''}
+        </div>
+        <div class="modal-meta">💎 遗物</div>
+        <div class="modal-desc">${relicList || '无'}</div>
+        <div class="modal-meta">🎴 牌组</div>
+        <div class="modal-desc">${deckList || '空'}</div>
+      `);
+    });
 
     card.innerHTML = `
       <div class="history-header">
@@ -1135,17 +1187,25 @@ function showHistoryScreen() {
         <span class="hint">${dateStr}</span>
       </div>
       <div class="history-stats">
-        <span>🏔️ 维度${rec.act}</span>
+        <span>🏔️ ${floorStr}</span>
         <span>📊 得分 ${rec.score}</span>
         <span>⚔️ 击败${rec.enemiesDefeated}敌 / ${rec.elitesDefeated}精英</span>
         <span>💰 ${rec.goldEarned}金</span>
         <span>❤️ ${rec.finalHp}/${rec.maxHp}</span>
       </div>
       ${!rec.victory && rec.deathCause ? `<div class="history-death">☠️ 死因：${rec.deathCause}</div>` : ''}
-      <div class="history-relics">💎 遗物：${relicIcons || '无'}</div>
-      <div class="history-deck">🎴 牌组：${deckStr || '空'}</div>
+      <div class="history-relics">💎 遗物：${relicHtml || '无'}</div>
+      <div class="history-deck">🎴 牌组：${deckTags || '空'}</div>
     `;
+    card.appendChild(detailBtn);
     el.historyList.appendChild(card);
+    // Attach click listeners to relic/card tags
+    card.querySelectorAll('.history-relic-tag').forEach(tag => {
+      tag.addEventListener('click', () => showInfoModal(relicInfoHtml(tag.dataset.relicId)));
+    });
+    card.querySelectorAll('.history-card-tag').forEach(tag => {
+      tag.addEventListener('click', () => showInfoModal(cardInfoHtml(tag.dataset.cardId)));
+    });
   });
 }
 
@@ -1183,9 +1243,12 @@ async function fetchLeaderboard() {
       victory: r.victory,
       death_cause: r.deathCause,
       act: r.act,
+      floor: r.floor,
       score: r.score,
       enemies_defeated: r.enemiesDefeated,
       elites_defeated: r.elitesDefeated,
+      relic_ids: r.relicIds,
+      deck_ids: r.deckIds,
       created_at: new Date(r.timestamp).toISOString(),
     }));
     entries = local;
@@ -1205,17 +1268,48 @@ function renderLeaderboard(entries) {
     row.className = 'leaderboard-row';
     const name = e.player_name || e.user_id || '匿名玩家';
     const date = e.created_at ? new Date(e.created_at).toLocaleDateString('zh-CN') : '';
+    const floorStr = e.floor ? floorToActFloorStr(e.floor) : `维度${e.act || 1}`;
     row.innerHTML = `
       <span class="lb-rank">${i + 1}</span>
       <span class="lb-char">${e.character_icon || ''} ${e.character_name || '?'}</span>
       <span class="lb-player">${name}</span>
       <span class="lb-result ${e.victory ? 'victory' : 'defeat'}">${e.victory ? '🏆' : '💀'}</span>
       <span class="lb-score">${e.score || 0}</span>
-      <span class="lb-act">维度${e.act || 1}</span>
+      <span class="lb-act">${floorStr}</span>
       <span class="lb-kills">⚔️${e.enemies_defeated || 0}</span>
       <span class="lb-date hint">${date}</span>
       ${!e.victory && e.death_cause ? `<span class="lb-death hint">☠️ ${e.death_cause}</span>` : ''}
     `;
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', () => {
+      const relicIds = e.relic_ids || [];
+      const relicList = relicIds.map(id => {
+        const r = RELICS[id];
+        return r ? `${r.icon} ${r.name} — ${r.desc}` : '';
+      }).filter(s => s).join('<br>');
+      const deckIds = e.deck_ids || [];
+      const deckSummary = deckIds.reduce((acc, id) => {
+        const key = id.replace(/\+$/, '');
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      const deckList = Object.entries(deckSummary).map(([id, count]) => {
+        const def = CARDS[id];
+        return def ? `${def.icon} ${def.name}×${count}` : '';
+      }).filter(s => s).join('、');
+      showInfoModal(`
+        <div class="modal-name">${e.character_icon || ''} ${e.character_name || '?'} — ${name}</div>
+        <div class="modal-meta">${date} · ${e.victory ? '🏆 通关' : '💀 阵亡'}</div>
+        <div class="modal-desc">
+          📊 得分：${e.score || 0}<br>
+          🏔️ 到达：${floorStr}<br>
+          ⚔️ 击败：${e.enemies_defeated || 0}敌 / ${e.elites_defeated || 0}精英<br>
+          ${!e.victory && e.death_cause ? `☠️ 死因：${e.death_cause}<br>` : ''}
+        </div>
+        ${relicList ? `<div class="modal-meta">💎 遗物</div><div class="modal-desc">${relicList}</div>` : ''}
+        ${deckList ? `<div class="modal-meta">🎴 牌组</div><div class="modal-desc">${deckList}</div>` : ''}
+      `);
+    });
     table.appendChild(row);
   });
   el.leaderboardList.innerHTML = '';
