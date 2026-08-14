@@ -572,7 +572,7 @@ const ENEMIES = {
 
   // ---------------- Summoner & Taunt enemies ----------------
   cultist_summoner: {
-    id: 'cultist_summoner', name: '邪教召唤师', icon: '🧙', hpRange: [48, 56], rarity: 'normal',
+    id: 'cultist_summoner', name: '邪教召唤师', icon: '🧙', hpRange: [48, 56], rarity: 'elite',
     chooseMove(enemy, combat) {
       const pattern = ['summon', 'atk', 'atk', 'ritual'];
       const step = enemy.aiState.cycle || 0;
@@ -980,9 +980,12 @@ const ENEMIES = {
   },
 };
 
-const NORMAL_ENEMY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'raider', 'skeleton_guard', 'hornet_swarm', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'fungi_beast', 'gremlin_nob', 'shieldbearer', 'cultist_summoner'];
+// Act 1 early pool (floors 0–14): damage 3–8, lower HP
+const ACT1_EARLY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard'];
+// Act 1 late pool (floors 15+): higher damage / HP
+const ACT1_LATE_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'gremlin_nob'];
 
-const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian', 'cultist_summoner'];
+const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian'];
 
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its
@@ -990,20 +993,23 @@ const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: NORMAL_ENEMY_IDS },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest', 'cultist_summoner'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: ACT1_EARLY_IDS, lateEnemyPool: ACT1_LATE_IDS, lateFloorThreshold: 15 },
   { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.35, dmgScaling: 1.2, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
   { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.7, dmgScaling: 1.4, doubleSpawnChance: 0.55, enemyPool: ACT2_ENEMY_IDS },
 ];
 
-function spawnEnemyGroup(rarity, act = 1) {
+function spawnEnemyGroup(rarity, act = 1, floor = 0) {
   const actDef = ACT_DEFS[act - 1] || ACT_DEFS[ACT_DEFS.length - 1];
   // Returns an array of enemy defIds for a combat node.
   if (rarity === 'boss') return [actDef.bossId];
   if (rarity === 'elite') return [pick(actDef.eliteIds)];
-  // normal: 1-2 enemies
+  // normal: 1-2 enemies — use late pool if floor is high enough
+  const pool = (actDef.lateEnemyPool && floor >= (actDef.lateFloorThreshold || 15))
+    ? actDef.lateEnemyPool
+    : (actDef.enemyPool || ACT1_EARLY_IDS);
   const count = Math.random() < (actDef.doubleSpawnChance ?? 0.45) ? 2 : 1;
   const ids = [];
-  for (let i = 0; i < count; i++) ids.push(pick(actDef.enemyPool || NORMAL_ENEMY_IDS));
+  for (let i = 0; i < count; i++) ids.push(pick(pool));
   return ids;
 }
 

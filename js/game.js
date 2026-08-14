@@ -287,9 +287,9 @@ function enterNode(node) {
   run.stats.floorReached = Math.max(run.stats.floorReached, run.stats.actOffset + node.floor + 1);
   renderHud();
   switch (node.type) {
-    case 'monster': startCombat(spawnEnemyGroup('normal', run.act), 'normal', node); break;
-    case 'elite': startCombat(spawnEnemyGroup('elite', run.act), 'elite', node); break;
-    case 'boss': startCombat(spawnEnemyGroup('boss', run.act), 'boss', node); break;
+    case 'monster': startCombat(spawnEnemyGroup('normal', run.act, node.floor), 'normal', node); break;
+    case 'elite': startCombat(spawnEnemyGroup('elite', run.act, node.floor), 'elite', node); break;
+    case 'boss': startCombat(spawnEnemyGroup('boss', run.act, node.floor), 'boss', node); break;
     case 'rest': showRestScreen(node); break;
     case 'shop': showShopScreen(node); break;
     case 'event': showEventScreenUI(node); break;
