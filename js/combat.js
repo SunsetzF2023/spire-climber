@@ -156,7 +156,7 @@ class CombatEngine {
       this.player.statuses.cardLock -= 1;
       this.log('🔓 封印解除', 'info');
     }
-    // discard hand — ethereal cards are exhausted instead of discarded
+    // discard hand — status/curse cards like dazed/void are exhausted
     const retain = this.player.statuses.wellLaidPlans || 0;
     const kept = retain > 0 ? this.hand.slice(0, retain) : [];
     const toProcess = retain > 0 ? this.hand.slice(retain) : this.hand;
@@ -165,11 +165,7 @@ class CombatEngine {
       const def = CARDS[c.defId];
       if (def.id === 'dazed' || def.id === 'void') {
         this.exhaustPile.push(c);
-        this.log(`🌫️ ${def.name} 因虚无被消耗`, 'info');
-      } else if (def.ethereal) {
-        this.exhaustPile.push(c);
-        this.onCardExhausted();
-        this.log(`👻 ${def.name} 因虚无效果被消耗`, 'info');
+        this.log(`🌫️ ${def.name} 被消耗`, 'info');
       } else {
         toDiscard.push(c);
       }

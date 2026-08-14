@@ -386,7 +386,7 @@ const EVENT_POOL = [
             const etherealPool = ['ether_potion', 'ether_strength', 'ether_block', 'ether_bomb', 'ether_draw', 'ether_cleanse'];
             const id = etherealPool[Math.floor(Math.random() * etherealPool.length)];
             addCardToDeck(run, id, false);
-            return { text: `药水化为一瓶虚无药剂！获得：${CARDS[id].name}`, cls: 'good' };
+            return { text: `药水化为一瓶药剂！获得：${CARDS[id].name}`, cls: 'good' };
           }
           const curses = ['clumsy', 'decay', 'doubt', 'injury', 'pain', 'shame', 'writhe'];
           const curseId = curses[Math.floor(Math.random() * curses.length)];
