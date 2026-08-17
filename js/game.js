@@ -857,7 +857,37 @@ function buildStatusBadge(name, amount, showLabel) {
   return span;
 }
 
+function triggerHitEffect(node) {
+  // Shake is applied to the icon child (not `node` itself), since patchEnemyBox
+  // reassigns node.className on every render and would otherwise wipe it instantly.
+  const icon = node.querySelector('.enemy-icon');
+  if (icon) {
+    icon.classList.remove('hit-shake');
+    void icon.offsetWidth; // restart animation
+    icon.classList.add('hit-shake');
+    setTimeout(() => icon.classList.remove('hit-shake'), 400);
+  }
+  const burst = document.createElement('div');
+  burst.className = 'blood-particles';
+  const count = 6 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    p.className = 'blood-particle';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 18 + Math.random() * 28;
+    p.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(1) + 'px');
+    p.style.setProperty('--dy', (Math.sin(angle) * dist).toFixed(1) + 'px');
+    p.style.animationDelay = (Math.random() * 0.08).toFixed(2) + 's';
+    burst.appendChild(p);
+  }
+  node.appendChild(burst);
+  setTimeout(() => burst.remove(), 650);
+}
+
 function patchEnemyBox(node, enemy) {
+  const prevHp = node.dataset.lastHp !== undefined ? parseFloat(node.dataset.lastHp) : enemy.hp;
+  if (enemy.hp < prevHp) triggerHitEffect(node);
+  node.dataset.lastHp = enemy.hp;
   const hasTauntAlive = combat.enemies.some(e => e.hp > 0 && e.taunt);
   const canTarget = enemy.hp > 0 && selectedCardUid && (!hasTauntAlive || enemy.taunt);
   node.className = 'enemy-box' + (canTarget ? ' targetable' : '') + (enemy.taunt && enemy.hp > 0 ? ' taunt-enemy' : '');

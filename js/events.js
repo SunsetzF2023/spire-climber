@@ -608,6 +608,159 @@ const EVENT_POOL = [
       { label: '🚶 离开', effect() { return { text: '你点头致意，各自赶路。', cls: 'info' }; } },
     ],
   },
+  {
+    id: 'gambler_dice', name: '赌徒的骰子', icon: '🎲',
+    desc: '一个游荡的赌徒摆开骰子摊，笑着邀请你赌上一把运气。',
+    options: [
+      {
+        label: '🎲 下注 20 金币（50% 双倍返还，50% 全部输掉）',
+        disabled(run) { return run.gold < 20; },
+        effect(run) {
+          if (run.gold < 20) return { text: '金币不足，赌不起！', cls: 'bad' };
+          run.gold -= 20;
+          if (Math.random() < 0.5) {
+            run.gold += 40;
+            run.stats.goldEarned += 40;
+            return { text: '骰子如你所愿！你赢得了 40 金币！', cls: 'good' };
+          }
+          return { text: '骰子无情，你输掉了赌注……', cls: 'bad' };
+        },
+      },
+      {
+        label: '🎲 押上全部金币（30% 三倍返还，70% 全部输光，一场豪赌）',
+        disabled(run) { return run.gold < 10; },
+        effect(run) {
+          const bet = run.gold;
+          run.gold = 0;
+          if (Math.random() < 0.3) {
+            const win = bet * 3;
+            run.gold = win;
+            run.stats.goldEarned += win;
+            return { text: `幸运女神眷顾了你！赢得了 ${win} 金币！`, cls: 'good' };
+          }
+          return { text: '孤注一掷，你输光了所有金币……', cls: 'bad' };
+        },
+      },
+      { label: '🚶 不赌，转身离开', effect() { return { text: '你明智地离开了赌局。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'mirror_pool', name: '镜面池', icon: '🪞',
+    desc: '池水泛着诡异的光，水面倒映出另一个"你"的身影，仿佛在无声地挑衅。',
+    options: [
+      {
+        label: '⚔️ 击败镜像自己（进入战斗）',
+        effect(run) {
+          startCombatFromEvent(['mirror_sprite'], 'normal');
+          return { text: '镜面破碎，倒影朝你扑来！', cls: 'info' };
+        },
+      },
+      { label: '🚶 不安地离开', effect() { return { text: '你转身离开，不愿直视自己的倒影。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'abandoned_shrine', name: '荒废神殿', icon: '🕯️',
+    desc: '神殿中央的圣火虽已熄灭，但残留的净化之力似乎还能洗去诅咒。',
+    options: [
+      {
+        label: '🔥 献祭 15 金币，净化一张诅咒牌',
+        disabled(run) { return run.gold < 15 || !run.deck.some(c => CARDS[c.defId] && CARDS[c.defId].type === 'curse'); },
+        effect(run) {
+          const curseCards = run.deck.filter(c => CARDS[c.defId] && CARDS[c.defId].type === 'curse');
+          if (curseCards.length === 0) return { text: '你身上没有任何诅咒牌，无需净化。', cls: 'info' };
+          if (run.gold < 15) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 15;
+          const target = curseCards[Math.floor(Math.random() * curseCards.length)];
+          const idx = run.deck.findIndex(c => c.uid === target.uid);
+          if (idx >= 0) run.deck.splice(idx, 1);
+          return { text: `圣火的余温净化了你身上的诅咒牌【${CARDS[target.defId].name}】！`, cls: 'good' };
+        },
+      },
+      { label: '🕯️ 什么都不做，肃立默哀后离开', effect() { return { text: '你在残破的神殿前默哀片刻，随后离开。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'traveling_bard', name: '游吟诗人', icon: '🎻',
+    desc: '一位游吟诗人坐在篝火旁，愿意为你演奏一曲，或是讲述一段冒险故事。',
+    options: [
+      {
+        label: '🎵 请他演奏一曲（回复 15 点生命）',
+        effect(run) {
+          healPlayerRun(run, 15);
+          return { text: '悠扬的曲调抚平了你的伤痛，回复了 15 点生命。', cls: 'good' };
+        },
+      },
+      {
+        label: '📖 听一段冒险故事（随机强化一张卡牌）',
+        effect(run) {
+          const card = upgradeRandomCardInDeck(run);
+          if (!card) return { text: '你的卡组中没有可以强化的卡牌了。', cls: 'info' };
+          return { text: `故事让你有所领悟，卡牌【${CARDS[card.defId].name}】被强化了！`, cls: 'good' };
+        },
+      },
+      { label: '🚶 匆匆赶路，不作停留', effect() { return { text: '你向诗人挥手致意，继续前行。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'strange_seed', name: '奇异种子', icon: '🌱',
+    desc: '你在路边发现了一颗散发微光的奇异种子，不确定它会带来什么。',
+    options: [
+      {
+        label: '🌱 种下种子，等待它生长（随机结果）',
+        effect(run) {
+          const roll = Math.random();
+          if (roll < 0.4) {
+            run.player.maxHp += 6;
+            run.player.hp += 6;
+            return { text: '种子破土而出，一股生命力涌入你的身体！最大生命 +6。', cls: 'good' };
+          }
+          if (roll < 0.75) {
+            const gold = 25 + Math.floor(Math.random() * 25);
+            run.gold += gold;
+            run.stats.goldEarned += gold;
+            return { text: `种子化作了闪光的金币，获得 ${gold} 金币！`, cls: 'good' };
+          }
+          const dmg = 6 + Math.floor(Math.random() * 6);
+          damagePlayerRun(run, dmg);
+          return { text: `种子中钻出了带刺的藤蔓，刺伤了你，损失 ${dmg} 点生命！`, cls: 'bad' };
+        },
+      },
+      { label: '🚶 不去招惹未知的东西，离开', effect() { return { text: '你选择不去打扰这颗神秘的种子。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'toll_bridge', name: '收费吊桥', icon: '🌉',
+    desc: '一座摇摇晃晃的吊桥前，一名收费人拦住了你的去路。',
+    options: [
+      {
+        label: '💰 支付 25 金币过桥费',
+        disabled(run) { return run.gold < 25; },
+        effect(run) {
+          if (run.gold < 25) return { text: '金币不足！', cls: 'bad' };
+          run.gold -= 25;
+          return { text: '你支付了过桥费，安全地穿过了吊桥。', cls: 'info' };
+        },
+      },
+      {
+        label: '⚔️ 拒绝支付，击败收费人',
+        effect(run) {
+          startCombatFromEvent(['shieldbearer'], 'normal');
+          return { text: '收费人愤怒地拔出了武器！', cls: 'info' };
+        },
+      },
+      {
+        label: '🏃 趁乱冒险抢过吊桥（可能摔伤）',
+        effect(run) {
+          if (Math.random() < 0.5) {
+            return { text: '你灵活地冲过了吊桥，什么事都没发生。', cls: 'good' };
+          }
+          const dmg = 8 + Math.floor(Math.random() * 6);
+          damagePlayerRun(run, dmg);
+          return { text: `吊桥剧烈摇晃，你摔了一跤，损失 ${dmg} 点生命！`, cls: 'bad' };
+        },
+      },
+    ],
+  },
 ];
 
 function pickRandomEvent() {

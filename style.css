@@ -167,6 +167,27 @@ body{
 .status-badge{cursor:help;}
 .enemy-box .status-row{margin-top:4px; font-size:10px; display:flex; gap:4px; justify-content:center; flex-wrap:wrap;}
 
+/* ---- Enemy hit feedback: shake + blood particle burst ---- */
+@keyframes enemyHitShake {
+  0% { transform: translate(0,0) rotate(0); }
+  20% { transform: translate(-6px, 2px) rotate(-6deg); }
+  40% { transform: translate(5px, -2px) rotate(5deg); }
+  60% { transform: translate(-4px, 1px) rotate(-3deg); }
+  80% { transform: translate(3px, -1px) rotate(2deg); }
+  100% { transform: translate(0,0) rotate(0); }
+}
+.enemy-box .enemy-icon.hit-shake{ animation: enemyHitShake .4s ease; display:inline-block; }
+.blood-particles{ position:absolute; inset:0; pointer-events:none; overflow:visible; z-index:5; }
+.blood-particle{
+  position:absolute; left:50%; top:38%; width:6px; height:6px; border-radius:50%;
+  background:radial-gradient(circle, #ff5c5c, #a10000);
+  animation: bloodBurst .55s ease-out forwards;
+}
+@keyframes bloodBurst{
+  0%{ transform:translate(0,0) scale(1); opacity:1; }
+  100%{ transform:translate(var(--dx), var(--dy)) scale(.3); opacity:0; }
+}
+
 .hp-bar{position:relative; height:16px; background:#000; border-radius:8px; overflow:hidden; border:1px solid var(--border); margin-top:6px;}
 .hp-fill{height:100%; background:linear-gradient(90deg,#a12525,#ff5c5c); transition:width .25s;}
 .hp-text{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;}
