@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=32">
+<link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
 
@@ -15,6 +15,7 @@
     <span>💰 <b id="hudGold">-</b></span>
     <span>🏔️ <b id="hudFloor">-</b></span>
     <span id="hudRelics" class="hud-relics"></span>
+    <button id="abandonRunBtn" class="btn btn-ghost abandon-run-btn hidden">🏳️ 结束本局</button>
   </div>
 </header>
 
@@ -23,6 +24,7 @@
   <div class="panel menu-panel">
     <h2>🗡️ 爬塔者</h2>
     <p class="hint">一局定胜负的原创卡牌爬塔游戏：选牌、组卡组、拿遗物，一路爬到塔顶击败Boss。</p>
+    <button id="resumeRunBtn" class="btn btn-primary hidden">▶️ 继续冒险</button>
     <button id="startRunBtn" class="btn btn-primary">开始新的一轮 ▶</button>
     <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
     <button id="openHistoryBtn" class="btn btn-ghost">📜 冒险历史</button>
@@ -234,6 +236,6 @@
 <script src="js/meta.js?v=32"></script>
 <script src="js/characters.js?v=32"></script>
 <script src="js/cloud-sync.js?v=33"></script>
-<script src="js/game.js?v=36"></script>
+<script src="js/game.js?v=37"></script>
 </body>
 </html>

@@ -17,6 +17,7 @@ function artIconHtml(folder, id, fallbackEmoji) {
 }
 const STARTING_GOLD = 99;
 const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
+const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
 let run = null;
 let combat = null;
@@ -24,10 +25,44 @@ let selectedCardUid = null;
 let currentShop = null;
 let meta = null;
 
+// ---------------- Mid-run save/resume ----------------
+function saveRunState() {
+  if (!run) return;
+  try { localStorage.setItem(RUN_STORAGE_KEY, JSON.stringify(run)); } catch (e) { /* storage unavailable, ignore */ }
+}
+function loadRunState() {
+  try {
+    const raw = localStorage.getItem(RUN_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+function clearRunState() {
+  try { localStorage.removeItem(RUN_STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+function checkResumeAvailable() {
+  if (!el.resumeRunBtn) return;
+  el.resumeRunBtn.classList.toggle('hidden', !loadRunState());
+}
+function resumeRun() {
+  const saved = loadRunState();
+  if (!saved) return;
+  run = saved;
+  showScreen('mapScreen');
+  renderHud();
+  renderMap();
+  renderDeck();
+}
+function abandonRun() {
+  if (!run) return;
+  if (!confirm('确定要结束本局冒险吗？当前进度将视为本局结束（不计入通关）。')) return;
+  finishRun(false, '你主动结束了本局冒险。');
+}
+
 const el = {};
 function cacheEls() {
   [
-    'menuScreen', 'startRunBtn', 'openProfileBtn',
+    'menuScreen', 'startRunBtn', 'resumeRunBtn', 'openProfileBtn', 'abandonRunBtn',
     'characterScreen', 'characterList', 'characterBackBtn',
     'mapScreen', 'mapContainer', 'mapActName', 'deckList', 'deckCount',
     'eventScreen', 'eventIcon', 'eventName', 'eventDesc', 'eventOptions', 'eventCardSelect', 'eventResult', 'eventContinueBtn',
@@ -151,6 +186,9 @@ function addCardToDeck(run, defId, upgraded) {
 function showScreen(name) {
   ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen']
     .forEach(s => el[s].classList.toggle('hidden', s !== name));
+  const noAbandonScreens = ['menuScreen', 'characterScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen'];
+  if (el.abandonRunBtn) el.abandonRunBtn.classList.toggle('hidden', !run || noAbandonScreens.includes(name));
+  if (name === 'menuScreen') checkResumeAvailable();
 }
 
 // ---------------- Character select ----------------
@@ -270,10 +308,15 @@ function checkRunDeath() {
 
 // ---------------- Map ----------------
 function renderMap() {
+  saveRunState();
   if (el.mapActName) el.mapActName.textContent = `第 ${run.act} 维度 · ${ACT_DEFS[run.act - 1].name}`;
   const reachable = new Set(getReachableNodeIds(run.map, run.currentNodeId));
   el.mapContainer.innerHTML = '';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'map-edges-svg');
+  el.mapContainer.appendChild(svg);
   let currentNodeEl = null;
+  const nodeElsById = {};
   run.map.floors.forEach(floorNodes => {
     const row = document.createElement('div');
     row.className = 'map-row';
@@ -286,15 +329,101 @@ function renderMap() {
       btn.className = classes.join(' ');
       btn.textContent = MAP_TYPE_ICON[node.type];
       btn.title = nodeLabel(node.type);
+      btn.dataset.nodeId = node.id;
       if (node.id === run.currentNodeId) currentNodeEl = btn;
       if (classes.includes('reachable')) {
         btn.addEventListener('click', () => enterNode(node));
       }
+      btn.addEventListener('mouseenter', () => highlightPathToNode(node.id));
+      btn.addEventListener('mouseleave', clearPathHighlight);
+      nodeElsById[node.id] = btn;
       row.appendChild(btn);
     });
     el.mapContainer.appendChild(row);
   });
+  drawMapEdges(svg, nodeElsById);
   if (currentNodeEl) currentNodeEl.scrollIntoView({ block: 'center', behavior: 'instant' });
+}
+
+function drawMapEdges(svg, nodeElsById) {
+  const containerRect = el.mapContainer.getBoundingClientRect();
+  svg.setAttribute('width', containerRect.width);
+  svg.setAttribute('height', containerRect.height);
+  svg.innerHTML = '';
+  Object.entries(run.map.edges).forEach(([fromId, toIds]) => {
+    const fromEl = nodeElsById[fromId];
+    if (!fromEl) return;
+    toIds.forEach(toId => {
+      const toEl = nodeElsById[toId];
+      if (!toEl) return;
+      const fromRect = fromEl.getBoundingClientRect();
+      const toRect = toEl.getBoundingClientRect();
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', fromRect.left + fromRect.width / 2 - containerRect.left);
+      line.setAttribute('y1', fromRect.top + fromRect.height / 2 - containerRect.top);
+      line.setAttribute('x2', toRect.left + toRect.width / 2 - containerRect.left);
+      line.setAttribute('y2', toRect.top + toRect.height / 2 - containerRect.top);
+      line.setAttribute('class', 'map-edge-line');
+      line.dataset.from = fromId;
+      line.dataset.to = toId;
+      svg.appendChild(line);
+    });
+  });
+}
+
+// BFS forward through the map's edges to find a path from the player's current
+// node to any given node, so hovering a future node can preview the route to it.
+function computePathToNode(targetNodeId) {
+  const start = run.currentNodeId;
+  if (!start) {
+    return run.map.floors[0].some(n => n.id === targetNodeId) ? [targetNodeId] : null;
+  }
+  if (start === targetNodeId) return [start];
+  const queue = [start];
+  const visitedSet = new Set([start]);
+  const parent = { [start]: null };
+  while (queue.length) {
+    const cur = queue.shift();
+    const nexts = run.map.edges[cur] || [];
+    for (const n of nexts) {
+      if (visitedSet.has(n)) continue;
+      visitedSet.add(n);
+      parent[n] = cur;
+      if (n === targetNodeId) {
+        const path = [];
+        let p = n;
+        while (p !== null && p !== undefined) { path.unshift(p); p = parent[p]; }
+        return path;
+      }
+      queue.push(n);
+    }
+  }
+  return null;
+}
+
+let currentPathHighlight = [];
+function highlightPathToNode(targetNodeId) {
+  clearPathHighlight();
+  const path = computePathToNode(targetNodeId);
+  if (!path) return;
+  currentPathHighlight = path;
+  path.forEach(id => {
+    const elm = el.mapContainer.querySelector(`.map-node[data-node-id="${id}"]`);
+    if (elm) elm.classList.add('path-highlight');
+  });
+  for (let i = 0; i < path.length - 1; i++) {
+    const line = el.mapContainer.querySelector(`.map-edge-line[data-from="${path[i]}"][data-to="${path[i + 1]}"]`);
+    if (line) line.classList.add('path-highlight');
+  }
+}
+function clearPathHighlight() {
+  currentPathHighlight.forEach(id => {
+    const elm = el.mapContainer.querySelector(`.map-node[data-node-id="${id}"]`);
+    if (elm) elm.classList.remove('path-highlight');
+  });
+  const svg = el.mapContainer.querySelector('.map-edges-svg');
+  if (svg) svg.querySelectorAll('.map-edge-line.path-highlight').forEach(l => l.classList.remove('path-highlight'));
+  currentPathHighlight = [];
 }
 
 function nodeLabel(type) {
@@ -946,6 +1075,7 @@ function statBoxHtml(label, value) {
 }
 
 function finishRun(victory, desc) {
+  clearRunState();
   showScreen('endScreen');
   const stats = {
     won: victory,
@@ -1334,7 +1464,13 @@ function setCombatZoom(z) {
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
   meta = loadMeta();
-  el.startRunBtn.addEventListener('click', renderCharacterSelect);
+  el.startRunBtn.addEventListener('click', () => {
+    if (loadRunState() && !confirm('你有一局未完成的冒险，开始新的一局将会覆盖它，是否继续？')) return;
+    clearRunState();
+    renderCharacterSelect();
+  });
+  el.resumeRunBtn.addEventListener('click', resumeRun);
+  el.abandonRunBtn.addEventListener('click', abandonRun);
   el.characterBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.openProfileBtn.addEventListener('click', () => showProfileScreen());
   el.profileBackBtn.addEventListener('click', () => showScreen('menuScreen'));
@@ -1373,6 +1509,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { passive: true });
   el.cloudLoginBtn.addEventListener('click', signInWithGitHub);
   el.cloudLogoutBtn.addEventListener('click', signOutCloud);
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (!run || el.mapScreen.classList.contains('hidden')) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderMap, 150);
+  });
   initCloudSync();
   showScreen('menuScreen');
 });
