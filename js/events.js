@@ -761,6 +761,88 @@ const EVENT_POOL = [
       },
     ],
   },
+  {
+    id: 'dark_contract', name: '黑暗契约', icon: '📜',
+    desc: '一份黑暗契约漂浮在半空，散发着不祥又诱人的气息，似乎能赋予你强大却危险的力量。',
+    options: [
+      {
+        label: '🖋️ 签下契约，获得一件强力但危险的遗物',
+        effect(run) {
+          const available = RELIC_LIST_EVENT.filter(id => !run.relics.includes(id));
+          if (available.length === 0) return { text: '你已经拥有所有黑暗契约的力量了。', cls: 'info' };
+          const relicId = available[Math.floor(Math.random() * available.length)];
+          addRelicToRun(run, relicId);
+          return { text: `契约生效！获得：${RELICS[relicId].icon} ${RELICS[relicId].name} — ${RELICS[relicId].desc}`, cls: 'info' };
+        },
+      },
+      { label: '🚶 拒绝签署，转身离开', effect() { return { text: '你没有签下这份危险的契约。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'corrupted_spring', name: '腐化之泉', icon: '🌊',
+    desc: '泉水泛着不祥的黑色光泽，传说饮下它能获得强健的体魄，但必然伴随代价。',
+    options: [
+      {
+        label: '🍶 饮下泉水（最大生命 +10，但混入 2 张诅咒牌）',
+        effect(run) {
+          run.player.maxHp += 10;
+          run.player.hp += 10;
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
+          const names = [];
+          for (let i = 0; i < 2; i++) {
+            const curseId = curses[Math.floor(Math.random() * curses.length)];
+            addCardToDeck(run, curseId, false);
+            names.push(CARDS[curseId].name);
+          }
+          return { text: `最大生命 +10，但两张诅咒牌【${names.join('】【')}】混入了你的卡组……`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不敢饮用，离开', effect() { return { text: '你选择远离这泓不祥的泉水。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'cursed_chest', name: '被诅咒的宝箱', icon: '📦',
+    desc: '一个宝箱周围萦绕着不祥的气息，锁链上刻着诡异的符文，但里面似乎装着真正的宝物。',
+    options: [
+      {
+        label: '🔓 强行打开（获得一件遗物，但混入一张诅咒牌）',
+        effect(run) {
+          const relicId = pickRandomRelic(run.relics);
+          addRelicToRun(run, relicId);
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
+          const curseId = curses[Math.floor(Math.random() * curses.length)];
+          addCardToDeck(run, curseId, false);
+          return { text: `获得了遗物：${RELICS[relicId].icon} ${RELICS[relicId].name}！但一张诅咒牌【${CARDS[curseId].name}】也随之混入了卡组……`, cls: 'info' };
+        },
+      },
+      { label: '🚶 不去招惹，离开', effect() { return { text: '你选择不去打开这个不祥的宝箱。', cls: 'info' }; } },
+    ],
+  },
+  {
+    id: 'blood_for_power', name: '以血换力', icon: '🩸',
+    desc: '一位神秘的祭司愿意用你的鲜血换取力量，但代价是诅咒会伴随你直到旅途结束。',
+    options: [
+      {
+        label: '🩸 献祭 20 点生命，强化两张卡牌，但混入一张诅咒牌',
+        disabled(run) { return run.player.hp <= 20; },
+        effect(run) {
+          if (run.player.hp <= 20) return { text: '生命值过低，不敢献祭！', cls: 'bad' };
+          damagePlayerRun(run, 20);
+          const upgraded = [];
+          for (let i = 0; i < 2; i++) {
+            const card = upgradeRandomCardInDeck(run);
+            if (card) upgraded.push(CARDS[card.defId].name);
+          }
+          const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
+          const curseId = curses[Math.floor(Math.random() * curses.length)];
+          addCardToDeck(run, curseId, false);
+          const upgradeText = upgraded.length > 0 ? `强化了【${upgraded.join('】【')}】，` : '';
+          return { text: `${upgradeText}但一张诅咒牌【${CARDS[curseId].name}】混入了卡组……`, cls: 'info' };
+        },
+      },
+      { label: '🚶 拒绝这场血祭', effect() { return { text: '你拒绝了祭司的提议，转身离开。', cls: 'info' }; } },
+    ],
+  },
 ];
 
 function pickRandomEvent() {
