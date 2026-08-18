@@ -205,6 +205,21 @@ body{
 }
 .game-card.card-draw-in{ animation:cardDrawIn .4s ease-out; }
 
+/* ---- Enemy death animation ---- */
+@keyframes enemyDeath{
+  0%{ transform:scale(1) rotate(0); opacity:.25; }
+  100%{ transform:scale(0) rotate(20deg); opacity:0; }
+}
+.enemy-box.enemy-dying{ animation:enemyDeath .5s ease-in forwards; pointer-events:none; }
+
+/* ---- Energy badge pulse ---- */
+@keyframes energyPulse{
+  0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(240,178,92,.6); }
+  50%{ transform:scale(1.15); box-shadow:0 0 12px 4px rgba(240,178,92,.4); }
+  100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(240,178,92,0); }
+}
+.energy-badge.energy-pulse{ animation:energyPulse .5s ease; }
+
 /* ---- Enemy hit feedback: shake + blood particle burst ---- */
 @keyframes enemyHitShake {
   0% { transform: translate(0,0) rotate(0); }

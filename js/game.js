@@ -836,6 +836,7 @@ function startCombat(enemyDefIds, tier, node) {
   el.handRow.innerHTML = '';
   delete el.playerHpFill.dataset.lastHp;
   delete el.playerBlockBadge.dataset.lastBlock;
+  delete el.energyBadge.dataset.lastEnergy;
   showScreen('combatScreen');
   renderCombat();
 }
@@ -853,6 +854,7 @@ function startCombatFromEvent(enemyDefIds, tier) {
   el.handRow.innerHTML = '';
   delete el.playerHpFill.dataset.lastHp;
   delete el.playerBlockBadge.dataset.lastBlock;
+  delete el.energyBadge.dataset.lastEnergy;
   showScreen('combatScreen');
   renderCombat();
 }
@@ -870,6 +872,8 @@ function showDamageNumber(container, amount, type) {
   const el2 = document.createElement('div');
   el2.className = 'dmg-float dmg-' + type;
   el2.textContent = (type === 'heal' ? '+' : '-') + amount;
+  const offsetX = (Math.random() - 0.5) * 40;
+  el2.style.setProperty('margin-left', offsetX.toFixed(0) + 'px');
   container.appendChild(el2);
   setTimeout(() => el2.remove(), 1000);
 }
@@ -1009,7 +1013,12 @@ function renderCombat() {
     node.setAttribute('data-eid', enemy.id);
     newEnemyOrder.push(node);
   });
-  Object.values(enemyMap).forEach(n => n.remove());
+  Object.values(enemyMap).forEach(n => {
+    if (!n.classList.contains('enemy-dying')) {
+      n.classList.add('enemy-dying');
+      setTimeout(() => n.remove(), 500);
+    }
+  });
   newEnemyOrder.forEach(n => el.enemyRow.appendChild(n));
 
   const p = combat.player;
@@ -1037,6 +1046,15 @@ function renderCombat() {
     if (p.statuses[name]) el.playerStatusRow.appendChild(buildStatusBadge(name, p.statuses[name], true));
   });
 
+  // Energy badge pulse on change
+  const prevEnergy = el.energyBadge.dataset.lastEnergy !== undefined ? parseFloat(el.energyBadge.dataset.lastEnergy) : combat.energy;
+  if (combat.energy !== prevEnergy) {
+    el.energyBadge.classList.remove('energy-pulse');
+    void el.energyBadge.offsetWidth;
+    el.energyBadge.classList.add('energy-pulse');
+    setTimeout(() => el.energyBadge.classList.remove('energy-pulse'), 500);
+  }
+  el.energyBadge.dataset.lastEnergy = combat.energy;
   el.energyBadge.textContent = `${combat.energy}/${combat.energyMax}`;
   el.drawCount.textContent = combat.drawPile.length;
   el.discardCount.textContent = combat.discardPile.length;
