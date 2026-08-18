@@ -612,6 +612,8 @@ function showTreasureNode(node) {
   el.eventName.textContent = '宝藏';
   el.eventDesc.textContent = `你发现了一个宝箱！获得 ${gold} 金币，以及遗物：${RELICS[relicId].icon} ${RELICS[relicId].name}`;
   el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.innerHTML = '';
   el.eventResult.className = 'event-result hidden';
   el.eventContinueBtn.classList.remove('hidden');
   el.eventContinueBtn.onclick = () => backToMapOrVictory(node);
