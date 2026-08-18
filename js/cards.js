@@ -26,13 +26,14 @@ const CARDS = {
   // ---------------- Neutral (colorless) pool ----------------
   bandage_up: {
     id: 'bandage_up', name: '包扎', icon: '🩹', type: 'skill', cost: 0, target: 'none', rarity: 'common', cls: 'neutral', exhaust: true,
-    vars(up) { return { heal: up ? 15 : 10 }; },
+    vars(up) { return { heal: up ? 8 : 5 }; },
     descTemplate(v) { return `回复 ${v.heal} 点生命（消耗）`; },
     effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); },
   },
   purify: {
-    id: 'purify', name: '净化', icon: '🌿', type: 'skill', cost: 0, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
-    vars(up) { return { heal: up ? 6 : 4 }; },
+    id: 'purify', name: '净化', icon: '🌿', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+    vars(up) { return { heal: up ? 6 : 4, cost: up ? 0 : 1 }; },
+    upgradedCost: 0,
     descTemplate(v) { return `移除所有负面状态（虚弱、易伤、脆弱、中毒、封印），回复 ${v.heal} 点生命。消耗`; },
     effect(ctx) {
       const s = ctx.combat.player.statuses;
@@ -51,22 +52,24 @@ const CARDS = {
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '闪击' }); },
   },
   second_skin: {
-    id: 'second_skin', name: '铁壁', icon: '🦾', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
-    vars(up) { return { block: up ? 18 : 13 }; },
+    id: 'second_skin', name: '铁壁', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+    vars(up) { return { block: up ? 17 : 13 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡（消耗）`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   swift_focus: {
-    id: 'swift_focus', name: '专注', icon: '🎯', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'neutral',
-    vars(up) { return { dex: up ? 3 : 2 }; },
+    id: 'swift_focus', name: '专注', icon: '🎯', type: 'power', cost: 2, target: 'none', rarity: 'uncommon', cls: 'neutral',
+    vars(up) { return { dex: 2 }; },
+    upgradedCost: 1,
     descTemplate(v) { return `永久获得 ${v.dex} 点敏捷（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('dexterity', ctx.vars.dex); },
   },
   apex_form: {
-    id: 'apex_form', name: '巅峰形态', icon: '🌟', type: 'power', cost: 2, target: 'none', rarity: 'rare', cls: 'neutral',
-    vars(up) { return { amt: up ? 3 : 2 }; },
-    descTemplate(v) { return `永久获得 ${v.amt} 点力量和 ${v.amt} 点敏捷（本场战斗）`; },
-    effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.amt); ctx.combat.applyStatusPlayer('dexterity', ctx.vars.amt); },
+    id: 'apex_form', name: '巅峰形态', icon: '🌟', type: 'power', cost: 3, target: 'none', rarity: 'rare', cls: 'neutral',
+    vars(up) { return { str: 2, dex: 1 }; },
+    upgradedCost: 2,
+    descTemplate(v) { return `永久获得 ${v.str} 点力量和 ${v.dex} 点敏捷（本场战斗）`; },
+    effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); ctx.combat.applyStatusPlayer('dexterity', ctx.vars.dex); },
   },
 
   // ================= 战士（Warrior）=================
@@ -82,8 +85,8 @@ const CARDS = {
 
   // ---------------- Warrior common ----------------
   cleave: {
-    id: 'cleave', name: '横扫', icon: '🌀', type: 'attack', cost: 1, target: 'all_enemies', rarity: 'common', cls: 'warrior',
-    vars(up) { return { dmg: up ? 11 : 8 }; },
+    id: 'cleave', name: '横扫', icon: '🌀', type: 'attack', cost: 2, target: 'all_enemies', rarity: 'common', cls: 'warrior',
+    vars(up) { return { dmg: up ? 12 : 8 }; },
     descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害`; },
     effect(ctx) { ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '横扫', isAoE: true }); }); },
   },
