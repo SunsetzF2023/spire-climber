@@ -185,8 +185,9 @@ const CARDS = {
     },
   },
   bloodletting: {
-    id: 'bloodletting', name: '放血', icon: '🩸', type: 'skill', cost: 0, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    id: 'bloodletting', name: '放血', icon: '🩸', type: 'skill', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
     vars(up) { return { hpCost: up ? 2 : 3, energy: up ? 3 : 2 }; },
+    upgradedCost: 0,
     descTemplate(v) { return `失去 ${v.hpCost} 点生命，获得 ${v.energy} 点能量`; },
     effect(ctx) { ctx.combat.damagePlayerDirect(ctx.vars.hpCost); ctx.combat.gainEnergy(ctx.vars.energy); },
   },
@@ -203,8 +204,9 @@ const CARDS = {
     },
   },
   inflame: {
-    id: 'inflame', name: '战意', icon: '🔥', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
-    vars(up) { return { str: up ? 3 : 2 }; },
+    id: 'inflame', name: '战意', icon: '🔥', type: 'power', cost: 2, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    vars(up) { return { str: 2 }; },
+    upgradedCost: 1,
     descTemplate(v) { return `永久获得 ${v.str} 点力量（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
   },
@@ -216,7 +218,7 @@ const CARDS = {
   },
   rampage: {
     id: 'rampage', name: '狂暴打击', icon: '🐗', type: 'attack', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'warrior',
-    vars(up) { return { dmg: up ? 9 : 6, growth: up ? 6 : 4 }; },
+    vars(up) { return { dmg: up ? 9 : 6, growth: up ? 4 : 3 }; },
     descTemplate(v) { return `造成 ${v.dmg} 点伤害，本场战斗每次使用此牌伤害 +${v.growth}`; },
     effect(ctx) {
       const bonus = (ctx.card.rampageBonus || 0);
@@ -240,14 +242,15 @@ const CARDS = {
     },
   },
   immolate: {
-    id: 'immolate', name: '献祭之炎', icon: '🔥', type: 'attack', cost: 2, target: 'all_enemies', rarity: 'rare', cls: 'warrior',
-    vars(up) { return { dmg: up ? 28 : 21 }; },
+    id: 'immolate', name: '献祭之炎', icon: '🔥', type: 'attack', cost: 3, target: 'all_enemies', rarity: 'rare', cls: 'warrior',
+    vars(up) { return { dmg: up ? 22 : 16 }; },
     descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害`; },
     effect(ctx) { ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '献祭之炎', isAoE: true }); }); },
   },
   offering: {
-    id: 'offering', name: '献祭', icon: '🕯️', type: 'skill', cost: 0, target: 'none', rarity: 'rare', cls: 'warrior', exhaust: true,
-    vars(up) { return { hpCost: up ? 4 : 6, energy: up ? 3 : 2, draw: up ? 5 : 3 }; },
+    id: 'offering', name: '献祭', icon: '🕯️', type: 'skill', cost: 1, target: 'none', rarity: 'rare', cls: 'warrior', exhaust: true,
+    vars(up) { return { hpCost: up ? 4 : 6, energy: up ? 3 : 2, draw: up ? 3 : 2 }; },
+    upgradedCost: 0,
     descTemplate(v) { return `失去 ${v.hpCost} 点生命，获得 ${v.energy} 点能量，抽 ${v.draw} 张牌（消耗）`; },
     effect(ctx) {
       ctx.combat.damagePlayerDirect(ctx.vars.hpCost);
@@ -257,7 +260,7 @@ const CARDS = {
   },
   bludgeon: {
     id: 'bludgeon', name: '重殴', icon: '🔱', type: 'attack', cost: 3, target: 'enemy', rarity: 'rare', cls: 'warrior',
-    vars(up) { return { dmg: up ? 42 : 32 }; },
+    vars(up) { return { dmg: up ? 36 : 28 }; },
     descTemplate(v) { return `造成 ${v.dmg} 点巨额伤害`; },
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '重殴' }); },
   },
