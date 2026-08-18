@@ -832,6 +832,10 @@ function startCombat(enemyDefIds, tier, node) {
   combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));
   combat.start();
   selectedCardUid = null;
+  // Reset tracking data for new combat
+  el.handRow.innerHTML = '';
+  delete el.playerHpFill.dataset.lastHp;
+  delete el.playerBlockBadge.dataset.lastBlock;
   showScreen('combatScreen');
   renderCombat();
 }
@@ -846,6 +850,9 @@ function startCombatFromEvent(enemyDefIds, tier) {
   combat.enemies.forEach(e => discover('discoveredEnemies', e.defId));
   combat.start();
   selectedCardUid = null;
+  el.handRow.innerHTML = '';
+  delete el.playerHpFill.dataset.lastHp;
+  delete el.playerBlockBadge.dataset.lastBlock;
   showScreen('combatScreen');
   renderCombat();
 }
@@ -857,6 +864,14 @@ function buildStatusBadge(name, amount, showLabel) {
   span.textContent = `${meta.icon}${showLabel ? ' ' + meta.label + ' ' : ''}${amount}`;
   attachTooltip(span, `<b>${meta.icon} ${meta.label} ${amount} 层</b><br>${meta.desc}`);
   return span;
+}
+
+function showDamageNumber(container, amount, type) {
+  const el2 = document.createElement('div');
+  el2.className = 'dmg-float dmg-' + type;
+  el2.textContent = (type === 'heal' ? '+' : '-') + amount;
+  container.appendChild(el2);
+  setTimeout(() => el2.remove(), 1000);
 }
 
 function triggerHitEffect(node) {
@@ -888,8 +903,26 @@ function triggerHitEffect(node) {
 
 function patchEnemyBox(node, enemy) {
   const prevHp = node.dataset.lastHp !== undefined ? parseFloat(node.dataset.lastHp) : enemy.hp;
-  if (enemy.hp < prevHp) triggerHitEffect(node);
+  const prevBlock = node.dataset.lastBlock !== undefined ? parseFloat(node.dataset.lastBlock) : enemy.block;
+  if (enemy.hp < prevHp) {
+    triggerHitEffect(node);
+    showDamageNumber(node, Math.round(prevHp - enemy.hp), 'enemy');
+  }
+  if (enemy.hp > prevHp) {
+    showDamageNumber(node, Math.round(enemy.hp - prevHp), 'heal');
+  }
   node.dataset.lastHp = enemy.hp;
+  // Block pulse on gain
+  if (enemy.block > prevBlock) {
+    const badge = node.querySelector('.block-badge');
+    if (badge) {
+      badge.classList.remove('block-pulse');
+      void badge.offsetWidth;
+      badge.classList.add('block-pulse');
+      setTimeout(() => badge.classList.remove('block-pulse'), 400);
+    }
+  }
+  node.dataset.lastBlock = enemy.block;
   const hasTauntAlive = combat.enemies.some(e => e.hp > 0 && e.taunt);
   const canTarget = enemy.hp > 0 && selectedCardUid && (!hasTauntAlive || enemy.taunt);
   node.className = 'enemy-box' + (canTarget ? ' targetable' : '') + (enemy.taunt && enemy.hp > 0 ? ' taunt-enemy' : '');
@@ -980,6 +1013,20 @@ function renderCombat() {
   newEnemyOrder.forEach(n => el.enemyRow.appendChild(n));
 
   const p = combat.player;
+  // Player damage / heal number
+  const prevPlayerHp = el.playerHpFill.dataset.lastHp !== undefined ? parseFloat(el.playerHpFill.dataset.lastHp) : run.player.hp;
+  if (run.player.hp < prevPlayerHp) showDamageNumber(el.playerBlockBadge.parentElement, Math.round(prevPlayerHp - run.player.hp), 'player');
+  if (run.player.hp > prevPlayerHp) showDamageNumber(el.playerBlockBadge.parentElement, Math.round(run.player.hp - prevPlayerHp), 'heal');
+  el.playerHpFill.dataset.lastHp = run.player.hp;
+  // Player block pulse
+  const prevPlayerBlock = el.playerBlockBadge.dataset.lastBlock !== undefined ? parseFloat(el.playerBlockBadge.dataset.lastBlock) : p.block;
+  if (p.block > prevPlayerBlock) {
+    el.playerBlockBadge.classList.remove('block-pulse');
+    void el.playerBlockBadge.offsetWidth;
+    el.playerBlockBadge.classList.add('block-pulse');
+    setTimeout(() => el.playerBlockBadge.classList.remove('block-pulse'), 400);
+  }
+  el.playerBlockBadge.dataset.lastBlock = p.block;
   el.playerHpFill.style.width = Math.max(0, run.player.hp / run.player.maxHp * 100) + '%';
   el.playerHpText.textContent = `${Math.max(0, Math.round(run.player.hp))}/${run.player.maxHp}`;
   el.playerBlockBadge.textContent = p.block > 0 ? `🛡️ ${p.block}` : '';
@@ -997,6 +1044,7 @@ function renderCombat() {
   // --- HAND ZONE DIFF PATCH ---
   const handMap = {};
   Array.from(el.handRow.children).forEach(child => {
+    if (child.dataset.removing) return; // skip fly-out nodes
     const uid = child.getAttribute('data-uid');
     if (uid) handMap[uid] = child;
   });
@@ -1024,11 +1072,17 @@ function renderCombat() {
           }
         },
       });
+      node.classList.add('card-draw-in');
+      setTimeout(() => node.classList.remove('card-draw-in'), 400);
     }
     node.setAttribute('data-uid', card.uid);
     newHandOrder.push(node);
   });
-  Object.values(handMap).forEach(n => n.remove());
+  Object.values(handMap).forEach(n => {
+    n.dataset.removing = '1';
+    n.classList.add('card-fly-out');
+    setTimeout(() => n.remove(), 400);
+  });
   newHandOrder.forEach(n => el.handRow.appendChild(n));
 
   el.combatLog.innerHTML = combat.log_.slice(-40).reverse().map(e => `<div class="log-entry ${e.cls}">${e.text}</div>`).join('');
