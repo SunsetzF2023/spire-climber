@@ -46,6 +46,7 @@ class CombatEngine {
     this.combatStats = { blockUsed: false, damageTakenByTurn: [], eliteTurns: null };
     this.lastPlayerCardType = null; // last non-status/curse card type played this round; used by mirror-style enemy AI
     this.nextTurnEnergyPenalty = 0; // energy stolen by enemies during their turn; applied at the start of the player's next turn
+    this.angerPlayedCount = 0; // tracks how many 'anger' cards have been played this combat
 
     this.player = {
       block: 0,
@@ -257,6 +258,7 @@ class CombatEngine {
 
     this.hand.splice(idx, 1);
     if (def.type !== 'status' && def.type !== 'curse') this.lastPlayerCardType = def.type;
+    if (card.defId === 'anger') this.angerPlayedCount++;
     const vars = def.vars(card.upgraded);
     def.effect({ combat: this, target, card, vars });
     this.runRelicHook('onCardPlayed', card);

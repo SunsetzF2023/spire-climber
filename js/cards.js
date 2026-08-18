@@ -101,11 +101,12 @@ const CARDS = {
   },
   twin_strike: {
     id: 'twin_strike', name: '连击', icon: '🗡️', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'warrior',
-    vars(up) { return { dmg: up ? 6 : 4 }; },
-    descTemplate(v) { return `造成 2 次 ${v.dmg} 点伤害`; },
+    vars(up) { return { dmg: 2, hits: up ? 6 : 3 }; },
+    descTemplate(v) { return `造成 ${v.hits} 次 ${v.dmg} 点伤害`; },
     effect(ctx) {
-      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '连击' });
-      ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '连击' });
+      for (let i = 0; i < ctx.vars.hits; i++) {
+        ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '连击' });
+      }
     },
   },
   pommel_strike: {
@@ -135,26 +136,31 @@ const CARDS = {
     descTemplate(v) { return `获得 ${v.block} 点格挡，抽 1 张牌`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); ctx.combat.drawCards(ctx.vars.draw); },
   },
-  true_grit: {
-    id: 'true_grit', name: '真气', icon: '💪', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
-    vars(up) { return { block: up ? 10 : 7 }; },
-    descTemplate(v) { return `获得 ${v.block} 点格挡`; },
-    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
-  },
   anger: {
     id: 'anger', name: '怒火', icon: '😡', type: 'attack', cost: 0, target: 'enemy', rarity: 'common', cls: 'warrior',
-    vars(up) { return { dmg: up ? 8 : 6 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害，本张牌复制一份进弃牌堆`; },
+    vars(up) { return { dmg: 6, copies: up ? 2 : 1 }; },
+    descTemplate(v) { return `造成 ${v.dmg} 点伤害，复制 ${v.copies} 份进弃牌堆`; },
     effect(ctx) {
       ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '怒火' });
-      ctx.combat.addCardToDiscard('anger', ctx.card.upgraded);
+      for (let i = 0; i < ctx.vars.copies; i++) {
+        ctx.combat.addCardToDiscard('anger', ctx.card.upgraded);
+      }
     },
   },
   battle_trance: {
-    id: 'battle_trance', name: '战斗狂热', icon: '📖', type: 'skill', cost: 0, target: 'none', rarity: 'common', cls: 'warrior', exhaust: true,
-    vars(up) { return { draw: up ? 4 : 3 }; },
-    descTemplate(v) { return `抽 ${v.draw} 张牌（消耗）`; },
-    effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); },
+    id: 'battle_trance', name: '战斗狂热', icon: '📖', type: 'skill', cost: 1, target: 'none', rarity: 'common', cls: 'warrior', exhaust: true,
+    vars(up) { return { draw: 1, angerThreshold: 2, bonusDraw: 1, bonusEnergy: up ? 1 : 0 }; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌。若本场战斗打出过 ${v.angerThreshold} 张以上怒火，额外抽 ${v.bonusDraw} 张牌${v.bonusEnergy > 0 ? `，获得 ${v.bonusEnergy} 点能量` : ''}（消耗）`; },
+    effect(ctx) {
+      ctx.combat.drawCards(ctx.vars.draw);
+      const angerCount = ctx.combat.angerPlayedCount;
+      const bonus = Math.floor(angerCount / ctx.vars.angerThreshold);
+      if (bonus > 0) {
+        ctx.combat.drawCards(bonus * ctx.vars.bonusDraw);
+        if (ctx.vars.bonusEnergy > 0) ctx.combat.gainEnergy(bonus * ctx.vars.bonusEnergy);
+        ctx.combat.log(`📖 战斗狂热：打出过 ${angerCount} 张怒火，额外抽 ${bonus * ctx.vars.bonusDraw} 张牌${ctx.vars.bonusEnergy > 0 ? `，获得 ${bonus * ctx.vars.bonusEnergy} 点能量` : ''}`, 'player');
+      }
+    },
   },
 
   // ---------------- Warrior uncommon ----------------
@@ -170,7 +176,7 @@ const CARDS = {
   },
   whirlwind: {
     id: 'whirlwind', name: '旋风斩', icon: '🌪️', type: 'attack', cost: 2, target: 'all_enemies', rarity: 'uncommon', cls: 'warrior',
-    vars(up) { return { dmg: up ? 6 : 4, hits: 3 }; },
+    vars(up) { return { dmg: up ? 5 : 3, hits: up ? 6 : 4 }; },
     descTemplate(v) { return `对所有敌人造成 ${v.hits} 次 ${v.dmg} 点伤害`; },
     effect(ctx) {
       for (let i = 0; i < ctx.vars.hits; i++) {
@@ -1127,7 +1133,7 @@ const CARDS = {
 const REWARD_POOLS = {
   common: {
     neutral: ['bandage_up', 'flash_strike', 'deflect'],
-    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'true_grit', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike', 'intimidating_roar', 'sunder'],
+    warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike', 'intimidating_roar', 'sunder'],
     huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll', 'corrosive_spit'],
     automaton: ['chain_lightning', 'emp', 'overclock'],
   },
