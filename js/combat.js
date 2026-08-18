@@ -44,6 +44,8 @@ class CombatEngine {
     this.firstAttackDone = false;
     this.relicFlags = {};
     this.combatStats = { blockUsed: false, damageTakenByTurn: [], eliteTurns: null };
+    this.lastPlayerCardType = null; // last non-status/curse card type played this round; used by mirror-style enemy AI
+    this.nextTurnEnergyPenalty = 0; // energy stolen by enemies during their turn; applied at the start of the player's next turn
 
     this.player = {
       block: 0,
@@ -91,13 +93,16 @@ class CombatEngine {
 
   startTurn() {
     this.turnCount += 1;
+    this.lastPlayerCardType = null;
     if (!(this.player.statuses.barricade > 0)) this.player.block = 0;
     if (this.player.statuses.poison > 0) {
       this.damagePlayerDirect(this.player.statuses.poison);
       this.log(`☠️ 中毒发作，损失 ${this.player.statuses.poison} 点生命`, 'enemy');
       this.player.statuses.poison -= 1;
     }
-    this.energy = this.energyMax + (this.carryEnergy || 0);
+    this.energy = Math.max(0, this.energyMax + (this.carryEnergy || 0) - (this.nextTurnEnergyPenalty || 0));
+    if (this.nextTurnEnergyPenalty > 0) this.log(`🌀 上回合被虹吸的能量生效：起始能量 -${this.nextTurnEnergyPenalty}`, 'enemy');
+    this.nextTurnEnergyPenalty = 0;
     this.carryEnergy = 0;
     this.runRelicHook('onTurnStart');
     if (this.player.statuses.battleHymn > 0) {
@@ -184,9 +189,10 @@ class CombatEngine {
           const m = this.enemies.find(e => e.id === id);
           return m && m.hp > 0;
         });
-        if (livingMinions.length === 0 && enemy.protected) {
+        if (livingMinions.length === 0 && (enemy.protected || enemy.dmgReduction)) {
           enemy.protected = false;
-          this.log(`🛡️ ${enemy.name} 的护盾随从全部被消灭，护盾解除！`, 'info');
+          enemy.dmgReduction = 0;
+          this.log(`🛡️ ${enemy.name} 失去了随从的庇护，防御减免解除！`, 'info');
         }
       }
       if (!enemy.persistentBlock) enemy.block = 0;
@@ -250,6 +256,7 @@ class CombatEngine {
     this.currentActor = 'player';
 
     this.hand.splice(idx, 1);
+    if (def.type !== 'status' && def.type !== 'curse') this.lastPlayerCardType = def.type;
     const vars = def.vars(card.upgraded);
     def.effect({ combat: this, target, card, vars });
     this.runRelicHook('onCardPlayed', card);
@@ -398,6 +405,7 @@ class CombatEngine {
     if (this.pendingAttackBonus) { dmg += this.pendingAttackBonus; this.pendingAttackBonus = 0; }
     if (!opts.ignoreWeak && this.player.statuses.weak > 0) dmg = Math.floor(dmg * 0.75);
     if (!opts.ignoreVulnerable && enemy.statuses.vulnerable > 0) dmg = Math.floor(dmg * 1.5);
+    if (enemy.dmgReduction && !opts.ignoreDmgReduction) dmg = Math.floor(dmg * (1 - enemy.dmgReduction));
     dmg = Math.max(0, dmg);
     let remaining = dmg;
     if (enemy.block > 0) {
@@ -410,6 +418,11 @@ class CombatEngine {
     if (this.currentActor === 'player' && dmg > 0 && this.player.statuses.venom > 0 && enemy.hp > 0) {
       this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom, { fromPower: true });
     }
+    if (this.currentActor === 'player' && dmg > 0 && enemy.thorns > 0 && enemy.hp > 0 && !opts.noThorns) {
+      this.damagePlayerDirect(enemy.thorns);
+      this.log(`🔩 ${enemy.name} 的尖刺护甲反弹了 ${enemy.thorns} 点伤害！`, 'enemy');
+    }
+    if (enemy.thorns > 0 && enemy.block <= 0) enemy.thorns = 0;
     if (enemy.hp <= 0) {
       enemy.hp = 0;
       this.log(`💀 ${enemy.name} 被击败了！`, 'info');
@@ -518,6 +531,18 @@ class CombatEngine {
         this.dealDamageToEnemy(target.id, this.player.statuses.juggernaut, { source: '势不可当', noStrength: true });
       }
     }
+  }
+
+  stealPlayerBlock(amount) {
+    const stolen = Math.min(this.player.block, amount);
+    this.player.block -= stolen;
+    return stolen;
+  }
+
+  stealPlayerEnergy(amount) {
+    const stolen = Math.min(this.energy, amount);
+    this.energy -= stolen;
+    return stolen;
   }
 
   gainBlockEnemy(enemyId, amount) {

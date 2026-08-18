@@ -655,6 +655,8 @@ const ENEMIES = {
   // ---------------- Elites ----------------
   iron_guard: {
     id: 'iron_guard', name: '钢铁卫兵', icon: '🤖', hpRange: [95, 105], rarity: 'elite',
+    // 尖刺护甲机制：铸铁强化后获得的护甲带有反伤尖刺，只要护甲未被打穿，
+    // 每次直接攻击它都会反弹固定伤害；护甲耗尽后尖刺自动失效。
     chooseMove(enemy, combat) {
       const pattern = ['slam', 'fortify'];
       const step = enemy.aiState.cycle || 0;
@@ -662,11 +664,12 @@ const ENEMIES = {
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
       if (pattern[step] === 'fortify') {
         return {
-          name: '铸铁强化', icon: '💪', type: 'buff', displayValue: 15,
+          name: '铸铁强化', icon: '�', type: 'buff', displayValue: 15, statusPreview: [{ name: 'strength', amount: 2 }],
           execute(combat, e) {
             combat.gainBlockEnemy(e.id, 15);
             combat.applyStatusEnemy(e.id, 'strength', 2);
-            combat.log(`${e.name} 铸铁强化：获得护甲与力量`, 'enemy');
+            e.thorns = 6;
+            combat.log(`🔩 ${e.name} 铸铁强化：获得护甲与力量，护甲带有尖刺（未破甲前攻击它会反弹 6 点伤害）`, 'enemy');
           },
         };
       }
@@ -679,6 +682,8 @@ const ENEMIES = {
   },
   shadow_priest: {
     id: 'shadow_priest', name: '暗影祭司', icon: '🧟', hpRange: [85, 95], rarity: 'elite',
+    // 能量虹吸机制：暗影诅咒不仅会往抽牌堆里塞诅咒牌，还会立即抽走你本回合的能量
+    // 转化为自身力量，是即时的资源掠夺，而非单纯延迟生效的诅咒牌。
     chooseMove(enemy, combat) {
       const turn = enemy.aiState.turn || 0;
       enemy.aiState.turn = turn + 1;
@@ -690,10 +695,12 @@ const ENEMIES = {
       }
       if (turn % 3 === 1) {
         return {
-          name: '暗影诅咒', icon: '💀', type: 'debuff', displayValue: null,
+          name: '能量虹吸', icon: '🌀', type: 'debuff', displayValue: null, statusPreview: [{ name: 'strength', amount: 1 }],
           execute(combat, e) {
             combat.shuffleStatusIntoDrawPile('necro_curse', 1);
-            combat.log(`💀 ${e.name} 施放暗影诅咒！1 张死灵诅咒洗入抽牌堆`, 'enemy');
+            combat.nextTurnEnergyPenalty = (combat.nextTurnEnergyPenalty || 0) + 1;
+            combat.applyStatusEnemy(e.id, 'strength', 1);
+            combat.log(`🌀 ${e.name} 虹吸你的能量！你下回合起始能量 -1，同时 1 张死灵诅咒洗入抽牌堆`, 'enemy');
           },
         };
       }
@@ -706,17 +713,21 @@ const ENEMIES = {
 
   plague_bearer: {
     id: 'plague_bearer', name: '瘟疫使者', icon: '🧌', hpRange: [110, 120], rarity: 'elite',
+    // 瘟疫虹吸机制：毒瘴重击会直接给玩家叠中毒层数，而"腐化再生"回复的生命值
+    // 与玩家当前的中毒层数成正比——中毒堆得越高，它就吸得越多，逼玩家尽快解决战斗或清除中毒。
     chooseMove(enemy, combat) {
       const pattern = ['toxic_slam', 'regenerate', 'plague'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       if (pattern[step] === 'regenerate') {
         return {
-          name: '腐化再生', icon: '💚', type: 'heal', displayValue: 20,
+          name: '瘟疫虹吸', icon: '💚', type: 'heal', displayValue: null,
           execute(combat, e) {
-            combat.healEnemy(e.id, 20);
+            const poisonStacks = combat.player.statuses.poison || 0;
+            const heal = 12 + poisonStacks * 3;
+            combat.healEnemy(e.id, heal);
             combat.gainBlockEnemy(e.id, 10);
-            combat.log(`${e.name} 吸收瘴气，回复生命并获得护甲`, 'enemy');
+            combat.log(`🦠 ${e.name} 从你身上的 ${poisonStacks} 层中毒中虹吸瘴气，回复 ${heal} 点生命并获得护甲`, 'enemy');
           },
         };
       }
@@ -730,8 +741,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 16,
-        execute(combat, e) { combat.dealDamageToPlayer(16, e.id); },
+        name: '毒瘴重击', icon: '⚔️', type: 'attack', displayValue: 14, statusPreview: [{ name: 'poison', amount: 3 }],
+        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.applyStatusPlayer('poison', 3); },
       };
     },
   },
@@ -848,20 +859,45 @@ const ENEMIES = {
   },
 
   // ---------------- Bosses ----------------
+  // 深渊之眼：深渊领主召唤的护盾核心，存活时领主获得 50% 减伤。
+  // 血量很低，是留给玩家的明确"先手目标"。
+  abyss_eye: {
+    id: 'abyss_eye', name: '深渊之眼', icon: '👁️', hpRange: [22, 26], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      return {
+        name: '凝视', icon: '👁️', type: 'debuff', displayValue: null, statusPreview: [{ name: 'vulnerable', amount: 1 }],
+        execute(combat, e) { combat.applyStatusPlayer('vulnerable', 1); combat.log(`👁️ ${e.name} 凝视着你，你更容易受到伤害了`, 'enemy'); },
+      };
+    },
+  },
   abyss_lord: {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',
+    // 护盾之眼机制：领主会召唤一只深渊之眼为自己提供 50% 减伤，
+    // 减伤在眼被击杀前持续生效——必须优先解决眼才能正常输出。
     chooseMove(enemy, combat) {
-      const pattern = ['slam', 'shield', 'breath', 'rest'];
+      const pattern = ['slam', 'summon_eye', 'breath', 'rest'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
 
-      if (pattern[step] === 'shield') {
+      if (pattern[step] === 'summon_eye') {
+        const eyeAlive = (enemy.aiState.summonedMinionIds || []).some(id => {
+          const m = combat.enemies.find(en => en.id === id);
+          return m && m.hp > 0;
+        });
+        if (eyeAlive) {
+          const dmg = 10 + (enemy.statuses.strength || 0);
+          return {
+            name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: dmg,
+            execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+          };
+        }
         return {
-          name: '护盾力场', icon: '🛡️', type: 'defend', displayValue: 20,
+          name: '唤醒深渊之眼', icon: '�️', type: 'summon', displayValue: null,
           execute(combat, e) {
-            combat.log(`${e.name} 张开护盾力场！`, 'enemy');
-            combat.gainBlockEnemy(e.id, 20);
+            combat.summonEnemy(e, 'abyss_eye', { registerToSummoner: true });
+            e.dmgReduction = 0.5;
+            combat.log(`👁️ ${e.name} 唤醒了深渊之眼！只要眼还活着，领主就会减免 50% 伤害——先解决眼！`, 'enemy');
           },
         };
       }
@@ -895,86 +931,111 @@ const ENEMIES = {
   },
   iron_colossus: {
     id: 'iron_colossus', name: '钢铁巨像', icon: '🗿', hpRange: [240, 260], rarity: 'boss',
+    // 过热机制：每次攻击或超载充能都会累积热量，热量达到 3 点后被迫
+    // "过热宕机"一回合并暴露 2 层易伤——这是留给玩家的固定爆发窗口，
+    // 不再依赖单纯的血量阈值狂暴。
     chooseMove(enemy, combat) {
-      const pattern = ['crush', 'overload', 'stomp', 'rest'];
+      enemy.aiState.heat = enemy.aiState.heat || 0;
+      const enraged = enemy.hp <= enemy.maxHp * 0.5;
+
+      if (enemy.aiState.heat >= 3) {
+        enemy.aiState.heat = 0;
+        return {
+          name: '过热宕机', icon: '🥵', type: 'idle', displayValue: null, statusPreview: [{ name: 'vulnerable', amount: 2 }],
+          execute(combat, e) {
+            combat.applyStatusEnemy(e.id, 'vulnerable', 2);
+            combat.log(`🥵 ${e.name} 过热宕机，机甲外壳暴露弱点！`, 'enemy');
+          },
+        };
+      }
+
+      const pattern = ['overload', 'crush', 'crush'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
-      const enraged = enemy.hp <= enemy.maxHp * 0.5;
 
       if (pattern[step] === 'overload') {
         return {
-          name: '超载充能', icon: '💪', type: 'buff', displayValue: 25,
+          name: '超载充能', icon: '�', type: 'buff', displayValue: 25,
           execute(combat, e) {
             combat.gainBlockEnemy(e.id, 25);
             combat.applyStatusEnemy(e.id, 'strength', 3);
-            combat.log(`${e.name} 超载充能：获得护甲与力量`, 'enemy');
+            e.aiState.heat += 1;
+            combat.log(`${e.name} 超载充能：获得护甲与力量（热量 ${e.aiState.heat}/3）`, 'enemy');
           },
         };
       }
-      if (pattern[step] === 'stomp') {
-        return {
-          name: '重压践踏', icon: '⚔️', type: 'attack', displayValue: 14,
-          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
-        };
-      }
-      if (pattern[step] === 'rest') {
-        return {
-          name: '散热', icon: '😴', type: 'idle', displayValue: null,
-          execute(combat, e) {
-            combat.log(`😴 ${e.name} 正在散热，往你的牌组塞了一张伤口！`, 'enemy');
-            combat.shuffleStatusIntoDrawPile('wound', 1);
-          },
-        };
-      }
-      const dmg = enraged ? 32 : 24;
+      const dmg = enraged ? 26 : 18;
       return {
         name: enraged ? '狂暴碾压' : '碾压', icon: '⚔️', type: 'attack', displayValue: dmg,
-        execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
+        execute(combat, e) {
+          combat.dealDamageToPlayer(dmg, e.id);
+          e.aiState.heat += 1;
+          combat.log(`🔥 ${e.name} 热量：${e.aiState.heat}/3`, 'enemy');
+        },
       };
     },
   },
   void_progenitor: {
     id: 'void_progenitor', name: '虚空造物主', icon: '🪐', hpRange: [300, 330], rarity: 'boss',
+    // 现实回响机制（血量 > 50% 时）：它会"回响"你上一回合打出的最后一张牌的类型——
+    // 你打攻击牌，它就双重反击；你打防御/技能牌，它就掠夺你的格挡；你打能力牌，
+    // 它会用一记现实撕裂重击你。逼玩家不能一味重复同一种打法。
+    // 血量 <= 50% 时放弃回响，进入纯粹的湮灭猛攻终盘阶段。
     chooseMove(enemy, combat) {
-      const pattern = ['annihilate', 'corrupt', 'reality_tear', 'rest'];
-      const step = enemy.aiState.cycle || 0;
-      enemy.aiState.cycle = (step + 1) % pattern.length;
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
 
-      if (pattern[step] === 'corrupt') {
-        return {
-          name: '虚空侵蚀', icon: '🛡️', type: 'defend', displayValue: 20,
-          execute(combat, e) {
-            combat.log(`${e.name} 释放虚空侵蚀！`, 'enemy');
-            combat.gainBlockEnemy(e.id, 20);
-          },
-        };
-      }
-      if (pattern[step] === 'reality_tear') {
-        return {
-          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 20,
-          execute(combat, e) { combat.dealDamageToPlayer(20, e.id); },
-        };
-      }
-      if (pattern[step] === 'rest') {
-        return {
-          name: '虚空凝视', icon: '😴', type: 'idle', displayValue: null,
-          execute(combat, e) {
-            combat.log(`😴 ${e.name} 凝视虚空，往你的牌组塞了一张虚空！`, 'enemy');
-            combat.shuffleStatusIntoDrawPile('void', 1);
-          },
-        };
-      }
-      // annihilate
       if (enraged) {
+        const pattern = ['annihilate', 'annihilate', 'rest'];
+        const step = enemy.aiState.enragedCycle || 0;
+        enemy.aiState.enragedCycle = (step + 1) % pattern.length;
+        if (pattern[step] === 'rest') {
+          return {
+            name: '虚空凝视', icon: '�', type: 'idle', displayValue: null,
+            execute(combat, e) {
+              combat.log(`😴 ${e.name} 凝视虚空，往你的牌组塞了一张虚空！`, 'enemy');
+              combat.shuffleStatusIntoDrawPile('void', 1);
+            },
+          };
+        }
         return {
           name: '湮灭 x2', icon: '⚔️', type: 'attack', displayValue: 26, hitsCount: 2,
           execute(combat, e) { combat.dealDamageToPlayer(26, e.id); combat.dealDamageToPlayer(26, e.id); },
         };
       }
+
+      const lastType = combat.lastPlayerCardType;
+      if (lastType === 'attack') {
+        return {
+          name: '回响打击', icon: '🪞', type: 'attack', displayValue: 13, hitsCount: 2,
+          execute(combat, e) {
+            combat.log(`🪞 ${e.name} 回响了你的攻击性！`, 'enemy');
+            combat.dealDamageToPlayer(13, e.id);
+            if (e.hp > 0) combat.dealDamageToPlayer(13, e.id);
+          },
+        };
+      }
+      if (lastType === 'skill') {
+        return {
+          name: '虚空掠夺', icon: '�️', type: 'debuff', displayValue: null,
+          execute(combat, e) {
+            const stolen = combat.stealPlayerBlock(12);
+            combat.gainBlockEnemy(e.id, stolen);
+            combat.log(`🕳️ ${e.name} 掠夺了你 ${stolen} 点格挡，转化为自己的护甲！`, 'enemy');
+          },
+        };
+      }
+      if (lastType === 'power') {
+        return {
+          name: '现实撕裂', icon: '⚔️', type: 'attack', displayValue: 24,
+          execute(combat, e) { combat.log(`${e.name} 撕裂现实，回应你的能力牌！`, 'enemy'); combat.dealDamageToPlayer(24, e.id); },
+        };
+      }
       return {
-        name: '湮灭打击', icon: '⚔️', type: 'attack', displayValue: 26,
-        execute(combat, e) { combat.dealDamageToPlayer(26, e.id); },
+        name: '虚空凝视', icon: '😴', type: 'idle', displayValue: null,
+        execute(combat, e) {
+          combat.log(`😴 ${e.name} 凝视虚空，往你的牌组塞了一张虚空！`, 'enemy');
+          combat.shuffleStatusIntoDrawPile('void', 1);
+        },
       };
     },
   },
