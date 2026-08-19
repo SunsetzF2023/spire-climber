@@ -929,8 +929,11 @@ const ENEMIES = {
       enemy.aiState.introShown = true;
     },
     onTurnEnd(enemy, combat) {
-      combat.shuffleStatusIntoDrawPile('burn', 1);
-      combat.log(`🔥 深渊领主的怒火持续燃烧，1 张灼烧牌洗入抽牌堆`, 'enemy');
+      const turnCount = combat.turnCount || 0;
+      if (turnCount % 2 === 0) {
+        combat.shuffleStatusIntoDrawPile('burn', 1);
+        combat.log(`🔥 深渊领主的怒火持续燃烧，1 张灼烧牌洗入抽牌堆`, 'enemy');
+      }
     },
     // 护盾之眼机制：领主会召唤一只深渊之眼为自己提供 50% 减伤，
     // 减伤在眼被击杀前持续生效——必须优先解决眼才能正常输出。
@@ -946,7 +949,7 @@ const ENEMIES = {
           return m && m.hp > 0;
         });
         if (eyeAlive) {
-          const dmg = 10 + (enemy.statuses.strength || 0);
+          const dmg = 6 + (enemy.statuses.strength || 0);
           return {
             name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: dmg,
             execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
@@ -963,29 +966,28 @@ const ENEMIES = {
       }
       if (pattern[step] === 'breath') {
         return {
-          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 10,
-          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); },
+          name: '深渊吐息', icon: '⚔️', type: 'attack', displayValue: 5,
+          execute(combat, e) { combat.dealDamageToPlayer(5, e.id); },
         };
       }
       if (pattern[step] === 'rest') {
         return {
           name: '蓄力', icon: '😴', type: 'idle', displayValue: null,
           execute(combat, e) {
-            combat.log(`😴 ${e.name} 正在蓄力，往你的牌组塞了一张灼烧！`, 'enemy');
-            combat.shuffleStatusIntoDrawPile('burn', 1);
+            combat.log(`😴 ${e.name} 正在蓄力。`, 'enemy');
           },
         };
       }
       // slam
       if (enraged) {
         return {
-          name: '狂暴重击 x2', icon: '⚔️', type: 'attack', displayValue: 14, hitsCount: 2,
-          execute(combat, e) { combat.dealDamageToPlayer(14, e.id); combat.dealDamageToPlayer(14, e.id); },
+          name: '狂暴重击 x2', icon: '⚔️', type: 'attack', displayValue: 10, hitsCount: 2,
+          execute(combat, e) { combat.dealDamageToPlayer(10, e.id); combat.dealDamageToPlayer(10, e.id); },
         };
       }
       return {
-        name: '重击', icon: '⚔️', type: 'attack', displayValue: 14,
-        execute(combat, e) { combat.dealDamageToPlayer(14, e.id); },
+        name: '重击', icon: '⚔️', type: 'attack', displayValue: 8,
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
       };
     },
   },

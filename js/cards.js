@@ -1123,6 +1123,16 @@ const CARDS = {
       }
     },
   },
+  developer_gift: {
+    id: 'developer_gift', name: '开发者的馈赠', icon: '🌟', type: 'skill', cost: 3, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    vars(up) { return { cost: up ? 2 : 3 }; },
+    upgradedCost: 2,
+    descTemplate(v) { return `本回合免疫所有伤害。消耗`; },
+    effect(ctx) {
+      ctx.combat.damageImmune = true;
+      ctx.combat.log(`🌟 开发者的馈赠：本回合免疫所有伤害！`, 'player');
+    },
+  },
 };
 
 const REWARD_POOLS = {
@@ -1146,7 +1156,7 @@ const REWARD_POOLS = {
   },
 };
 
-const SHOP_ETHEREAL_POOL = ['ether_potion', 'ether_strength', 'ether_block', 'ether_bomb', 'ether_draw', 'ether_cleanse'];
+const SHOP_ETHEREAL_POOL = ['ether_potion', 'ether_strength', 'ether_block', 'ether_bomb', 'ether_draw', 'ether_cleanse', 'developer_gift'];
 
 const ACHIEVEMENT_CARD_REWARDS = {
   'first_steps': 'triple_strike',

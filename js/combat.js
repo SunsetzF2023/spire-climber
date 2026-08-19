@@ -25,6 +25,7 @@ const STATUS_META = {
   corruption: { icon: '🩸', label: '腐化', desc: '所有卡牌费用变为 0，但打出后会被消耗。' },
   demonForm: { icon: '😈', label: '恶魔形态', desc: '每回合开始时获得等同于层数的力量。' },
   evasion: { icon: '💨', label: '闪避', desc: '50% 几率规避下一次受到的任何伤害。负面状态无法被闪避。' },
+  damageImmune: { icon: '🌟', label: '无敌', desc: '本回合免疫所有伤害。' },
 };
 
 class CombatEngine {
@@ -52,6 +53,7 @@ class CombatEngine {
     this.damageEvents = []; // queue of {enemyId, amount, type} for multi-hit visual effects
     this.turnDamageDealt = 0; // total damage player dealt this turn (for mirror_sprite)
     this.turnBlockGained = 0; // total block player gained this turn (for mirror_sprite)
+    this.damageImmune = false; // immune to all damage this turn (from developer_gift card)
 
     this.player = {
       block: 0,
@@ -195,6 +197,7 @@ class CombatEngine {
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
     this.player.statuses.normalityLock = 0;
     this.entangledUids = [];
+    this.damageImmune = false;
     if (this.player.statuses.cardLock > 0) {
       this.player.statuses.cardLock -= 1;
       this.log('🔓 封印解除', 'info');
@@ -578,6 +581,10 @@ class CombatEngine {
   }
 
   dealDamageToPlayer(baseAmount, attackerEnemyId) {
+    if (this.damageImmune) {
+      this.log(`🌟 无敌：免疫了 ${baseAmount} 点伤害！`, 'player');
+      return 0;
+    }
     const attacker = attackerEnemyId ? this.enemies.find(e => e.id === attackerEnemyId) : null;
     const scaledBase = Math.round(baseAmount * this.dmgScaling);
     let dmg = scaledBase + (attacker ? (attacker.statuses.strength || 0) : 0);
@@ -599,6 +606,10 @@ class CombatEngine {
   }
 
   damagePlayerDirect(amount) {
+    if (this.damageImmune) {
+      this.log(`🌟 无敌：免疫了 ${amount} 点伤害！`, 'player');
+      return;
+    }
     this.run.player.hp -= amount;
     this.checkPlayerDeath(null);
   }

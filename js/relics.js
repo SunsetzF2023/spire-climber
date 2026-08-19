@@ -196,13 +196,78 @@ const RELICS = {
       if (combat.carryEnergy > 0) combat.log(`♊ 双子星（右）：${combat.carryEnergy} 点能量将继承到下回合`, 'info');
     },
   },
+
+  // ---------------- Axe relics ----------------
+  golden_axe: {
+    id: 'golden_axe', name: '黄金斧头', icon: '🪓', rarity: 'shop',
+    desc: '每2回合，一张随机牌加入手牌，一张随机牌被洗入牌组',
+    onCombatStart(combat) { combat.relicFlags.goldenAxeCount = 0; },
+    onTurnStart(combat) {
+      combat.relicFlags.goldenAxeCount = (combat.relicFlags.goldenAxeCount || 0) + 1;
+      if (combat.relicFlags.goldenAxeCount % 2 !== 0) return;
+      const pool = getAxeCardPool();
+      if (pool.length === 0) return;
+      const cardId = pool[Math.floor(Math.random() * pool.length)];
+      const inst = makeCardInstance(cardId, false);
+      if (combat.hand.length < 10) {
+        combat.hand.push(inst);
+        combat.log(`🪓 黄金斧头：${CARDS[cardId].name} 加入手牌`, 'info');
+      }
+      const cardId2 = pool[Math.floor(Math.random() * pool.length)];
+      const inst2 = makeCardInstance(cardId2, false);
+      combat.drawPile.push(inst2);
+      combat.log(`🪓 黄金斧头：${CARDS[cardId2].name} 被洗入抽牌堆`, 'info');
+    },
+  },
+  silver_axe: {
+    id: 'silver_axe', name: '白银斧头', icon: '🪓', rarity: 'shop',
+    desc: '每2回合，一张随机牌被洗入牌组',
+    onCombatStart(combat) { combat.relicFlags.silverAxeCount = 0; },
+    onTurnStart(combat) {
+      combat.relicFlags.silverAxeCount = (combat.relicFlags.silverAxeCount || 0) + 1;
+      if (combat.relicFlags.silverAxeCount % 2 !== 0) return;
+      const pool = getAxeCardPool();
+      if (pool.length === 0) return;
+      const cardId = pool[Math.floor(Math.random() * pool.length)];
+      const inst = makeCardInstance(cardId, false);
+      combat.drawPile.push(inst);
+      combat.log(`🪓 白银斧头：${CARDS[cardId].name} 被洗入抽牌堆`, 'info');
+    },
+  },
+  bronze_axe: {
+    id: 'bronze_axe', name: '青铜斧头', icon: '🪓', rarity: 'shop',
+    desc: '每2回合，一张预设卡牌被洗入牌组',
+    onCombatStart(combat) { combat.relicFlags.bronzeAxeCount = 0; },
+    onTurnStart(combat) {
+      combat.relicFlags.bronzeAxeCount = (combat.relicFlags.bronzeAxeCount || 0) + 1;
+      if (combat.relicFlags.bronzeAxeCount % 2 !== 0) return;
+      const inst = makeCardInstance('defend', false);
+      combat.drawPile.push(inst);
+      combat.log(`🪓 青铜斧头：防御 被洗入抽牌堆`, 'info');
+    },
+  },
 };
+
+function getAxeCardPool() {
+  const all = [];
+  Object.values(REWARD_POOLS).forEach(tier => {
+    Object.values(tier).forEach(pool => {
+      pool.forEach(id => {
+        const def = CARDS[id];
+        if (def && def.type !== 'status' && def.type !== 'curse' && def.type !== 'power') {
+          all.push(id);
+        }
+      });
+    });
+  });
+  return all;
+}
 
 const RELIC_LIST_COMMON = ['whetstone', 'hourglass', 'hunters_badge', 'greedy_badge', 'marbled_pouch', 'first_strike_fang', 'ceramic_fish'];
 const RELIC_LIST_UNCOMMON = ['calm_heart', 'thorns', 'eagle_eye', 'vengeful_heart', 'serpent_breath', 'gremlin_horn', 'centennial_puzzle'];
 const RELIC_LIST_RARE = ['turbo_heart', 'cracked_shield', 'bloodstone', 'ashen_charm'];
 const RELIC_LIST_EVENT = ['mark_of_bloom', 'gremlin_visage', 'mutagenic_strength', 'cursed_key', 'brimstone', 'golden_idol', 'red_mask'];
-const RELIC_LIST_SHOP = ['energy_core', 'gemini_left', 'gemini_right'];
+const RELIC_LIST_SHOP = ['energy_core', 'gemini_left', 'gemini_right', 'golden_axe', 'silver_axe', 'bronze_axe'];
 
 function pickRandomRelic(excludeIds = []) {
   const r = Math.random();
