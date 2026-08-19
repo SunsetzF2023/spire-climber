@@ -818,27 +818,27 @@ function showShopScreen(node) {
   };
   currentShop.cards.forEach(offer => {
     const rarity = CARDS[offer.id].rarity;
-    offer.cost = Math.round((rarity === 'rare' ? 140 + Math.floor(Math.random() * 40) : rarity === 'uncommon' ? 80 + Math.floor(Math.random() * 25) : 50 + Math.floor(Math.random() * 20)) * actMul);
+    offer.cost = Math.round((rarity === 'rare' ? 90 + Math.floor(Math.random() * 25) : rarity === 'uncommon' ? 50 + Math.floor(Math.random() * 15) : 30 + Math.floor(Math.random() * 12)) * actMul);
   });
   currentShop.ethereal.forEach(offer => {
-    offer.cost = Math.round((35 + Math.floor(Math.random() * 15)) * actMul);
+    offer.cost = Math.round((22 + Math.floor(Math.random() * 10)) * actMul);
   });
   currentShop.relics.forEach(offer => {
     const rarity = RELICS[offer.id].rarity;
-    offer.cost = Math.round((rarity === 'rare' ? 200 + Math.floor(Math.random() * 50) : rarity === 'uncommon' ? 140 + Math.floor(Math.random() * 40) : 90 + Math.floor(Math.random() * 30)) * actMul);
+    offer.cost = Math.round((rarity === 'rare' ? 130 + Math.floor(Math.random() * 30) : rarity === 'uncommon' ? 90 + Math.floor(Math.random() * 25) : 60 + Math.floor(Math.random() * 20)) * actMul);
   });
   if (currentShop.shopRelic) {
-    currentShop.shopRelic.cost = 180 + Math.floor(Math.random() * 75);
+    currentShop.shopRelic.cost = 120 + Math.floor(Math.random() * 50);
   }
   renderShop(node);
   el.shopLeaveBtn.onclick = () => backToMapOrVictory(node);
 }
 
 function renderShop(node) {
-  el.removeCost.textContent = 15 + run.removeCount * 15;
-  el.shopRemoveBtn.disabled = run.gold < (15 + run.removeCount * 15) || run.deck.length <= 5;
+  el.removeCost.textContent = 15;
+  el.shopRemoveBtn.disabled = run.gold < 15 || run.deck.length <= 5;
   el.shopRemoveBtn.onclick = () => {
-    const cost = 15 + run.removeCount * 15;
+    const cost = 15;
     if (run.gold < cost || run.deck.length <= 5) return;
     const cardEls = run.deck.map(card => renderCardEl(card, {
       clickable: true,

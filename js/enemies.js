@@ -26,8 +26,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 8,
-        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
+        name: '撞击', icon: '⚔️', type: 'attack', displayValue: 6,
+        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
       };
     },
   },
@@ -82,8 +82,8 @@ const ENEMIES = {
       if (pattern[step] === 'rest') {
         return idleMove('喘息', '💤', '连续撕咬后精疲力竭，喘了口气');
       }
-      const dmg = enemy.aiState.biteDmg || 5;
-      enemy.aiState.biteDmg = Math.min(dmg + 3, 12);
+      const dmg = enemy.aiState.biteDmg || 3;
+      enemy.aiState.biteDmg = Math.min(dmg + 2, 8);
       return {
         name: '撕咬升级', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
@@ -103,8 +103,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '缠绕撕裂', icon: '⚔️', type: 'attack', displayValue: 8, statusPreview: [{ name: 'vulnerable', amount: 1 }],
-        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); combat.applyStatusPlayer('vulnerable', 1); },
+        name: '缠绕撕裂', icon: '⚔️', type: 'attack', displayValue: 6, statusPreview: [{ name: 'vulnerable', amount: 1 }],
+        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); combat.applyStatusPlayer('vulnerable', 1); },
       };
     },
   },
@@ -121,8 +121,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '劈砍', icon: '⚔️', type: 'attack', displayValue: 9,
-        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
+        name: '劈砍', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
       };
     },
   },
@@ -139,8 +139,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '骸骨挥砍', icon: '⚔️', type: 'attack', displayValue: 9,
-        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
+        name: '骸骨挥砍', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
       };
     },
   },
@@ -151,8 +151,8 @@ const ENEMIES = {
         return idleMove('盘旋', '🌀', '收拢队形，绕着你盘旋');
       }
       return {
-        name: '双重刺击', icon: '⚔️', type: 'attack', displayValue: 4, hitsCount: 2,
-        execute(combat, e) { combat.dealDamageToPlayer(4, e.id); if (e.hp > 0) combat.dealDamageToPlayer(4, e.id); },
+        name: '双重刺击', icon: '⚔️', type: 'attack', displayValue: 3, hitsCount: 2,
+        execute(combat, e) { combat.dealDamageToPlayer(3, e.id); if (e.hp > 0) combat.dealDamageToPlayer(3, e.id); },
       };
     },
   },
@@ -241,8 +241,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '孢子喷吐', icon: '⚔️', type: 'attack', displayValue: 6,
-        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
+        name: '孢子喷吐', icon: '⚔️', type: 'attack', displayValue: 4,
+        execute(combat, e) { combat.dealDamageToPlayer(4, e.id); },
       };
     },
   },
@@ -674,8 +674,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '盾击', icon: '⚔️', type: 'attack', displayValue: 8,
-        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
+        name: '盾击', icon: '⚔️', type: 'attack', displayValue: 6,
+        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
       };
     },
   },
