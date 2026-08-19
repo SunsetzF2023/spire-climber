@@ -923,7 +923,7 @@ const ENEMIES = {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',
     onCombatStart(enemy, combat) {
       const deckSize = combat.drawPile.length + combat.hand.length + combat.discardPile.length;
-      const burnCount = Math.floor(deckSize / 2);
+      const burnCount = Math.max(2, Math.floor(deckSize / 4));
       combat.shuffleStatusIntoDrawPile('burn', burnCount);
       combat.log(`👹 深渊领主：我的怒火将吞噬你！${burnCount} 张灼烧牌洗入你的抽牌堆！`, 'enemy');
       enemy.aiState.introShown = true;
