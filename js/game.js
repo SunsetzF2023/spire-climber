@@ -80,6 +80,7 @@ function cacheEls() {
     'openHistoryBtn', 'openLeaderboardBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
+    'pileModal', 'pileModalClose', 'pileModalTitle', 'pileModalGrid',
     'zoomControls', 'zoomInBtn', 'zoomOutBtn', 'zoomResetBtn', 'zoomLevel',
     'cloudSyncStatus', 'cloudLoginBtn', 'cloudLogoutBtn',
   ].forEach(id => { el[id] = document.getElementById(id); });
@@ -535,6 +536,28 @@ function renderCardEl(cardInstance, opts = {}) {
   if (opts.clickable) div.addEventListener('click', () => opts.onClick(cardInstance));
   return div;
 }
+
+// ---------------- Pile viewer (draw/discard) ----------------
+function showPileModal(title, cards) {
+  el.pileModalTitle.textContent = `${title}（${cards.length} 张）`;
+  el.pileModalGrid.innerHTML = '';
+  cards.forEach(card => {
+    const cardEl = renderCardEl(card, { clickable: false });
+    el.pileModalGrid.appendChild(cardEl);
+  });
+  el.pileModal.classList.remove('hidden');
+}
+function hidePileModal() { el.pileModal.classList.add('hidden'); }
+el.pileModalClose && el.pileModalClose.addEventListener('click', hidePileModal);
+el.pileModal && el.pileModal.addEventListener('click', (e) => { if (e.target === el.pileModal) hidePileModal(); });
+document.getElementById('drawPileBox').addEventListener('click', () => {
+  if (!combat || combat.finished) return;
+  showPileModal('抽牌堆', combat.drawPile.slice().reverse());
+});
+document.getElementById('discardPileBox').addEventListener('click', () => {
+  if (!combat || combat.finished) return;
+  showPileModal('弃牌堆', combat.discardPile.slice().reverse());
+});
 
 // ---------------- Event screen ----------------
 function showEventScreenUI(node) {

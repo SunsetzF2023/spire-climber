@@ -249,7 +249,8 @@ body{
 .status-badge{background:var(--bg3); border-radius:6px; padding:2px 6px; font-size:10px;}
 
 .combat-mid{display:flex; align-items:center; justify-content:center; gap:40px; padding:10px 0;}
-.pile-box{width:80px; text-align:center; font-size:11px; color:var(--dim); background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px;}
+.pile-box{width:80px; text-align:center; font-size:11px; color:var(--dim); background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px; cursor:pointer; transition:border-color .15s;}
+.pile-box:hover{border-color:var(--amber);}
 .player-box{width:260px; text-align:center; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:12px; position:relative;}
 .player-name{font-size:13px; font-weight:700;}
 
@@ -326,6 +327,9 @@ body{
   font-size:16px; cursor:pointer; line-height:1;
 }
 .modal-close:hover{color:var(--text);}
+.pile-modal-box{max-width:680px;max-height:85vh;overflow-y:auto;text-align:left;}
+.pile-modal-title{font-size:16px;font-weight:700;margin-bottom:14px;text-align:center;}
+.pile-modal-box .card-grid{justify-content:center;}
 .modal-icon{font-size:40px;}
 .modal-name{font-size:16px; font-weight:700; margin-top:8px;}
 .modal-meta{font-size:11px; color:var(--dim); margin-top:2px;}
