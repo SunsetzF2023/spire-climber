@@ -510,6 +510,7 @@ function advanceToNextAct(node) {
   run.stats.actsCleared += 1;
   run.stats.actOffset += ACT_FLOOR_COUNT + 1;
   run.act += 1;
+  run.player.maxHp += 20;
   healPlayerRun(run, run.player.maxHp);
   run.map = generateMap(ACT_FLOOR_COUNT);
   run.currentNodeId = null;
