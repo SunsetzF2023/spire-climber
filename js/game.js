@@ -1208,9 +1208,11 @@ function showRewardScreen() {
       el.rewardCards.appendChild(cardEl);
     });
     el.rewardSkipBtn.classList.remove('hidden');
+    el.rewardSkipBtn.textContent = '跳过，不选卡';
   } else {
     el.rewardCards.innerHTML = '<p class="hint" style="margin:20px 0">本次战斗未掉落卡牌</p>';
-    el.rewardSkipBtn.classList.add('hidden');
+    el.rewardSkipBtn.classList.remove('hidden');
+    el.rewardSkipBtn.textContent = '继续';
   }
   el.rewardSkipBtn.onclick = () => backToMapOrVictory(combat.node);
 }
