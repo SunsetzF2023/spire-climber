@@ -193,6 +193,15 @@ function upgradeRandomCardInDeck(run) {
   card.upgraded = true;
   return card;
 }
+function getUpgradableCards(run) {
+  return run.deck.filter(c => !c.upgraded && !['status', 'curse'].includes((CARDS[c.defId] || {}).type));
+}
+function upgradeCardByUid(run, uid) {
+  const card = run.deck.find(c => c.uid === uid);
+  if (!card || card.upgraded) return null;
+  card.upgraded = true;
+  return card;
+}
 function addCardToDeck(run, defId, upgraded) {
   run.deck.push(makeCardInstance(defId, upgraded));
   discover('discoveredCards', defId);
@@ -630,7 +639,41 @@ function showEventScreenUI(node) {
           hint.textContent = opt.pickHint;
           el.eventCardSelect.appendChild(hint);
         }
-        run.deck.forEach(card => {
+        const cards = opt.selectUpgrade ? getUpgradableCards(run) : run.deck;
+        if (opt.selectUpgrade && cards.length === 0) {
+          finishOption({ text: '卡组中没有可以强化的卡牌了。', cls: 'info' });
+          return;
+        }
+        // Multi-select upgrade mode
+        if (opt.selectUpgradeCount && opt.selectUpgradeCount > 1) {
+          const maxPick = Math.min(opt.selectUpgradeCount, cards.length);
+          const picked = [];
+          const hint2 = document.createElement('div');
+          hint2.className = 'hint';
+          hint2.textContent = `请选择 ${maxPick} 张卡牌进行强化（已选 ${picked.length}/${maxPick}）：`;
+          el.eventCardSelect.appendChild(hint2);
+          const selectedUids = new Set();
+          cards.forEach(card => {
+            const cardEl = renderCardEl(card, {
+              clickable: true,
+              onClick: (c) => {
+                if (selectedUids.has(c.uid)) return;
+                selectedUids.add(c.uid);
+                picked.push(c);
+                cardEl.classList.add('upgraded');
+                hint2.textContent = `请选择 ${maxPick} 张卡牌进行强化（已选 ${picked.length}/${maxPick}）：`;
+                if (picked.length >= maxPick) {
+                  const results = picked.map(p => upgradeCardByUid(run, p.uid)).filter(Boolean);
+                  const names = results.map(c => CARDS[c.defId].name);
+                  finishOption(opt.effect(run, null, names));
+                }
+              },
+            });
+            el.eventCardSelect.appendChild(cardEl);
+          });
+          return;
+        }
+        cards.forEach(card => {
           el.eventCardSelect.appendChild(renderCardEl(card, {
             clickable: true,
             onClick: (c) => finishOption(opt.effect(run, c.uid)),

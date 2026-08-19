@@ -74,12 +74,17 @@ const EVENT_POOL = [
     desc: '一位流浪铁匠愿意免费为你打磨一张卡牌。',
     options: [
       {
-        label: '🔨 免费打磨一张随机卡牌（永久强化）',
-        effect(run) {
-          const upgraded = upgradeRandomCardInDeck(run);
+        label: '🔨 免费打磨一张卡牌（永久强化）',
+        selectCard: true,
+        selectUpgrade: true,
+        pickHint: '选择一张卡牌进行强化：',
+        canPick(run) { return getUpgradableCards(run).length > 0; },
+        blockedText: '卡组里没有可以强化的卡牌了。',
+        effect(run, cardUid) {
+          const upgraded = upgradeCardByUid(run, cardUid);
           return upgraded
             ? { text: `${CARDS[upgraded.defId].name} 被强化了！`, cls: 'good' }
-            : { text: '卡组里没有可以强化的卡牌了。', cls: 'bad' };
+            : { text: '强化失败。', cls: 'bad' };
         },
       },
       { label: '🚶 谢绝好意', effect() { return { text: '你继续赶路。', cls: 'info' }; } },
@@ -301,15 +306,20 @@ const EVENT_POOL = [
     desc: '一个古老的血祭法阵仍在运作。献祭生命可以永久强化一张卡牌，但代价是更多的鲜血。',
     options: [
       {
-        label: '🩸 献祭 15 点生命，强化一张随机卡牌',
+        label: '🩸 献祭 15 点生命，强化一张卡牌',
         disabled(run) { return run.player.hp <= 15; },
-        effect(run) {
+        selectCard: true,
+        selectUpgrade: true,
+        pickHint: '选择一张卡牌进行强化：',
+        canPick(run) { return getUpgradableCards(run).length > 0; },
+        blockedText: '卡组中没有可强化的卡牌了。',
+        effect(run, cardUid) {
           if (run.player.hp <= 15) return { text: '生命值不足以献祭！', cls: 'bad' };
           damagePlayerRun(run, 15);
-          const upgraded = upgradeRandomCardInDeck(run);
+          const upgraded = upgradeCardByUid(run, cardUid);
           return upgraded
             ? { text: `血祭成功！${CARDS[upgraded.defId].name} 被永久强化了。`, cls: 'good' }
-            : { text: '血祭完成，但卡组中没有可强化的卡牌了。', cls: 'info' };
+            : { text: '血祭完成，但强化失败。', cls: 'info' };
         },
       },
       { label: '🚶 远离血祭', effect() { return { text: '你不想与黑暗力量打交道。', cls: 'info' }; } },
@@ -691,10 +701,15 @@ const EVENT_POOL = [
         },
       },
       {
-        label: '📖 听一段冒险故事（随机强化一张卡牌）',
-        effect(run) {
-          const card = upgradeRandomCardInDeck(run);
-          if (!card) return { text: '你的卡组中没有可以强化的卡牌了。', cls: 'info' };
+        label: '📖 听一段冒险故事（强化一张卡牌）',
+        selectCard: true,
+        selectUpgrade: true,
+        pickHint: '选择一张卡牌进行强化：',
+        canPick(run) { return getUpgradableCards(run).length > 0; },
+        blockedText: '你的卡组中没有可以强化的卡牌了。',
+        effect(run, cardUid) {
+          const card = upgradeCardByUid(run, cardUid);
+          if (!card) return { text: '强化失败。', cls: 'info' };
           return { text: `故事让你有所领悟，卡牌【${CARDS[card.defId].name}】被强化了！`, cls: 'good' };
         },
       },
@@ -825,18 +840,19 @@ const EVENT_POOL = [
       {
         label: '🩸 献祭 20 点生命，强化两张卡牌，但混入一张诅咒牌',
         disabled(run) { return run.player.hp <= 20; },
-        effect(run) {
+        selectCard: true,
+        selectUpgrade: true,
+        selectUpgradeCount: 2,
+        pickHint: '选择两张卡牌进行强化：',
+        canPick(run) { return getUpgradableCards(run).length >= 1; },
+        blockedText: '卡组中没有可强化的卡牌了。',
+        effect(run, _cardUid, upgradedNames) {
           if (run.player.hp <= 20) return { text: '生命值过低，不敢献祭！', cls: 'bad' };
           damagePlayerRun(run, 20);
-          const upgraded = [];
-          for (let i = 0; i < 2; i++) {
-            const card = upgradeRandomCardInDeck(run);
-            if (card) upgraded.push(CARDS[card.defId].name);
-          }
           const curses = ['clumsy', 'decay', 'doubt', 'injury', 'normality', 'pain', 'parasite', 'regret', 'shame', 'writhe'];
           const curseId = curses[Math.floor(Math.random() * curses.length)];
           addCardToDeck(run, curseId, false);
-          const upgradeText = upgraded.length > 0 ? `强化了【${upgraded.join('】【')}】，` : '';
+          const upgradeText = upgradedNames && upgradedNames.length > 0 ? `强化了【${upgradedNames.join('】【')}】，` : '';
           return { text: `${upgradeText}但一张诅咒牌【${CARDS[curseId].name}】混入了卡组……`, cls: 'info' };
         },
       },
