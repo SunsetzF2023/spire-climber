@@ -11,9 +11,9 @@ function artIcon(folder, id, fallbackEmoji) {
   return fallbackEmoji;
 }
 // For textContent contexts (collection grid) — returns emoji only (can't use img in textContent)
-// For HTML contexts — returns img tag with fallback
+// For HTML contexts — returns img tag with onerror fallback to emoji
 function artIconHtml(folder, id, fallbackEmoji) {
-  return fallbackEmoji;
+  return `<img class="art-icon" src="assets/${folder}/${id}.png" alt="${fallbackEmoji}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="art-icon-fallback" style="display:none">${fallbackEmoji}</span>`;
 }
 const STARTING_GOLD = 99;
 const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-boss rest + boss floor
@@ -685,7 +685,7 @@ function renderCardEl(cardInstance, opts = {}) {
   div.innerHTML = `
     <div class="cost">${cost}</div>
     <div class="rarity-tag">${def.rarity}</div>
-    <div class="icon">${def.icon}</div>
+    <div class="icon">${artIconHtml('cards', def.id, def.icon)}</div>
     <div class="name">${def.name}</div>
     <div class="type-label">${{ attack: '攻击', skill: '技能', power: '能力' }[def.type]}</div>
     <div class="desc">${cardDesc(cardInstance)}</div>
