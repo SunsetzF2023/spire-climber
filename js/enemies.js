@@ -1017,16 +1017,16 @@ const ENEMIES = {
 
       if (pattern[step] === 'overload') {
         return {
-          name: '超载充能', icon: '�', type: 'buff', displayValue: 25,
+          name: '超载充能', icon: '⚡', type: 'buff', displayValue: 20,
           execute(combat, e) {
-            combat.gainBlockEnemy(e.id, 25);
-            combat.applyStatusEnemy(e.id, 'strength', 3);
+            combat.gainBlockEnemy(e.id, 20);
+            combat.applyStatusEnemy(e.id, 'strength', 2);
             e.aiState.heat += 1;
             combat.log(`${e.name} 超载充能：获得护甲与力量（热量 ${e.aiState.heat}/3）`, 'enemy');
           },
         };
       }
-      const dmg = enraged ? 26 : 18;
+      const dmg = enraged ? 20 : 14;
       return {
         name: enraged ? '狂暴碾压' : '碾压', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) {
