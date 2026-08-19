@@ -1189,7 +1189,14 @@ function patchEnemyBox(node, enemy) {
   const move = enemy.nextMove;
   const intentDiv = node.querySelector('.intent');
   if (enemy.hp > 0) {
-    const intentText = move ? `${move.icon} ${move.type === 'attack' ? move.displayValue + (move.hitsCount ? ` x${move.hitsCount}` : '') : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : (move.type === 'idle' ? move.name : '')))}` : '';
+    const intentText = move ? `${move.icon} ${move.type === 'attack' ? (() => {
+      let val = move.displayValue;
+      const str = enemy.statuses.strength || 0;
+      if (str) val = val + str;
+      if (combat.player.statuses.vulnerable > 0) val = Math.floor(val * 1.5);
+      if (enemy.statuses.weak > 0) val = Math.floor(val * 0.75);
+      return val + (move.hitsCount ? ` x${move.hitsCount}` : '');
+    })() : (move.type === 'defend' ? move.displayValue : (move.type === 'heal' ? move.displayValue : (move.type === 'idle' ? move.name : '')))}` : '';
     intentDiv.textContent = intentText;
     intentDiv.className = 'intent';
     if (move && move.type === 'idle') {
