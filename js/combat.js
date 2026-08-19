@@ -47,6 +47,7 @@ class CombatEngine {
     this.lastPlayerCardType = null; // last non-status/curse card type played this round; used by mirror-style enemy AI
     this.nextTurnEnergyPenalty = 0; // energy stolen by enemies during their turn; applied at the start of the player's next turn
     this.angerPlayedCount = 0; // tracks how many 'anger' cards have been played this combat
+    this.damageEvents = []; // queue of {enemyId, amount, type} for multi-hit visual effects
 
     this.player = {
       block: 0,
@@ -418,6 +419,7 @@ class CombatEngine {
     }
     enemy.hp -= remaining;
     this.log(`⚔️ ${opts.source || '攻击'} 对 ${enemy.name} 造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'player');
+    this.damageEvents.push({ enemyId, amount: remaining, type: 'damage' });
     if (this.currentActor === 'player' && dmg > 0 && this.player.statuses.venom > 0 && enemy.hp > 0) {
       this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom, { fromPower: true });
     }

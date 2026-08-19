@@ -931,7 +931,18 @@ function triggerHitEffect(node) {
 function patchEnemyBox(node, enemy) {
   const prevHp = node.dataset.lastHp !== undefined ? parseFloat(node.dataset.lastHp) : enemy.hp;
   const prevBlock = node.dataset.lastBlock !== undefined ? parseFloat(node.dataset.lastBlock) : enemy.block;
-  if (enemy.hp < prevHp) {
+  // Process queued damage events for this enemy (multi-hit support)
+  const events = combat.damageEvents.filter(ev => ev.enemyId === enemy.id);
+  if (events.length > 0) {
+    events.forEach((ev, i) => {
+      setTimeout(() => {
+        if (ev.amount > 0) {
+          triggerHitEffect(node);
+          showDamageNumber(node, ev.amount, 'enemy');
+        }
+      }, i * 180);
+    });
+  } else if (enemy.hp < prevHp) {
     triggerHitEffect(node);
     showDamageNumber(node, Math.round(prevHp - enemy.hp), 'enemy');
   }
@@ -1043,6 +1054,7 @@ function renderCombat() {
     }
   });
   newEnemyOrder.forEach(n => el.enemyRow.appendChild(n));
+  combat.damageEvents = [];
 
   const p = combat.player;
   // Player damage / heal number

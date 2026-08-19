@@ -1224,11 +1224,14 @@ const ACT_DEFS = [
 function spawnEnemyGroup(rarity, act = 1, floor = 0) {
   const actDef = ACT_DEFS[act - 1] || ACT_DEFS[ACT_DEFS.length - 1];
   if (rarity === 'boss') return [actDef.bossId];
-  if (rarity === 'elite') return [pick(actDef.eliteIds)];
-  // normal: 35% chance for a predefined synergy group, otherwise 1-2 random enemies
-  if (Math.random() < 0.35) {
-    return pick(ENCOUNTER_GROUPS).slice();
+  if (rarity === 'elite') {
+    // Elite: 70% chance for a predefined synergy group (3-4 enemies), 30% single elite
+    if (Math.random() < 0.70) {
+      return pick(ENCOUNTER_GROUPS).slice();
+    }
+    return [pick(actDef.eliteIds)];
   }
+  // normal: 1-2 enemies only, no synergy groups
   const pool = (actDef.lateEnemyPool && floor >= (actDef.lateFloorThreshold || 10))
     ? actDef.lateEnemyPool
     : (actDef.enemyPool || ACT1_EARLY_IDS);
