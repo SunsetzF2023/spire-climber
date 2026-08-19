@@ -4,7 +4,7 @@
 // ============================================================
 
 const MAP_TYPE_ICON = {
-  monster: '⚔️', elite: '💀', rest: '🔥', shop: '🛒', event: '❓', treasure: '💎', boss: '👑',
+  monster: '⚔️', elite: '💀', rest: '🔥', shop: '🛒', shop_half: '🛍️', shop_free: '🎁', event: '❓', treasure: '💎', boss: '👑',
 };
 
 function weightedPick(weights) {
@@ -51,7 +51,14 @@ function generateMap(travelFloors = 6, act = 1) {
         const weights = { ...actWeights };
         if (f >= 4) weights.elite = act <= 1 ? 6 : 12;
         const type = weightedPick(weights);
-        nodes.push({ id: `${f}_${i}`, floor: f, idx: i, type, visited: false });
+        // 15% chance to upgrade a normal shop into a special shop
+        let finalType = type;
+        if (type === 'shop') {
+          const r = Math.random();
+          if (r < 0.08) finalType = 'shop_half';
+          else if (r < 0.15) finalType = 'shop_free';
+        }
+        nodes.push({ id: `${f}_${i}`, floor: f, idx: i, type: finalType, visited: false });
       }
     }
     floors.push(nodes);

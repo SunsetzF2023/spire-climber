@@ -475,7 +475,7 @@ function enterNode(node) {
     case 'elite': startCombat(spawnEnemyGroup('elite', run.act, node.floor), 'elite', node); break;
     case 'boss': startCombat(spawnEnemyGroup('boss', run.act, node.floor), 'boss', node); break;
     case 'rest': showRestScreen(node); break;
-    case 'shop': showShopScreen(node); break;
+    case 'shop': case 'shop_half': case 'shop_free': showShopScreen(node); break;
     case 'event': showEventScreenUI(node); break;
     case 'treasure': showTreasureNode(node); break;
   }
@@ -888,7 +888,12 @@ function showShopScreen(node) {
   run.stats.shopsVisited = (run.stats.shopsVisited || 0) + 1;
   const actMul = 1 + (run.act - 1) * 0.3;
   const shopRelicId = pickShopRelic(run.relics);
+  const shopType = node.type;
+  const isHalfPrice = shopType === 'shop_half';
+  const isFirstFree = shopType === 'shop_free';
   currentShop = {
+    shopType,
+    firstFreeUsed: false,
     cards: [0, 1, 2, 3, 4].map(() => ({ id: pickRandomCardId(run.characterId), cost: 0 })),
     ethereal: [0, 1].map(() => {
       const pool = SHOP_ETHEREAL_POOL.filter(id => !currentShop || true);
@@ -911,8 +916,39 @@ function showShopScreen(node) {
   if (currentShop.shopRelic) {
     currentShop.shopRelic.cost = 120 + Math.floor(Math.random() * 50);
   }
+  // Apply half-price discount
+  if (isHalfPrice) {
+    currentShop.cards.forEach(o => { if (o) o.cost = Math.ceil(o.cost / 2); });
+    currentShop.ethereal.forEach(o => { if (o) o.cost = Math.ceil(o.cost / 2); });
+    currentShop.relics.forEach(o => { if (o) o.cost = Math.ceil(o.cost / 2); });
+    if (currentShop.shopRelic) currentShop.shopRelic.cost = Math.ceil(currentShop.shopRelic.cost / 2);
+  }
+  // Update shop title
+  const titleEl = document.querySelector('#shopScreen h2');
+  if (titleEl) {
+    if (isHalfPrice) {
+      titleEl.innerHTML = '🛍️ 流动商人 <span class="hint">全场半价！限时特惠</span>';
+    } else if (isFirstFree) {
+      titleEl.innerHTML = '🎁 神秘商人 <span class="hint">第一件商品免费！之后原价</span>';
+    } else {
+      titleEl.innerHTML = '商人 <span class="hint">花金币购买卡牌/遗物，或移除一张卡</span>';
+    }
+  }
   renderShop(node);
   el.shopLeaveBtn.onclick = () => backToMapOrVictory(node);
+}
+
+function getShopCost(offer) {
+  if (currentShop.shopType === 'shop_free' && !currentShop.firstFreeUsed) return 0;
+  return offer.cost;
+}
+
+function payShopCost(offer) {
+  const cost = getShopCost(offer);
+  run.gold -= cost;
+  if (currentShop.shopType === 'shop_free' && !currentShop.firstFreeUsed) {
+    currentShop.firstFreeUsed = true;
+  }
 }
 
 function renderShop(node) {
@@ -946,16 +982,18 @@ function renderShop(node) {
   currentShop.cards.forEach((offer, i) => {
     if (!offer) return;
     const inst = makeCardInstance(offer.id, false);
-    const card = renderCardEl(inst, { clickable: run.gold >= offer.cost, unplayable: run.gold < offer.cost });
+    const effectiveCost = getShopCost(offer);
+    const isFree = effectiveCost === 0;
+    const card = renderCardEl(inst, { clickable: run.gold >= effectiveCost, unplayable: run.gold < effectiveCost });
     const priceTag = document.createElement('div');
     priceTag.className = 'hint';
-    priceTag.textContent = `💰 ${offer.cost}`;
+    priceTag.textContent = isFree ? '🎁 免费!' : `💰 ${offer.cost}`;
     const wrap = document.createElement('div');
     wrap.appendChild(card);
     wrap.appendChild(priceTag);
-    if (run.gold >= offer.cost) {
+    if (run.gold >= effectiveCost) {
       card.addEventListener('click', () => {
-        run.gold -= offer.cost;
+        payShopCost(offer);
         addCardToDeck(run, offer.id, false);
         currentShop.cards[i] = null;
         run.stats.shopSpent = true;
@@ -970,16 +1008,18 @@ function renderShop(node) {
   currentShop.ethereal.forEach((offer, i) => {
     if (!offer) return;
     const inst = makeCardInstance(offer.id, false);
-    const card = renderCardEl(inst, { clickable: run.gold >= offer.cost, unplayable: run.gold < offer.cost });
+    const effectiveCost = getShopCost(offer);
+    const isFree = effectiveCost === 0;
+    const card = renderCardEl(inst, { clickable: run.gold >= effectiveCost, unplayable: run.gold < effectiveCost });
     const priceTag = document.createElement('div');
     priceTag.className = 'hint';
-    priceTag.textContent = `💰 ${offer.cost}`;
+    priceTag.textContent = isFree ? '🎁 免费!' : `💰 ${offer.cost}`;
     const wrap = document.createElement('div');
     wrap.appendChild(card);
     wrap.appendChild(priceTag);
-    if (run.gold >= offer.cost) {
+    if (run.gold >= effectiveCost) {
       card.addEventListener('click', () => {
-        run.gold -= offer.cost;
+        payShopCost(offer);
         addCardToDeck(run, offer.id, false);
         currentShop.ethereal[i] = null;
         run.stats.shopSpent = true;
@@ -993,13 +1033,15 @@ function renderShop(node) {
   currentShop.relics.forEach((offer, i) => {
     if (!offer) return;
     const relic = RELICS[offer.id];
+    const effectiveCost = getShopCost(offer);
+    const isFree = effectiveCost === 0;
     const box = document.createElement('div');
     box.className = 'relic-card';
     box.innerHTML = artIcon('relics', offer.id, relic.icon);
-    attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}<br>💰 ${offer.cost}`);
-    if (run.gold >= offer.cost) {
+    attachTooltip(box, `<b>${relic.name}</b><br>${relic.desc}<br>${isFree ? '🎁 免费!' : '💰 ' + offer.cost}`);
+    if (run.gold >= effectiveCost) {
       box.addEventListener('click', () => {
-        run.gold -= offer.cost;
+        payShopCost(offer);
         addRelicToRun(run, offer.id);
         currentShop.relics[i] = null;
         run.stats.shopSpent = true;
@@ -1014,13 +1056,15 @@ function renderShop(node) {
   if (currentShop.shopRelic) {
     const offer = currentShop.shopRelic;
     const relic = RELICS[offer.id];
+    const effectiveCost = getShopCost(offer);
+    const isFree = effectiveCost === 0;
     const box = document.createElement('div');
     box.className = 'relic-card shop-relic-card';
     box.innerHTML = artIcon('relics', offer.id, relic.icon);
-    attachTooltip(box, `<b>${relic.name}</b> 🏪<br>${relic.desc}<br>💰 ${offer.cost}`);
-    if (run.gold >= offer.cost) {
+    attachTooltip(box, `<b>${relic.name}</b> 🏪<br>${relic.desc}<br>${isFree ? '🎁 免费!' : '💰 ' + offer.cost}`);
+    if (run.gold >= effectiveCost) {
       box.addEventListener('click', () => {
-        run.gold -= offer.cost;
+        payShopCost(offer);
         addRelicToRun(run, offer.id);
         currentShop.shopRelic = null;
         run.stats.shopSpent = true;
