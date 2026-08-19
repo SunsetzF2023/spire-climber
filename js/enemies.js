@@ -1294,7 +1294,7 @@ const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror
 // Each group is a fixed composition designed to create tactical
 // decisions: kill the support first, or burst the damage dealer?
 // ============================================================
-const ENCOUNTER_GROUPS = [
+const ENCOUNTER_GROUPS_ACT1 = [
   // 3-enemy synergy groups
   ['shaman', 'raider', 'skeleton_guard'],     // buffer + 2 fighters
   ['healer', 'bat', 'hornet_swarm'],          // healer keeps glass cannons alive
@@ -1307,6 +1307,13 @@ const ENCOUNTER_GROUPS = [
   ['war_drummer', 'bat', 'bat', 'skeleton_guard'], // drummer + swarm
   ['shaman', 'raider', 'raider', 'shieldbearer'],  // buffer + 2 fighters + tank
   ['healer', 'hornet_swarm', 'hornet_swarm', 'tentacle'], // healer + double swarm
+];
+
+const ENCOUNTER_GROUPS_ACT2 = [
+  // Act 1 groups still valid in act 2
+  ['shaman', 'raider', 'skeleton_guard'],
+  ['war_drummer', 'rampaging_hound', 'tentacle'],
+  ['healer', 'bulwark', 'jaw_worm'],
   // Act 2 flavored groups
   ['shaman', 'mirror_sprite', 'rust_sentinel'],
   ['mirror_sprite', 'jaw_worm', 'gargoyle'],
@@ -1333,7 +1340,8 @@ function spawnEnemyGroup(rarity, act = 1, floor = 0) {
   if (rarity === 'elite') {
     // Elite: 70% chance for a predefined synergy group (3-4 enemies), 30% single elite
     if (Math.random() < 0.70) {
-      return pick(ENCOUNTER_GROUPS).slice();
+      const groups = act <= 1 ? ENCOUNTER_GROUPS_ACT1 : ENCOUNTER_GROUPS_ACT2;
+      return pick(groups).slice();
     }
     return [pick(actDef.eliteIds)];
   }
