@@ -1458,13 +1458,54 @@ function afterCombatAction() {
         const deathDesc = killer
           ? `你被${killer}击败了……`
           : '你在战斗中被击败了……';
-        finishRun(false, deathDesc);
+        if (combat.rewardTier === 'boss') {
+          showBossDefeatScreen(deathDesc);
+        } else {
+          finishRun(false, deathDesc);
+        }
       }
     }, 400);
   }
 }
 
 // ---------------- Reward screen ----------------
+
+function showBossDefeatScreen(deathDesc) {
+  run.bossRetries = (run.bossRetries || 0);
+  const retriesLeft = 3 - run.bossRetries;
+  showScreen('eventScreen');
+  el.eventIcon.textContent = '💀';
+  el.eventName.textContent = 'Boss战失败';
+  el.eventDesc.textContent = `${deathDesc}\n\n你可以重新挑战Boss（最多3次），或者放弃本局冒险。\n剩余重试次数：${retriesLeft}/3`;
+  el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.innerHTML = '';
+  el.eventResult.className = 'event-result hidden';
+  el.eventContinueBtn.classList.add('hidden');
+
+  if (retriesLeft > 0) {
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'btn btn-primary';
+    retryBtn.textContent = `⚔️ 重新挑战Boss（剩余 ${retriesLeft} 次）`;
+    retryBtn.addEventListener('click', () => {
+      run.bossRetries += 1;
+      run.player.hp = run.player.maxHp;
+      const node = combat.node;
+      const enemyDefIds = spawnEnemyGroup('boss', run.act, node.floor);
+      startCombat(enemyDefIds, 'boss', node);
+    });
+    el.eventOptions.appendChild(retryBtn);
+  }
+
+  const giveUpBtn = document.createElement('button');
+  giveUpBtn.className = 'btn btn-ghost';
+  giveUpBtn.textContent = '🏳️ 放弃，结束游戏';
+  giveUpBtn.addEventListener('click', () => {
+    finishRun(false, deathDesc);
+  });
+  el.eventOptions.appendChild(giveUpBtn);
+}
+
 function showRewardScreen() {
   // Remove cards with removeFromDeck trait from run.deck
   if (combat.removedFromDeck && combat.removedFromDeck.length > 0) {
