@@ -659,19 +659,31 @@ function patchCardEl(node, card, combat) {
   const def = CARDS[card.defId];
   const unplayable = combat && !combat.canAfford(card);
   const selected = selectedCardUid === card.uid;
+  const hasImage = CARD_IMAGE_IDS.has(def.id);
   node.className = `game-card type-${def.type}`
     + (card.upgraded ? ' upgraded' : '')
     + (unplayable ? ' unplayable' : '')
-    + (selected ? ' selected' : '');
+    + (selected ? ' selected' : '')
+    + (hasImage ? ' card-has-image' : '');
   const baseCost = combat ? combat.getCardCost(card) : ((card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost);
   const isEntangled = combat && combat.entangledUids && combat.entangledUids.includes(card.uid);
-  node.querySelector('.cost').textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
+  const costEl = node.querySelector('.cost');
+  if (costEl) costEl.textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
   node.classList.toggle('entangled', !!isEntangled);
-  node.querySelector('.rarity-tag').textContent = def.rarity;
-  node.querySelector('.icon').innerHTML = def.icon;
-  node.querySelector('.name').textContent = def.name;
-  node.querySelector('.type-label').textContent = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
-  node.querySelector('.desc').textContent = cardDesc(card);
+  if (hasImage) {
+    // Full-image cards only need cost updated (already done above)
+    return;
+  }
+  const rarityEl = node.querySelector('.rarity-tag');
+  if (rarityEl) rarityEl.textContent = def.rarity;
+  const iconEl = node.querySelector('.icon');
+  if (iconEl) iconEl.innerHTML = def.icon;
+  const nameEl = node.querySelector('.name');
+  if (nameEl) nameEl.textContent = def.name;
+  const typeEl = node.querySelector('.type-label');
+  if (typeEl) typeEl.textContent = { attack: '攻击', skill: '技能', power: '能力', status: '状态', curse: '诅咒' }[def.type] || def.type;
+  const descEl = node.querySelector('.desc');
+  if (descEl) descEl.textContent = cardDesc(card);
 }
 
 function renderCardEl(cardInstance, opts = {}) {
