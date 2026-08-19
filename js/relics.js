@@ -226,7 +226,8 @@ function getAxeCardPool() {
     Object.values(tier).forEach(pool => {
       pool.forEach(id => {
         const def = CARDS[id];
-        if (def && def.type !== 'status' && def.type !== 'curse' && def.type !== 'power') {
+        if (def && def.type !== 'status' && def.type !== 'curse' && def.type !== 'power'
+            && def.rarity !== 'special' && !def.removeFromDeck) {
           all.push(id);
         }
       });

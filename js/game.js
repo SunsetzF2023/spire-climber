@@ -530,7 +530,7 @@ function showRelicRewardScreen(clearedBossName) {
   el.eventContinueBtn.classList.add('hidden');
 
   const proceedAfterRelic = () => {
-    if (run.act >= 2) {
+    if (run.act === 2) {
       showCardRewardScreen(clearedBossName);
     } else {
       showScreen('mapScreen'); renderMap(); renderDeck(); renderHud();
