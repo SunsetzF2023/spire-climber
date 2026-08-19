@@ -84,6 +84,8 @@ function cacheEls() {
     'zoomControls', 'zoomInBtn', 'zoomOutBtn', 'zoomResetBtn', 'zoomLevel',
     'cloudSyncStatus', 'cloudLoginBtn', 'cloudLogoutBtn',
   ].forEach(id => { el[id] = document.getElementById(id); });
+  el.pileModalClose.addEventListener('click', hidePileModal);
+  el.pileModal.addEventListener('click', (e) => { if (e.target === el.pileModal) hidePileModal(); });
 }
 
 // ---------------- Tooltip (hover) + info modal (click) ----------------
@@ -548,8 +550,6 @@ function showPileModal(title, cards) {
   el.pileModal.classList.remove('hidden');
 }
 function hidePileModal() { el.pileModal.classList.add('hidden'); }
-el.pileModalClose && el.pileModalClose.addEventListener('click', hidePileModal);
-el.pileModal && el.pileModal.addEventListener('click', (e) => { if (e.target === el.pileModal) hidePileModal(); });
 document.getElementById('drawPileBox').addEventListener('click', () => {
   if (!combat || combat.finished) return;
   showPileModal('抽牌堆', combat.drawPile.slice().reverse());
