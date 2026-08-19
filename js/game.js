@@ -19,6 +19,9 @@ const STARTING_GOLD = 99;
 const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-boss rest + boss floor
 const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
+// Card IDs that have image assets in assets/cards/
+const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'defend', 'purify', 'second_skin', 'swift_focus']);
+
 let run = null;
 let combat = null;
 let selectedCardUid = null;
@@ -682,14 +685,29 @@ function renderCardEl(cardInstance, opts = {}) {
   const isEntangled = liveCombat && liveCombat.entangledUids && liveCombat.entangledUids.includes(cardInstance.uid);
   if (isEntangled) div.classList.add('entangled');
   const cost = (liveCombat && ((liveCombat.firstAttackFree && def.type === 'attack') || (liveCombat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
-  div.innerHTML = `
-    <div class="cost">${cost}</div>
-    <div class="rarity-tag">${def.rarity}</div>
-    <div class="icon">${artIconHtml('cards', def.id, def.icon)}</div>
-    <div class="name">${def.name}</div>
-    <div class="type-label">${{ attack: '攻击', skill: '技能', power: '能力' }[def.type]}</div>
-    <div class="desc">${cardDesc(cardInstance)}</div>
-  `;
+  const typeLabel = { attack: '攻击', skill: '技能', power: '能力', status: '状态', curse: '诅咒' }[def.type] || def.type;
+  const descText = cardDesc(cardInstance);
+
+  // Check if card has an image asset
+  const hasImage = CARD_IMAGE_IDS.has(def.id);
+  if (hasImage) {
+    div.classList.add('card-has-image');
+    div.innerHTML = `
+      <img class="card-full-image" src="assets/cards/${def.id}.png" alt="${def.name}">
+      <div class="cost">${cost}</div>
+      ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
+    `;
+    attachTooltip(div, `<b>${def.name}${cardInstance.upgraded ? '+' : ''}</b><br>${typeLabel} · 费用 ${cost}<br>${descText}`);
+  } else {
+    div.innerHTML = `
+      <div class="cost">${cost}</div>
+      <div class="rarity-tag">${def.rarity}</div>
+      <div class="icon">${def.icon}</div>
+      <div class="name">${def.name}</div>
+      <div class="type-label">${typeLabel}</div>
+      <div class="desc">${descText}</div>
+    `;
+  }
   if (opts.clickable) div.addEventListener('click', () => opts.onClick(cardInstance));
   return div;
 }
