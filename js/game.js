@@ -133,10 +133,27 @@ function relicInfoHtml(relicId) {
   const r = RELICS[relicId];
   return `<div class="modal-icon">${r.icon}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
 }
-function cardInfoHtml(defId) {
+function cardInfoHtml(defId, upgraded) {
   const def = CARDS[defId];
   const typeLabel = { attack: '攻击', skill: '技能', power: '能力' }[def.type];
-  return `<div class="modal-icon">${def.icon}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${def.cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(def.vars(false))}</div>`;
+  const cost = (upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+  const vars = def.vars(upgraded);
+  const hasUpgrade = JSON.stringify(def.vars(false)) !== JSON.stringify(def.vars(true)) || def.upgradedCost !== undefined;
+  const badge = upgraded ? '<span class="upgrade-badge">+1</span>' : '';
+  const toggleBtn = hasUpgrade
+    ? `<button id="cardInfoToggle" class="btn btn-ghost" style="margin-top:12px">${upgraded ? '查看基础形态' : '查看升级形态'}</button>`
+    : '<p class="hint" style="margin-top:12px">此卡牌无升级变化</p>';
+  return `<div class="modal-icon">${def.icon}${badge}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(vars)}</div>${toggleBtn}`;
+}
+function showCardInfoModal(defId) {
+  let upgraded = false;
+  const render = () => {
+    el.infoModalContent.innerHTML = cardInfoHtml(defId, upgraded);
+    const toggle = document.getElementById('cardInfoToggle');
+    if (toggle) toggle.addEventListener('click', () => { upgraded = !upgraded; render(); });
+  };
+  render();
+  el.infoModal.classList.remove('hidden');
 }
 function enemyInfoHtml(defId) {
   const def = ENEMIES[defId];
@@ -1365,21 +1382,24 @@ function showProfileScreen() {
     el.profileAchievements.appendChild(div);
   });
 
-  const buildCollectionGrid = (container, ids, discoveredList, infoFn, label) => {
+  const buildCollectionGrid = (container, ids, discoveredList, infoFn, label, isCard) => {
     container.innerHTML = '';
     ids.forEach(id => {
       const discovered = discoveredList.includes(id);
       const div = document.createElement('div');
       div.className = `collection-item ${discovered ? '' : 'undiscovered'}`;
       div.innerHTML = discovered ? infoFn.icon(id) : '❔';
-      div.addEventListener('click', () => showInfoModal(discovered ? infoFn.html(id) : unknownInfoHtml(label)));
+      div.addEventListener('click', () => {
+        if (!discovered) { showInfoModal(unknownInfoHtml(label)); return; }
+        if (isCard) showCardInfoModal(id); else showInfoModal(infoFn.html(id));
+      });
       container.appendChild(div);
     });
   };
 
   const cardIds = Object.keys(CARDS);
   el.profileCardProgress.textContent = `(${meta.discoveredCards.length} / ${cardIds.length})`;
-  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => artIcon('cards', id, CARDS[id].icon), html: cardInfoHtml }, '卡牌');
+  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => artIcon('cards', id, CARDS[id].icon), html: cardInfoHtml }, '卡牌', true);
 
   const relicIds = Object.keys(RELICS);
   el.profileRelicProgress.textContent = `(${meta.discoveredRelics.length} / ${relicIds.length})`;
@@ -1487,7 +1507,7 @@ function showHistoryScreen() {
       tag.addEventListener('click', () => showInfoModal(relicInfoHtml(tag.dataset.relicId)));
     });
     card.querySelectorAll('.history-card-tag').forEach(tag => {
-      tag.addEventListener('click', () => showInfoModal(cardInfoHtml(tag.dataset.cardId)));
+      tag.addEventListener('click', () => showCardInfoModal(tag.dataset.cardId));
     });
   });
 }

@@ -334,6 +334,7 @@ body{
 .modal-name{font-size:16px; font-weight:700; margin-top:8px;}
 .modal-meta{font-size:11px; color:var(--dim); margin-top:2px;}
 .modal-desc{font-size:13px; color:var(--text); margin-top:12px; line-height:1.6;}
+.upgrade-badge{display:inline-block; background:var(--amber); color:#000; font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; margin-left:6px; vertical-align:middle;}
 
 @media (max-width:800px){
   .mapScreen, #mapScreen{grid-template-columns:1fr;}
