@@ -514,17 +514,59 @@ function advanceToNextAct(node) {
   run.map = generateMap(ACT_FLOOR_COUNT);
   run.currentNodeId = null;
 
+  showRelicRewardScreen(clearedBossName);
+}
+
+function showRelicRewardScreen(clearedBossName) {
   showScreen('eventScreen');
-  el.eventIcon.textContent = '🌌';
-  el.eventName.textContent = `进入第 ${run.act} 维度`;
-  el.eventDesc.textContent = `你击败了${clearedBossName}！${ACT_DEFS[run.act - 1].name} —— 你感觉到更强大的威胁正在逼近……（生命已完全恢复）`;
+  el.eventIcon.textContent = '�';
+  el.eventName.textContent = `击败${clearedBossName}！免费遗物奖励`;
+  el.eventDesc.textContent = `你击败了${clearedBossName}！生命已完全恢复。作为奖励，请从遗物池中免费选择一件遗物：`;
   el.eventOptions.innerHTML = '';
-  el.eventCardSelect.className = 'card-grid hidden';
+  el.eventCardSelect.className = 'relic-reward-grid';
   el.eventCardSelect.innerHTML = '';
   el.eventResult.className = 'event-result hidden';
-  el.eventContinueBtn.classList.remove('hidden');
-  el.eventContinueBtn.onclick = () => { showScreen('mapScreen'); renderMap(); renderDeck(); renderHud(); };
-  renderHud();
+  el.eventContinueBtn.classList.add('hidden');
+
+  const allRelicIds = [
+    ...RELIC_LIST_COMMON,
+    ...RELIC_LIST_UNCOMMON,
+    ...RELIC_LIST_RARE,
+    ...RELIC_LIST_SHOP,
+  ].filter(id => !run.relics.includes(id));
+
+  allRelicIds.forEach(id => {
+    const relic = RELICS[id];
+    const box = document.createElement('div');
+    box.className = 'relic-card relic-reward-card';
+    box.textContent = relic.icon;
+    const rarityTag = document.createElement('span');
+    rarityTag.className = 'relic-rarity-tag';
+    rarityTag.textContent = relic.rarity === 'common' ? '普通' : relic.rarity === 'uncommon' ? '罕见' : relic.rarity === 'rare' ? '稀有' : relic.rarity === 'shop' ? '商店' : '事件';
+    box.appendChild(rarityTag);
+    attachTooltip(box, `<b>${relic.icon} ${relic.name}</b> [${rarityTag.textContent}]<br>${relic.desc}`);
+    box.addEventListener('click', () => {
+      addRelicToRun(run, id);
+      el.eventCardSelect.className = 'card-grid hidden';
+      el.eventCardSelect.innerHTML = '';
+      el.eventResult.className = 'event-result good';
+      el.eventResult.textContent = `获得了遗物：${relic.icon} ${relic.name}！`;
+      el.eventContinueBtn.classList.remove('hidden');
+      el.eventContinueBtn.onclick = () => { showScreen('mapScreen'); renderMap(); renderDeck(); renderHud(); };
+      renderHud();
+    });
+    el.eventCardSelect.appendChild(box);
+  });
+
+  const skipBtn = document.createElement('button');
+  skipBtn.className = 'btn btn-ghost';
+  skipBtn.textContent = '⏭️ 不需要遗物，直接进入';
+  skipBtn.addEventListener('click', () => {
+    el.eventCardSelect.className = 'card-grid hidden';
+    el.eventCardSelect.innerHTML = '';
+    showScreen('mapScreen'); renderMap(); renderDeck(); renderHud();
+  });
+  el.eventOptions.appendChild(skipBtn);
 }
 
 // ---------------- Generic card element renderer ----------------
