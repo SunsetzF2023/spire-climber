@@ -296,7 +296,7 @@ function newRun(characterId, bonus = {}) {
     gold: STARTING_GOLD,
     relics: [],
     deck: deckIds.map(id => makeCardInstance(id, false)),
-    map: generateMap(ACT_FLOOR_COUNT),
+    map: generateMap(ACT_FLOOR_COUNT, 1),
     currentNodeId: null,
     removeCount: 0,
     act: 1,
@@ -512,7 +512,7 @@ function advanceToNextAct(node) {
   run.act += 1;
   run.player.maxHp += 20;
   healPlayerRun(run, run.player.maxHp);
-  run.map = generateMap(ACT_FLOOR_COUNT);
+  run.map = generateMap(ACT_FLOOR_COUNT, run.act);
   run.currentNodeId = null;
 
   showRelicRewardScreen(clearedBossName);
@@ -520,7 +520,7 @@ function advanceToNextAct(node) {
 
 function showRelicRewardScreen(clearedBossName) {
   showScreen('eventScreen');
-  el.eventIcon.textContent = '�';
+  el.eventIcon.textContent = '🎁';
   el.eventName.textContent = `击败${clearedBossName}！免费遗物奖励`;
   el.eventDesc.textContent = `你击败了${clearedBossName}！生命已完全恢复。作为奖励，请从遗物池中免费选择一件遗物：`;
   el.eventOptions.innerHTML = '';
@@ -528,6 +528,14 @@ function showRelicRewardScreen(clearedBossName) {
   el.eventCardSelect.innerHTML = '';
   el.eventResult.className = 'event-result hidden';
   el.eventContinueBtn.classList.add('hidden');
+
+  const proceedAfterRelic = () => {
+    if (run.act >= 2) {
+      showCardRewardScreen(clearedBossName);
+    } else {
+      showScreen('mapScreen'); renderMap(); renderDeck(); renderHud();
+    }
+  };
 
   const allRelicIds = [
     ...RELIC_LIST_COMMON,
@@ -553,7 +561,7 @@ function showRelicRewardScreen(clearedBossName) {
       el.eventResult.className = 'event-result good';
       el.eventResult.textContent = `获得了遗物：${relic.icon} ${relic.name}！`;
       el.eventContinueBtn.classList.remove('hidden');
-      el.eventContinueBtn.onclick = () => { showScreen('mapScreen'); renderMap(); renderDeck(); renderHud(); };
+      el.eventContinueBtn.onclick = proceedAfterRelic;
       renderHud();
     });
     el.eventCardSelect.appendChild(box);
@@ -565,9 +573,81 @@ function showRelicRewardScreen(clearedBossName) {
   skipBtn.addEventListener('click', () => {
     el.eventCardSelect.className = 'card-grid hidden';
     el.eventCardSelect.innerHTML = '';
-    showScreen('mapScreen'); renderMap(); renderDeck(); renderHud();
+    proceedAfterRelic();
   });
   el.eventOptions.appendChild(skipBtn);
+}
+
+function showCardRewardScreen(clearedBossName) {
+  showScreen('eventScreen');
+  el.eventIcon.textContent = '🎴';
+  el.eventName.textContent = `击败${clearedBossName}！卡牌奖励`;
+  el.eventDesc.textContent = `作为额外奖励，你可以从卡牌池中免费挑选最多 3 张卡牌加入卡组。也可以跳过不选。`;
+  el.eventOptions.innerHTML = '';
+  el.eventCardSelect.className = 'card-grid';
+  el.eventCardSelect.innerHTML = '';
+  el.eventResult.className = 'event-result hidden';
+  el.eventContinueBtn.classList.add('hidden');
+
+  const selectedCards = [];
+  const allCardIds = [];
+  // Build full card pool from all rarities
+  ['common', 'uncommon', 'rare'].forEach(rarity => {
+    const tier = REWARD_POOLS[rarity];
+    if (tier) {
+      [...(tier.neutral || []), ...(tier[run.characterId] || tier.warrior || [])].forEach(id => {
+        if (!allCardIds.includes(id)) allCardIds.push(id);
+      });
+    }
+  });
+
+  const continueBtn = document.createElement('button');
+  continueBtn.className = 'btn btn-ghost';
+  continueBtn.textContent = '✅ 确认选择，继续前进';
+  continueBtn.style.marginTop = '12px';
+  continueBtn.addEventListener('click', () => {
+    selectedCards.forEach(id => {
+      run.deck.push(makeCardInstance(id, false));
+      discover('discoveredCards', id);
+    });
+    showScreen('mapScreen'); renderMap(); renderDeck(); renderHud();
+  });
+
+  allCardIds.forEach(id => {
+    const def = CARDS[id];
+    if (!def) return;
+    const card = makeCardInstance(id, false);
+    const cardEl = renderCardEl(card, {
+      clickable: true,
+      onClick: (c) => {
+        if (selectedCards.includes(id)) {
+          // Deselect
+          const idx = selectedCards.indexOf(id);
+          selectedCards.splice(idx, 1);
+          cardEl.classList.remove('card-selected');
+        } else {
+          if (selectedCards.length >= 3) return;
+          selectedCards.push(id);
+          cardEl.classList.add('card-selected');
+        }
+        el.eventResult.className = 'event-result good';
+        el.eventResult.textContent = selectedCards.length > 0
+          ? `已选择 ${selectedCards.length}/3 张卡牌：${selectedCards.map(sid => CARDS[sid].name).join('、')}`
+          : '';
+        if (selectedCards.length > 0) {
+          el.eventContinueBtn.classList.add('hidden');
+          el.eventOptions.innerHTML = '';
+          el.eventOptions.appendChild(continueBtn);
+        } else {
+          el.eventOptions.innerHTML = '';
+          el.eventOptions.appendChild(continueBtn);
+        }
+      },
+    });
+    el.eventCardSelect.appendChild(cardEl);
+  });
+
+  el.eventOptions.appendChild(continueBtn);
 }
 
 // ---------------- Generic card element renderer ----------------

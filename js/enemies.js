@@ -1329,7 +1329,7 @@ const ENCOUNTER_GROUPS_ACT2 = [
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest', 'cultist_summoner'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: ACT1_EARLY_IDS, lateEnemyPool: ACT1_LATE_IDS, lateFloorThreshold: 10 },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest', 'cultist_summoner'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.20, enemyPool: ACT1_EARLY_IDS, lateEnemyPool: ACT1_LATE_IDS, lateFloorThreshold: 10 },
   { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.15, dmgScaling: 1.1, doubleSpawnChance: 0.35, enemyPool: ACT2_ENEMY_IDS },
   { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.35, dmgScaling: 1.2, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
 ];
@@ -1338,8 +1338,9 @@ function spawnEnemyGroup(rarity, act = 1, floor = 0) {
   const actDef = ACT_DEFS[act - 1] || ACT_DEFS[ACT_DEFS.length - 1];
   if (rarity === 'boss') return [actDef.bossId];
   if (rarity === 'elite') {
-    // Elite: 70% chance for a predefined synergy group (3-4 enemies), 30% single elite
-    if (Math.random() < 0.70) {
+    // Elite: synergy group chance varies by act — act1 easier, act2+ harder
+    const synergyChance = act <= 1 ? 0.40 : 0.70;
+    if (Math.random() < synergyChance) {
       const groups = act <= 1 ? ENCOUNTER_GROUPS_ACT1 : ENCOUNTER_GROUPS_ACT2;
       return pick(groups).slice();
     }

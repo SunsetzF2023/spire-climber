@@ -18,9 +18,14 @@ function weightedPick(weights) {
   return entries[0][0];
 }
 
-function generateMap(travelFloors = 6) {
+function generateMap(travelFloors = 6, act = 1) {
   const FLOOR_COUNT = travelFloors; // floors 0..FLOOR_COUNT-1 are travel floors, FLOOR_COUNT is boss
   const floors = [];
+
+  // Node weights vary by act for pacing
+  const actWeights = act <= 1
+    ? { monster: 48, event: 18, shop: 10, treasure: 6, rest: 12 }  // act1: more monsters, warmup
+    : { monster: 34, event: 24, shop: 16, treasure: 12, rest: 10 }; // act2+: more rewards/events/shops
 
   // For long acts, sprinkle a couple of guaranteed rest checkpoints roughly
   // at the 1/3 and 2/3 marks so a 20-30 floor act isn't pure attrition.
@@ -43,8 +48,8 @@ function generateMap(travelFloors = 6) {
     } else {
       const n = 2 + Math.floor(Math.random() * 2); // 2-3 nodes
       for (let i = 0; i < n; i++) {
-        const weights = { monster: 42, event: 20, shop: 12, treasure: 8, rest: 10 };
-        if (f >= 4) weights.elite = 10;
+        const weights = { ...actWeights };
+        if (f >= 4) weights.elite = act <= 1 ? 6 : 12;
         const type = weightedPick(weights);
         nodes.push({ id: `${f}_${i}`, floor: f, idx: i, type, visited: false });
       }
