@@ -620,11 +620,11 @@ const ENEMIES = {
       }
       if (pattern[step] === 'ritual') {
         return {
-          name: '仪式', icon: '💪', type: 'buff', displayValue: 3,
-          execute(combat, e) { combat.applyStatusEnemy(e.id, 'strength', 3); combat.log(`🧙 ${e.name} 举行仪式：力量 +3`, 'enemy'); },
+          name: '仪式', icon: '💪', type: 'buff', displayValue: 2,
+          execute(combat, e) { combat.applyStatusEnemy(e.id, 'strength', 2); combat.log(`🧙 ${e.name} 举行仪式：力量 +2`, 'enemy'); },
         };
       }
-      const dmg = 8 + (enemy.statuses.strength || 0);
+      const dmg = 6 + (enemy.statuses.strength || 0);
       return {
         name: '暗影箭', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
@@ -632,9 +632,9 @@ const ENEMIES = {
     },
   },
   cultist_minion: {
-    id: 'cultist_minion', name: '邪教随从', icon: '🧟', hpRange: [12, 18], rarity: 'normal',
+    id: 'cultist_minion', name: '邪教随从', icon: '🧟', hpRange: [10, 14], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const dmg = 6 + (enemy.statuses.strength || 0);
+      const dmg = 4 + (enemy.statuses.strength || 0);
       return {
         name: '撕咬', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
@@ -709,7 +709,7 @@ const ENEMIES = {
     },
   },
   shadow_priest: {
-    id: 'shadow_priest', name: '暗影祭司', icon: '🧟', hpRange: [85, 95], rarity: 'elite',
+    id: 'shadow_priest', name: '暗影祭司', icon: '🧟', hpRange: [60, 70], rarity: 'elite',
     // 能量虹吸机制：暗影诅咒不仅会往抽牌堆里塞诅咒牌，还会立即抽走你本回合的能量
     // 转化为自身力量，是即时的资源掠夺，而非单纯延迟生效的诅咒牌。
     chooseMove(enemy, combat) {
@@ -723,8 +723,8 @@ const ENEMIES = {
       }
       if (turn % 4 === 2) {
         return {
-          name: '暗影恢复', icon: '💚', type: 'heal', displayValue: 15,
-          execute(combat, e) { combat.healEnemy(e.id, 15); combat.log(`${e.name} 吸收暗影能量，回复 15 点生命`, 'enemy'); },
+          name: '暗影恢复', icon: '💚', type: 'heal', displayValue: 10,
+          execute(combat, e) { combat.healEnemy(e.id, 10); combat.log(`${e.name} 吸收暗影能量，回复 10 点生命`, 'enemy'); },
         };
       }
       if (turn % 4 === 1) {
@@ -739,8 +739,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 9,
-        execute(combat, e) { combat.dealDamageToPlayer(9, e.id); },
+        name: '诅咒之触', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
       };
     },
   },
