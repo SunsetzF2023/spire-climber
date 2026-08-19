@@ -511,7 +511,8 @@ function patchCardEl(node, card, combat) {
     + (card.upgraded ? ' upgraded' : '')
     + (unplayable ? ' unplayable' : '')
     + (selected ? ' selected' : '');
-  node.querySelector('.cost').textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : def.cost;
+  const baseCost = (card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+  node.querySelector('.cost').textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
   node.querySelector('.rarity-tag').textContent = def.rarity;
   node.querySelector('.icon').innerHTML = def.icon;
   node.querySelector('.name').textContent = def.name;
@@ -526,7 +527,8 @@ function renderCardEl(cardInstance, opts = {}) {
   if (opts.selected) div.classList.add('selected');
   if (opts.unplayable) div.classList.add('unplayable');
   const liveCombat = opts.liveCombat || null;
-  const cost = (liveCombat && ((liveCombat.firstAttackFree && def.type === 'attack') || (liveCombat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : def.cost;
+  const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+  const cost = (liveCombat && ((liveCombat.firstAttackFree && def.type === 'attack') || (liveCombat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
   div.innerHTML = `
     <div class="cost">${cost}</div>
     <div class="rarity-tag">${def.rarity}</div>

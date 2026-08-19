@@ -59,14 +59,14 @@ const CARDS = {
   },
   swift_focus: {
     id: 'swift_focus', name: '专注', icon: '🎯', type: 'power', cost: 2, target: 'none', rarity: 'uncommon', cls: 'neutral',
-    vars(up) { return { dex: 2 }; },
+    vars(up) { return { dex: up ? 3 : 2 }; },
     upgradedCost: 1,
     descTemplate(v) { return `永久获得 ${v.dex} 点敏捷（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('dexterity', ctx.vars.dex); },
   },
   apex_form: {
     id: 'apex_form', name: '巅峰形态', icon: '🌟', type: 'power', cost: 3, target: 'none', rarity: 'rare', cls: 'neutral',
-    vars(up) { return { str: 2, dex: 1 }; },
+    vars(up) { return { str: up ? 3 : 2, dex: up ? 2 : 1 }; },
     upgradedCost: 2,
     descTemplate(v) { return `永久获得 ${v.str} 点力量和 ${v.dex} 点敏捷（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); ctx.combat.applyStatusPlayer('dexterity', ctx.vars.dex); },
@@ -205,7 +205,7 @@ const CARDS = {
   },
   inflame: {
     id: 'inflame', name: '战意', icon: '🔥', type: 'power', cost: 2, target: 'none', rarity: 'uncommon', cls: 'warrior',
-    vars(up) { return { str: 2 }; },
+    vars(up) { return { str: up ? 3 : 2 }; },
     upgradedCost: 1,
     descTemplate(v) { return `永久获得 ${v.str} 点力量（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
