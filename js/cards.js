@@ -210,12 +210,6 @@ const CARDS = {
     descTemplate(v) { return `永久获得 ${v.str} 点力量（本场战斗）`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
   },
-  metallicize: {
-    id: 'metallicize', name: '金属化', icon: '🔩', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
-    vars(up) { return { block: up ? 4 : 3 }; },
-    descTemplate(v) { return `每回合结束时获得 ${v.block} 点格挡`; },
-    effect(ctx) { ctx.combat.applyStatusPlayer('metallicize', ctx.vars.block); },
-  },
   rampage: {
     id: 'rampage', name: '狂暴打击', icon: '🐗', type: 'attack', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'warrior',
     vars(up) { return { dmg: up ? 9 : 6, growth: up ? 4 : 3 }; },
@@ -382,12 +376,6 @@ const CARDS = {
       ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '轻捷突刺' });
       ctx.combat.drawCards(ctx.vars.draw);
     },
-  },
-  venomous_fang: {
-    id: 'venomous_fang', name: '渗毒獠牙', icon: '🐍', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'huntress',
-    vars(up) { return { amt: up ? 2 : 1 }; },
-    descTemplate(v) { return `永久获得 ${v.amt} 层渗毒：此后你的攻击牌命中造成伤害时，额外施加等量中毒`; },
-    effect(ctx) { ctx.combat.applyStatusPlayer('venom', ctx.vars.amt); },
   },
 
   // ---------------- Huntress rare ----------------
@@ -1144,8 +1132,8 @@ const REWARD_POOLS = {
   },
   uncommon: {
     neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify', 'weakening_mist'],
-    warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'metallicize', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
-    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'venomous_fang', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror', 'hex'],
+    warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
+    huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror', 'hex'],
     automaton: ['force_field', 'storm_surge'],
   },
   rare: {
