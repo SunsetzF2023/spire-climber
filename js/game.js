@@ -1430,7 +1430,7 @@ function showHistoryScreen() {
   history.forEach((rec, i) => {
     const card = document.createElement('div');
     card.className = 'history-card';
-    const dateStr = new Date(rec.timestamp).toLocaleString('zh-CN');
+    const dateStr = new Date(rec.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     const floorStr = floorToActFloorStr(rec.floor || rec.act * (ACT_FLOOR_COUNT + 1));
 
     // Relics — clickable spans with names (build as HTML, attach listeners after)
@@ -1571,7 +1571,7 @@ function renderLeaderboard(entries) {
     const row = document.createElement('div');
     row.className = 'leaderboard-row';
     const name = e.player_name || e.user_id || '匿名玩家';
-    const date = e.created_at ? new Date(e.created_at).toLocaleDateString('zh-CN') : '';
+    const date = e.created_at ? new Date(e.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
     const floorStr = e.floor ? floorToActFloorStr(e.floor) : `维度${e.act || 1}`;
     row.innerHTML = `
       <span class="lb-char">${e.character_icon || ''} ${e.character_name || '?'}</span>
