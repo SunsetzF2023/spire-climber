@@ -19,6 +19,8 @@ const STATUS_META = {
   wellLaidPlans: { icon: '📋', label: '计划妥当', desc: '回合结束时保留等同于层数的手牌，不会被弃置。' },
   toolsOfTrade: { icon: '🧰', label: '必备工具', desc: '每回合开始时，抽 1 张牌并弃 1 张牌。' },
   cardLock: { icon: '🔒', label: '封印', desc: '本回合无法打出任何卡牌。回合结束时解除。' },
+  entangle: { icon: '🌿', label: '缠绕', desc: '手牌中随机对应层数的卡牌被封印，无法打出。只有净化类卡牌可以消除。' },
+  chaos: { icon: '🌀', label: '混乱', desc: '所有卡牌费用随机重新分配（总费用+1）。只有净化类卡牌可以消除。' },
   battleHymn: { icon: '🎵', label: '战歌', desc: '每回合开始时，对所有敌人造成等同于层数的伤害。' },
   corruption: { icon: '🩸', label: '腐化', desc: '所有卡牌费用变为 0，但打出后会被消耗。' },
   demonForm: { icon: '😈', label: '恶魔形态', desc: '每回合开始时获得等同于层数的力量。' },
@@ -56,7 +58,7 @@ class CombatEngine {
       statuses: {
         strength: 0, dexterity: 0, weak: 0, vulnerable: 0, frail: 0, poison: 0, metallicize: 0, venom: 0,
         darkEmbrace: 0, feelNoPain: 0, barricade: 0, juggernaut: 0, noxiousFumes: 0, wellLaidPlans: 0, toolsOfTrade: 0,
-        cardLock: 0, battleHymn: 0, corruption: 0, demonForm: 0, normalityLock: 0,
+        cardLock: 0, battleHymn: 0, corruption: 0, demonForm: 0, normalityLock: 0, entangle: 0, chaos: 0,
       },
     };
 
@@ -137,6 +139,22 @@ class CombatEngine {
         this.discardRandomFromHand(1);
       }
     }
+    // Entangle: seal random cards in hand equal to entangle stacks
+    if (this.player.statuses.entangle > 0) {
+      this.entangledUids = [];
+      const playable = this.hand.filter(c => {
+        const d = CARDS[c.defId];
+        return d.type !== 'status' && d.type !== 'curse';
+      });
+      const shuffled = playable.slice().sort(() => Math.random() - 0.5);
+      const count = Math.min(this.player.statuses.entangle, shuffled.length);
+      for (let i = 0; i < count; i++) this.entangledUids.push(shuffled[i].uid);
+      if (count > 0) this.log(`🌿 缠绕：${count} 张手牌被封印，本回合无法打出`, 'enemy');
+    }
+    // Chaos: recalculate card costs with random redistribution (+1 total)
+    if (this.player.statuses.chaos > 0) {
+      this.recalculateChaosCosts();
+    }
     this.log(`—— 回合 ${this.turnCount} 开始 ——`, 'info');
   }
 
@@ -169,6 +187,7 @@ class CombatEngine {
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
     this.player.statuses.normalityLock = 0;
+    this.entangledUids = [];
     if (this.player.statuses.cardLock > 0) {
       this.player.statuses.cardLock -= 1;
       this.log('🔓 封印解除', 'info');
@@ -231,13 +250,57 @@ class CombatEngine {
     const def = CARDS[cardInstance.defId];
     if ((def.type === 'status' || def.type === 'curse') && !def.exhaust) return false;
     if (this.player.statuses.normalityLock > 0 && def.type === 'attack') return false;
+    if (this.entangledUids && this.entangledUids.includes(cardInstance.uid)) return false;
     if (this.player.statuses.corruption > 0) return true;
-    const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+    const baseCost = this.getCardCost(cardInstance);
     const geminiFree = this.geminiLeftActive && def.type !== 'status' && def.type !== 'curse';
     const cost = geminiFree ? 0 : ((this.firstAttackFree && def.type === 'attack') ? 0 : baseCost);
     if (this.energy < cost) return false;
     if (def.id === 'clash' && !this.hand.every(c => CARDS[c.defId].type === 'attack')) return false;
     return true;
+  }
+
+  getCardCost(cardInstance) {
+    const def = CARDS[cardInstance.defId];
+    let base = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+    if (this.player.statuses.chaos > 0 && this.chaosCostMap && this.chaosCostMap.has(cardInstance.uid)) {
+      base = this.chaosCostMap.get(cardInstance.uid);
+    }
+    return base;
+  }
+
+  recalculateChaosCosts() {
+    this.chaosCostMap = this.chaosCostMap || new Map();
+    this.chaosCostMap.clear();
+    const playable = this.hand.filter(c => {
+      const d = CARDS[c.defId];
+      return d.type !== 'status' && d.type !== 'curse';
+    });
+    if (playable.length === 0) return;
+    const baseCosts = playable.map(c => {
+      const d = CARDS[c.defId];
+      return (c.upgraded && d.upgradedCost !== undefined) ? d.upgradedCost : d.cost;
+    });
+    const totalOriginal = baseCosts.reduce((s, v) => s + v, 0);
+    const totalNew = totalOriginal + playable.length; // +1 per card
+    // Distribute totalNew across cards randomly, each card gets at least 0
+    const costs = new Array(playable.length).fill(0);
+    let remaining = totalNew;
+    // Randomly assign, ensuring no card exceeds a reasonable cap
+    for (let i = 0; i < playable.length && remaining > 0; i++) {
+      const maxHere = Math.min(remaining, 4);
+      const assign = i === playable.length - 1 ? remaining : Math.floor(Math.random() * (maxHere + 1));
+      costs[i] = assign;
+      remaining -= assign;
+    }
+    // If remaining > 0 (last card got less), redistribute
+    while (remaining > 0) {
+      const idx = Math.floor(Math.random() * playable.length);
+      costs[idx] += 1;
+      remaining -= 1;
+    }
+    playable.forEach((c, i) => this.chaosCostMap.set(c.uid, costs[i]));
+    this.log(`🌀 混乱：手牌费用已随机重新分配`, 'enemy');
   }
 
   playCard(cardUid, targetEnemyId) {
@@ -250,7 +313,7 @@ class CombatEngine {
     const isCorrupted = this.player.statuses.corruption > 0;
     const isFreeAttack = this.firstAttackFree && def.type === 'attack';
     const isGeminiFree = this.geminiLeftActive && def.type !== 'status' && def.type !== 'curse';
-    const baseCost = (card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+    const baseCost = this.getCardCost(card);
     const cost = isCorrupted ? 0 : (isGeminiFree ? 0 : (isFreeAttack ? 0 : baseCost));
     if (this.energy < cost) return { success: false, reason: 'no-energy' };
 

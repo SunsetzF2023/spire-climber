@@ -1203,12 +1203,54 @@ const ENEMIES = {
       };
     },
   },
+  vine_tender: {
+    id: 'vine_tender', name: '藤蔓操控者', icon: '🌿', hpRange: [28, 36], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['entangle', 'atk', 'entangle', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'entangle') {
+        return {
+          name: '缠绕藤蔓', icon: '🌿', type: 'debuff', displayValue: 2, statusPreview: [{ name: 'entangle', amount: 2 }],
+          execute(combat, e) {
+            combat.applyStatusPlayer('entangle', 2);
+            combat.log(`🌿 ${e.name} 释放缠绕藤蔓！2 张手牌将被封印！`, 'enemy');
+          },
+        };
+      }
+      return {
+        name: '藤蔓鞭击', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
+      };
+    },
+  },
+  chaos_wizard: {
+    id: 'chaos_wizard', name: '混沌术士', icon: '🌀', hpRange: [30, 38], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['chaos', 'atk', 'atk', 'chaos'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'chaos') {
+        return {
+          name: '混乱咒术', icon: '🌀', type: 'debuff', displayValue: null, statusPreview: [{ name: 'chaos', amount: 1 }],
+          execute(combat, e) {
+            combat.applyStatusPlayer('chaos', 1);
+            combat.log(`🌀 ${e.name} 施放混乱咒术！你的卡牌费用被打乱！`, 'enemy');
+          },
+        };
+      }
+      return {
+        name: '混沌箭', icon: '⚔️', type: 'attack', displayValue: 8,
+        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); },
+      };
+    },
+  },
 };
 const ACT1_EARLY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard'];
 // Act 1 late pool (floors 10+): higher damage / HP
-const ACT1_LATE_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'gremlin_nob'];
+const ACT1_LATE_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'gremlin_nob', 'vine_tender'];
 
-const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian'];
+const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian', 'vine_tender', 'chaos_wizard'];
 
 // ============================================================
 // Predefined encounter groups with enemy synergy.

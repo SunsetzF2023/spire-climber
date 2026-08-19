@@ -34,13 +34,15 @@ const CARDS = {
     id: 'purify', name: '净化', icon: '🌿', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
     vars(up) { return { heal: up ? 6 : 4, cost: up ? 0 : 1 }; },
     upgradedCost: 0,
-    descTemplate(v) { return `移除所有负面状态（虚弱、易伤、脆弱、中毒、封印），回复 ${v.heal} 点生命。消耗`; },
+    descTemplate(v) { return `移除所有负面状态（虚弱、易伤、脆弱、中毒、封印、缠绕、混乱），回复 ${v.heal} 点生命。消耗`; },
     effect(ctx) {
       const s = ctx.combat.player.statuses;
       let removed = 0;
-      ['weak', 'vulnerable', 'frail', 'poison', 'cardLock'].forEach(stat => {
+      ['weak', 'vulnerable', 'frail', 'poison', 'cardLock', 'entangle', 'chaos'].forEach(stat => {
         if (s[stat] > 0) { s[stat] = 0; removed++; }
       });
+      ctx.combat.entangledUids = [];
+      if (ctx.combat.chaosCostMap) ctx.combat.chaosCostMap.clear();
       ctx.combat.log(`🌿 净化：移除了 ${removed} 种负面状态`, 'player');
       ctx.combat.healPlayer(ctx.vars.heal);
     },

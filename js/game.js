@@ -528,8 +528,10 @@ function patchCardEl(node, card, combat) {
     + (card.upgraded ? ' upgraded' : '')
     + (unplayable ? ' unplayable' : '')
     + (selected ? ' selected' : '');
-  const baseCost = (card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+  const baseCost = combat ? combat.getCardCost(card) : ((card.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost);
+  const isEntangled = combat && combat.entangledUids && combat.entangledUids.includes(card.uid);
   node.querySelector('.cost').textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
+  node.classList.toggle('entangled', !!isEntangled);
   node.querySelector('.rarity-tag').textContent = def.rarity;
   node.querySelector('.icon').innerHTML = def.icon;
   node.querySelector('.name').textContent = def.name;
@@ -544,7 +546,9 @@ function renderCardEl(cardInstance, opts = {}) {
   if (opts.selected) div.classList.add('selected');
   if (opts.unplayable) div.classList.add('unplayable');
   const liveCombat = opts.liveCombat || null;
-  const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
+  const baseCost = (liveCombat && liveCombat.chaosCostMap && liveCombat.chaosCostMap.has(cardInstance.uid)) ? liveCombat.chaosCostMap.get(cardInstance.uid) : ((cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost);
+  const isEntangled = liveCombat && liveCombat.entangledUids && liveCombat.entangledUids.includes(cardInstance.uid);
+  if (isEntangled) div.classList.add('entangled');
   const cost = (liveCombat && ((liveCombat.firstAttackFree && def.type === 'attack') || (liveCombat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
   div.innerHTML = `
     <div class="cost">${cost}</div>
@@ -1096,7 +1100,7 @@ function renderCombat() {
   el.playerStatusRow.innerHTML = '';
   ['strength', 'dexterity', 'weak', 'vulnerable', 'frail', 'poison', 'metallicize', 'venom',
     'darkEmbrace', 'feelNoPain', 'barricade', 'juggernaut', 'noxiousFumes', 'wellLaidPlans', 'toolsOfTrade',
-    'cardLock', 'battleHymn', 'corruption', 'demonForm'].forEach(name => {
+    'cardLock', 'entangle', 'chaos', 'battleHymn', 'corruption', 'demonForm'].forEach(name => {
     if (p.statuses[name]) el.playerStatusRow.appendChild(buildStatusBadge(name, p.statuses[name], true));
   });
 

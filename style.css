@@ -119,6 +119,8 @@ body{
 .game-card.unplayable{opacity:.5; cursor:not-allowed; filter:grayscale(.6) brightness(.7);}
 .game-card.unplayable .cost{border-color:var(--red); color:var(--red);}
 .game-card.unplayable:hover{transform:none; border-color:var(--border);}
+.game-card.entangled{border-color:#2d8a2d; box-shadow:0 0 8px rgba(45,138,45,.5);}
+.game-card.entangled::before{content:'🌿'; position:absolute; top:2px; right:50%; transform:translateX(50%); font-size:14px; z-index:2; filter:drop-shadow(0 0 2px rgba(0,0,0,.8));}
 
 .relic-card{
   width:64px; height:64px; border-radius:10px; border:2px solid var(--border);
