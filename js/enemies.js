@@ -421,30 +421,40 @@ const ENEMIES = {
   mirror_sprite: {
     id: 'mirror_sprite', name: '镜影精灵', icon: '🪞', hpRange: [40, 48], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['atk', 'reflect', 'atk'];
+      const lastDmg = enemy.aiState.lastPlayerDamage || 0;
+      const lastBlock = enemy.aiState.lastPlayerBlock || 0;
       const step = enemy.aiState.cycle || 0;
-      enemy.aiState.cycle = (step + 1) % pattern.length;
-      if (pattern[step] === 'reflect') {
+      enemy.aiState.cycle = (step + 1) % 2;
+      if (step === 0) {
         return {
-          name: '镜面反射', icon: '🪞', type: 'defend', displayValue: 8,
+          name: '镜面护盾', icon: '🪞', type: 'defend', displayValue: lastDmg > 0 ? lastDmg : null,
           execute(combat, e) {
-            combat.gainBlockEnemy(e.id, 8);
-            e.aiState.reflecting = true;
-            combat.log(`${e.name} 张开镜面，本回合受到攻击将反射伤害！`, 'enemy');
+            if (lastDmg > 0) {
+              combat.gainBlockEnemy(e.id, lastDmg);
+              combat.log(`🪞 ${e.name} 镜像了你上回合的 ${lastDmg} 点伤害，获得等量格挡！`, 'enemy');
+            } else {
+              combat.gainBlockEnemy(e.id, 6);
+              combat.log(`🪞 ${e.name} 凝聚镜面，获得 6 点格挡`, 'enemy');
+            }
           },
         };
       }
       return {
-        name: '碎片风暴', icon: '⚔️', type: 'attack', displayValue: 8, hitsCount: 2,
-        execute(combat, e) { combat.dealDamageToPlayer(8, e.id); if (e.hp > 0) combat.dealDamageToPlayer(8, e.id); },
+        name: '镜面反击', icon: '⚔️', type: 'attack', displayValue: lastBlock > 0 ? lastBlock : 6,
+        execute(combat, e) {
+          if (lastBlock > 0) {
+            combat.dealDamageToPlayer(lastBlock, e.id);
+            combat.log(`🪞 ${e.name} 镜像了你上回合的 ${lastBlock} 点格挡，造成等量伤害！`, 'enemy');
+          } else {
+            combat.dealDamageToPlayer(6, e.id);
+            combat.log(`🪞 ${e.name} 发射碎片，造成 6 点伤害`, 'enemy');
+          }
+        },
       };
     },
-    onCardPlayed(enemy, combat, card) {
-      if (enemy.aiState.reflecting && CARDS[card.defId].type === 'attack') {
-        enemy.aiState.reflecting = false;
-        combat.damagePlayerDirect(4);
-        combat.log(`🪞 ${enemy.name} 反射了 4 点伤害！`, 'enemy');
-      }
+    onTurnEnd(enemy, combat) {
+      enemy.aiState.lastPlayerDamage = combat.turnDamageDealt;
+      enemy.aiState.lastPlayerBlock = combat.turnBlockGained;
     },
   },
   rust_sentinel: {
@@ -864,6 +874,21 @@ const ENEMIES = {
   abyss_eye: {
     id: 'abyss_eye', name: '深渊之眼', icon: '👁️', hpRange: [22, 26], rarity: 'normal',
     chooseMove(enemy, combat) {
+      const pattern = ['gaze', 'weaken', 'pierce'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'weaken') {
+        return {
+          name: '虚弱凝视', icon: '👁️', type: 'debuff', displayValue: null, statusPreview: [{ name: 'weak', amount: 1 }],
+          execute(combat, e) { combat.applyStatusPlayer('weak', 1); combat.log(`👁️ ${e.name} 的虚弱凝视使你变得虚弱`, 'enemy'); },
+        };
+      }
+      if (pattern[step] === 'pierce') {
+        return {
+          name: '虚空穿刺', icon: '⚔️', type: 'attack', displayValue: 5,
+          execute(combat, e) { combat.dealDamageToPlayer(5, e.id); },
+        };
+      }
       return {
         name: '凝视', icon: '👁️', type: 'debuff', displayValue: null, statusPreview: [{ name: 'vulnerable', amount: 1 }],
         execute(combat, e) { combat.applyStatusPlayer('vulnerable', 1); combat.log(`👁️ ${e.name} 凝视着你，你更容易受到伤害了`, 'enemy'); },
@@ -1205,9 +1230,11 @@ const ENCOUNTER_GROUPS = [
   ['healer', 'hornet_swarm', 'hornet_swarm', 'tentacle'], // healer + double swarm
   // Act 2 flavored groups
   ['shaman', 'mirror_sprite', 'rust_sentinel'],
+  ['mirror_sprite', 'jaw_worm', 'gargoyle'],
   ['healer', 'stone_guardian', 'snake_plant'],
   ['war_drummer', 'chosen', 'spheric_guardian'],
   ['bulwark', 'necromancer', 'silence_warden'],
+  ['mirror_sprite', 'war_drummer', 'shadow_assassin', 'raider'],
 ];
 
 // ============================================================

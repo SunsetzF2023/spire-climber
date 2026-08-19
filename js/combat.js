@@ -48,6 +48,8 @@ class CombatEngine {
     this.nextTurnEnergyPenalty = 0; // energy stolen by enemies during their turn; applied at the start of the player's next turn
     this.angerPlayedCount = 0; // tracks how many 'anger' cards have been played this combat
     this.damageEvents = []; // queue of {enemyId, amount, type} for multi-hit visual effects
+    this.turnDamageDealt = 0; // total damage player dealt this turn (for mirror_sprite)
+    this.turnBlockGained = 0; // total block player gained this turn (for mirror_sprite)
 
     this.player = {
       block: 0,
@@ -96,6 +98,8 @@ class CombatEngine {
   startTurn() {
     this.turnCount += 1;
     this.lastPlayerCardType = null;
+    this.turnDamageDealt = 0;
+    this.turnBlockGained = 0;
     if (!(this.player.statuses.barricade > 0)) this.player.block = 0;
     if (this.player.statuses.poison > 0) {
       this.damagePlayerDirect(this.player.statuses.poison);
@@ -155,6 +159,12 @@ class CombatEngine {
     const gravityDmg = this.hand.filter(c => c.defId === 'gravity').reduce((sum) => sum + 3, 0);
     if (gravityDmg > 0) { this.damagePlayerDirect(gravityDmg); this.log(`🪨 重力压制：受到 ${gravityDmg} 点伤害`, 'enemy'); }
     this.runRelicHook('onTurnEnd');
+    this.enemies.forEach(e => {
+      if (e.hp > 0) {
+        const eDef = ENEMIES[e.defId];
+        if (eDef && typeof eDef.onTurnEnd === 'function') eDef.onTurnEnd(e, this);
+      }
+    });
     this.player.statuses.weak = Math.max(0, this.player.statuses.weak - 1);
     this.player.statuses.vulnerable = Math.max(0, this.player.statuses.vulnerable - 1);
     this.player.statuses.frail = Math.max(0, this.player.statuses.frail - 1);
@@ -420,6 +430,7 @@ class CombatEngine {
     enemy.hp -= remaining;
     this.log(`⚔️ ${opts.source || '攻击'} 对 ${enemy.name} 造成 ${dmg} 点伤害${dmg - remaining > 0 ? `（格挡吸收 ${dmg - remaining}）` : ''}`, 'player');
     this.damageEvents.push({ enemyId, amount: remaining, type: 'damage' });
+    this.turnDamageDealt += remaining;
     if (this.currentActor === 'player' && dmg > 0 && this.player.statuses.venom > 0 && enemy.hp > 0) {
       this.applyStatusEnemy(enemyId, 'poison', this.player.statuses.venom, { fromPower: true });
     }
@@ -528,6 +539,7 @@ class CombatEngine {
     final = Math.max(0, final);
     if (final > 0) this.combatStats.blockUsed = true;
     this.player.block += final;
+    this.turnBlockGained += final;
     this.log(`🛡️ 你获得 ${final} 点格挡`, 'player');
     if (final > 0 && this.player.statuses.juggernaut > 0) {
       const living = this.enemies.filter(e => e.hp > 0);
