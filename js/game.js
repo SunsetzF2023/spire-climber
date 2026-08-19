@@ -1660,14 +1660,16 @@ function showHistoryScreen() {
     detailBtn.className = 'btn btn-ghost history-detail-btn';
     detailBtn.textContent = '📋 详情';
     detailBtn.addEventListener('click', () => {
-      const relicList = (rec.relicIds || []).map(id => {
+      const relicTags = (rec.relicIds || []).map(id => {
         const r = RELICS[id];
-        return r ? `${r.icon} ${r.name} — ${r.desc}` : '';
-      }).filter(s => s).join('<br>');
-      const deckList = Object.entries(deckSummary).map(([id, count]) => {
+        return r ? `<span class="history-relic-tag" data-relic-id="${id}">${r.icon} ${r.name}</span>` : '';
+      }).filter(s => s).join(' ');
+      const deckTags = Object.entries(deckSummary).map(([id, count]) => {
         const def = CARDS[id];
-        return def ? `${def.icon} ${def.name}×${count}` : '';
-      }).filter(s => s).join('、');
+        if (!def) return '';
+        const upgraded = rec.deckIds.some(d => d === id + '+');
+        return `<span class="history-card-tag" data-card-id="${id}">${def.icon} ${def.name}${upgraded ? '+' : ''}×${count}</span>`;
+      }).filter(s => s).join(' ');
       showInfoModal(`
         <div class="modal-name">${rec.characterIcon} ${rec.characterName} — ${rec.victory ? '🏆 通关' : '💀 阵亡'}</div>
         <div class="modal-meta">${dateStr}</div>
@@ -1680,10 +1682,19 @@ function showHistoryScreen() {
           ${!rec.victory && rec.deathCause ? `☠️ 死因：${rec.deathCause}<br>` : ''}
         </div>
         <div class="modal-meta">💎 遗物</div>
-        <div class="modal-desc">${relicList || '无'}</div>
+        <div class="modal-desc">${relicTags || '无'}</div>
         <div class="modal-meta">🎴 牌组</div>
-        <div class="modal-desc">${deckList || '空'}</div>
+        <div class="modal-desc">${deckTags || '空'}</div>
       `);
+      el.infoModalContent.querySelectorAll('.history-relic-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          const r = RELICS[tag.dataset.relicId];
+          if (r) showInfoModal(`<div class="modal-name">${r.icon} ${r.name}</div><div class="modal-desc">${r.desc}</div>`);
+        });
+      });
+      el.infoModalContent.querySelectorAll('.history-card-tag').forEach(tag => {
+        tag.addEventListener('click', () => showCardInfoModal(tag.dataset.cardId));
+      });
     });
 
     card.innerHTML = `
@@ -1799,10 +1810,16 @@ function renderLeaderboard(entries) {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
-      const deckList = Object.entries(deckSummary).map(([id, count]) => {
+      const deckTags = Object.entries(deckSummary).map(([id, count]) => {
         const def = CARDS[id];
-        return def ? `${def.icon} ${def.name}×${count}` : '';
-      }).filter(s => s).join('、');
+        if (!def) return '';
+        const upgraded = deckIds.some(d => d === id + '+');
+        return `<span class="history-card-tag" data-card-id="${id}">${def.icon} ${def.name}${upgraded ? '+' : ''}×${count}</span>`;
+      }).filter(s => s).join(' ');
+      const relicTags = relicIds.map(id => {
+        const r = RELICS[id];
+        return r ? `<span class="history-relic-tag" data-relic-id="${id}">${r.icon} ${r.name}</span>` : '';
+      }).filter(s => s).join(' ');
       showInfoModal(`
         <div class="modal-name">${e.character_icon || ''} ${e.character_name || '?'} — ${name}</div>
         <div class="modal-meta">${date} · ${e.victory ? '🏆 通关' : '💀 阵亡'}</div>
@@ -1812,9 +1829,19 @@ function renderLeaderboard(entries) {
           ⚔️ 击败：${e.enemies_defeated || 0}敌 / ${e.elites_defeated || 0}精英 / ${e.bosses_defeated || 0}Boss<br>
           ${!e.victory && e.death_cause ? `☠️ 死因：${e.death_cause}<br>` : ''}
         </div>
-        ${relicList ? `<div class="modal-meta">💎 遗物</div><div class="modal-desc">${relicList}</div>` : ''}
-        ${deckList ? `<div class="modal-meta">🎴 牌组</div><div class="modal-desc">${deckList}</div>` : ''}
+        ${relicTags ? `<div class="modal-meta">💎 遗物</div><div class="modal-desc">${relicTags}</div>` : ''}
+        ${deckTags ? `<div class="modal-meta">🎴 牌组</div><div class="modal-desc">${deckTags}</div>` : ''}
       `);
+      // Attach click listeners to tags in the modal
+      el.infoModalContent.querySelectorAll('.history-relic-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          const r = RELICS[tag.dataset.relicId];
+          if (r) showInfoModal(`<div class="modal-name">${r.icon} ${r.name}</div><div class="modal-desc">${r.desc}</div>`);
+        });
+      });
+      el.infoModalContent.querySelectorAll('.history-card-tag').forEach(tag => {
+        tag.addEventListener('click', () => showCardInfoModal(tag.dataset.cardId));
+      });
     });
     table.appendChild(row);
   });
