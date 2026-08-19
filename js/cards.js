@@ -901,15 +901,15 @@ const CARDS = {
 
   // ================= 状态牌（Status）==================
   wound: {
-    id: 'wound', name: '伤口', icon: '🩹', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    id: 'wound', name: '伤口', icon: '🩹', type: 'status', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars() { return {}; },
-    descTemplate() { return `不可打出`; },
+    descTemplate() { return `消耗`; },
     effect() {},
   },
   burn: {
-    id: 'burn', name: '灼烧', icon: '🔥', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    id: 'burn', name: '灼烧', icon: '🔥', type: 'status', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars(up) { return { dmg: up ? 4 : 2 }; },
-    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。不可打出`; },
+    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。消耗`; },
     effect() {},
   },
   dazed: {
@@ -919,7 +919,7 @@ const CARDS = {
     effect() {},
   },
   slimed: {
-    id: 'slimed', name: '被粘液覆盖', icon: '🟢', type: 'status', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'slimed', name: '被粘液覆盖', icon: '🟢', type: 'status', cost: 0, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars() { return {}; },
     descTemplate() { return `消耗`; },
     effect() {},
@@ -942,6 +942,8 @@ const CARDS = {
     descTemplate(v) { return `回合结束时仍在手牌中则受到 ${v.dmg} 点伤害。消耗`; },
     effect() {},
   },
+  // playableStatus: mark status cards that can be played (consumed) by the player
+
 
   // ================= 诅咒牌（Curse）==================
   clumsy: {
@@ -951,9 +953,9 @@ const CARDS = {
     effect() {},
   },
   decay: {
-    id: 'decay', name: '腐朽', icon: '🪦', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    id: 'decay', name: '腐朽', icon: '🪦', type: 'curse', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars() { return { dmg: 2 }; },
-    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。不可打出`; },
+    descTemplate(v) { return `回合结束时受到 ${v.dmg} 点伤害。消耗`; },
     effect() {},
   },
   doubt: {
@@ -963,9 +965,9 @@ const CARDS = {
     effect() {},
   },
   injury: {
-    id: 'injury', name: '创伤', icon: '💢', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    id: 'injury', name: '创伤', icon: '💢', type: 'curse', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars() { return {}; },
-    descTemplate() { return `不可打出`; },
+    descTemplate() { return `消耗`; },
     effect() {},
   },
   normality: {
@@ -999,9 +1001,9 @@ const CARDS = {
     effect() {},
   },
   writhe: {
-    id: 'writhe', name: '煎熬', icon: '😣', type: 'curse', cost: 0, target: 'none', rarity: 'special', cls: 'neutral',
+    id: 'writhe', name: '煎熬', icon: '😣', type: 'curse', cost: 1, target: 'none', rarity: 'special', cls: 'neutral', exhaust: true,
     vars() { return {}; },
-    descTemplate() { return `不可打出`; },
+    descTemplate() { return `消耗`; },
     effect() {},
   },
 

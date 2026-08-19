@@ -217,7 +217,7 @@ class CombatEngine {
   canAfford(cardInstance) {
     if (this.player.statuses.cardLock > 0) return false;
     const def = CARDS[cardInstance.defId];
-    if (def.type === 'status' || def.type === 'curse') return false;
+    if ((def.type === 'status' || def.type === 'curse') && !def.exhaust) return false;
     if (this.player.statuses.normalityLock > 0 && def.type === 'attack') return false;
     if (this.player.statuses.corruption > 0) return true;
     const baseCost = (cardInstance.upgraded && def.upgradedCost !== undefined) ? def.upgradedCost : def.cost;
