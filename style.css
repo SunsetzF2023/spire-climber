@@ -137,6 +137,11 @@ body{
 @keyframes bossIntroZoom{from{transform:scale(.5); opacity:0;} to{transform:scale(1); opacity:1;}}
 @keyframes speechBubblePop{from{transform:scale(0); opacity:0;} to{transform:scale(1); opacity:1;}}
 
+/* Boss combat speech bubble */
+.boss-combat-speech{position:fixed; top:20%; left:50%; transform:translateX(-50%); background:rgba(20,10,10,.95); border:2px solid var(--red); border-radius:14px; padding:10px 20px; font-size:15px; color:var(--text); z-index:9000; pointer-events:none; animation:speechBubblePop .3s ease-out; white-space:nowrap; box-shadow:0 4px 20px rgba(255,50,50,.3);}
+.boss-combat-speech-fade-out{animation:bossCombatSpeechFade .5s ease-in forwards;}
+@keyframes bossCombatSpeechFade{from{opacity:1;} to{opacity:0;}}
+
 .relic-card{
   width:64px; height:64px; border-radius:10px; border:2px solid var(--border);
   background:var(--bg3); display:flex; align-items:center; justify-content:center;

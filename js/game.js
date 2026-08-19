@@ -187,7 +187,7 @@ function removeRandomCardFromDeck(run) {
   return run.deck.splice(idx, 1)[0];
 }
 function upgradeRandomCardInDeck(run) {
-  const candidates = run.deck.filter(c => !c.upgraded);
+  const candidates = run.deck.filter(c => !c.upgraded && !['status', 'curse'].includes((CARDS[c.defId] || {}).type));
   if (candidates.length === 0) return null;
   const card = candidates[Math.floor(Math.random() * candidates.length)];
   card.upgraded = true;
@@ -689,7 +689,7 @@ function showRestScreen(node) {
   };
 
   const renderUpgradeList = () => {
-    const upgradable = run.deck.filter(c => !c.upgraded);
+    const upgradable = run.deck.filter(c => !c.upgraded && !['status', 'curse'].includes((CARDS[c.defId] || {}).type));
     if (upgradable.length === 0) { alert('卡组中所有卡牌都已经强化过了！'); return; }
     el.restUpgradePreview.classList.add('hidden');
     el.restUpgradeList.classList.remove('hidden');
@@ -919,6 +919,61 @@ function showBossIntro(boss) {
   }, 2500);
 }
 
+const BOSS_SPEECHES = {
+  abyss_lord: {
+    intro: '我的怒火将吞噬你。',
+    highDamage: ['化为灰烬吧！', '感受深渊的力量！', '燃烧吧，虫蚁！'],
+    tookDamage: ['你无法打败深渊', '这点疼痛不算什么……', '深渊不会倒下！'],
+    lowHp: ['人类……离开深渊', '不可能……我的力量在消逝', '你竟敢……'],
+    turn: ['颤抖吧', '绝望吧', '深渊永不停息'],
+  },
+  iron_colossus: {
+    intro: '系统过载……歼灭模式启动。',
+    highDamage: ['目标锁定，歼灭！', '过载打击！', '系统全功率输出！'],
+    tookDamage: ['护甲受损……重新校准', '外部冲击已记录', '系统不受影响'],
+    lowHp: ['警告……核心不稳定', '系统……崩溃中', '不可能……过热临界'],
+    turn: ['执行清扫程序', '热能积蓄中', '下一轮攻击准备就绪'],
+  },
+  void_progenitor: {
+    intro: '虚空已在你们心中生根。',
+    highDamage: ['虚空吞噬你！', '感受虚无的力量！', '万物归于虚空！'],
+    tookDamage: ['虚空不可被伤害', '你的攻击毫无意义', '我即是虚无本身'],
+    lowHp: ['虚空……在崩塌？', '这不可能发生……', '你们……无法理解'],
+    turn: ['虚空在扩张', '你们的力量在消逝', '虚无即将降临'],
+  },
+};
+
+function showBossSpeech(bossDefId, text) {
+  const existing = document.getElementById('bossCombatSpeech');
+  if (existing) existing.remove();
+  const bubble = document.createElement('div');
+  bubble.id = 'bossCombatSpeech';
+  bubble.className = 'boss-combat-speech';
+  bubble.textContent = `💬 "${text}"`;
+  document.body.appendChild(bubble);
+  setTimeout(() => {
+    bubble.classList.add('boss-combat-speech-fade-out');
+    setTimeout(() => bubble.remove(), 500);
+  }, 2000);
+}
+
+function tryBossSpeech(trigger) {
+  if (!combat) return;
+  const boss = combat.enemies.find(e => e.hp > 0 && ENEMIES[e.defId] && ENEMIES[e.defId].rarity === 'boss');
+  if (!boss) return;
+  const speeches = BOSS_SPEECHES[boss.defId];
+  if (!speeches) return;
+  let lines;
+  if (trigger === 'highDamage') lines = speeches.highDamage;
+  else if (trigger === 'tookDamage') lines = speeches.tookDamage;
+  else if (trigger === 'lowHp') lines = speeches.lowHp;
+  else if (trigger === 'turn') lines = speeches.turn;
+  if (!lines || lines.length === 0) return;
+  if (Math.random() < 0.5) return; // 50% chance to speak
+  const text = lines[Math.floor(Math.random() * lines.length)];
+  showBossSpeech(boss.defId, text);
+}
+
 function startCombatFromEvent(enemyDefIds, tier) {
   const hpScaling = ACT_DEFS[run.act - 1].scaling;
   const dmgScaling = ACT_DEFS[run.act - 1].dmgScaling || 1.0;
@@ -1010,6 +1065,17 @@ function patchEnemyBox(node, enemy) {
     showDamageNumber(node, Math.round(enemy.hp - prevHp), 'heal');
   }
   node.dataset.lastHp = enemy.hp;
+  // Boss speech triggers
+  const eDef = ENEMIES[enemy.defId];
+  if (eDef && eDef.rarity === 'boss') {
+    if (enemy.hp < prevHp) {
+      const dmgTaken = prevHp - enemy.hp;
+      if (dmgTaken >= 15) tryBossSpeech('tookDamage');
+    }
+    if (enemy.hp > 0 && enemy.hp <= enemy.maxHp * 0.3 && prevHp > enemy.maxHp * 0.3) {
+      tryBossSpeech('lowHp');
+    }
+  }
   // Block pulse on gain
   if (enemy.block > prevBlock) {
     const badge = node.querySelector('.block-badge');
@@ -1119,7 +1185,11 @@ function renderCombat() {
   const p = combat.player;
   // Player damage / heal number
   const prevPlayerHp = el.playerHpFill.dataset.lastHp !== undefined ? parseFloat(el.playerHpFill.dataset.lastHp) : run.player.hp;
-  if (run.player.hp < prevPlayerHp) showDamageNumber(el.playerBlockBadge.parentElement, Math.round(prevPlayerHp - run.player.hp), 'player');
+  if (run.player.hp < prevPlayerHp) {
+    const dmgTaken = prevPlayerHp - run.player.hp;
+    showDamageNumber(el.playerBlockBadge.parentElement, Math.round(dmgTaken), 'player');
+    if (dmgTaken >= 10) tryBossSpeech('highDamage');
+  }
   if (run.player.hp > prevPlayerHp) showDamageNumber(el.playerBlockBadge.parentElement, Math.round(run.player.hp - prevPlayerHp), 'heal');
   el.playerHpFill.dataset.lastHp = run.player.hp;
   // Player block pulse
