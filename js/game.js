@@ -16,7 +16,7 @@ function artIconHtml(folder, id, fallbackEmoji) {
   return fallbackEmoji;
 }
 const STARTING_GOLD = 99;
-const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
+const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-boss rest + boss floor
 const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
 let run = null;
@@ -1176,23 +1176,30 @@ function showRewardScreen() {
   el.rewardGold.textContent = goldText;
   renderHud();
 
-  const offered = [];
-  while (offered.length < 3) {
-    const id = pickRandomCardId(run.characterId, offered);
-    if (!offered.includes(id)) offered.push(id);
-  }
-  el.rewardCards.innerHTML = '';
-  offered.forEach(id => {
-    const inst = makeCardInstance(id, false);
-    const cardEl = renderCardEl(inst, {
-      clickable: true,
-      onClick: () => {
-        addCardToDeck(run, id, false);
-        backToMapOrVictory(combat.node);
-      },
+  const offerCards = tier !== 'normal' || Math.random() < 0.5;
+  if (offerCards) {
+    const offered = [];
+    while (offered.length < 3) {
+      const id = pickRandomCardId(run.characterId, offered);
+      if (!offered.includes(id)) offered.push(id);
+    }
+    el.rewardCards.innerHTML = '';
+    offered.forEach(id => {
+      const inst = makeCardInstance(id, false);
+      const cardEl = renderCardEl(inst, {
+        clickable: true,
+        onClick: () => {
+          addCardToDeck(run, id, false);
+          backToMapOrVictory(combat.node);
+        },
+      });
+      el.rewardCards.appendChild(cardEl);
     });
-    el.rewardCards.appendChild(cardEl);
-  });
+    el.rewardSkipBtn.classList.remove('hidden');
+  } else {
+    el.rewardCards.innerHTML = '<p class="hint" style="margin:20px 0">本次战斗未掉落卡牌</p>';
+    el.rewardSkipBtn.classList.add('hidden');
+  }
   el.rewardSkipBtn.onclick = () => backToMapOrVictory(combat.node);
 }
 

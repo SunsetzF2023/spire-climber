@@ -208,6 +208,7 @@ class CombatEngine {
       if (this.finished) return;
       enemy.statuses.weak = Math.max(0, enemy.statuses.weak - 1);
       enemy.statuses.vulnerable = Math.max(0, enemy.statuses.vulnerable - 1);
+      if (enemy.taunt > 0) { enemy.taunt -= 1; if (enemy.taunt === 0) this.log(`📢 ${enemy.name} 的嘲讽效果消失了`, 'info'); }
       if (enemy.hp > 0) enemy.nextMove = ENEMIES[enemy.defId].chooseMove(enemy, this);
     }
     this.cleanupDeadEnemies();

@@ -1039,14 +1039,176 @@ const ENEMIES = {
       };
     },
   },
-};
 
-// Act 1 early pool (floors 0–14): damage 3–8, lower HP
+  // ================ SUPPORT ENEMIES (synergy) ================
+  shaman: {
+    id: 'shaman', name: '萨满祭司', icon: '🪄', hpRange: [22, 28], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['buff', 'atk', 'buff', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'buff') {
+        return {
+          name: '力量图腾', icon: '🪄', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            const allies = combat.enemies.filter(a => a.hp > 0 && a.id !== e.id);
+            if (allies.length > 0) {
+              allies.forEach(a => combat.applyStatusEnemy(a.id, 'strength', 1));
+              combat.log(`🪄 ${e.name} 施放力量图腾，所有队友获得 1 点力量！`, 'enemy');
+            } else {
+              combat.applyStatusEnemy(e.id, 'strength', 2);
+              combat.log(`🪄 ${e.name} 没有队友，为自己获得 2 点力量！`, 'enemy');
+            }
+          },
+        };
+      }
+      return {
+        name: '灵能冲击', icon: '⚡', type: 'attack', displayValue: 6,
+        execute(combat, e) { combat.dealDamageToPlayer(6, e.id); },
+      };
+    },
+  },
+  healer: {
+    id: 'healer', name: '暗影医者', icon: '➕', hpRange: [18, 24], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['heal', 'atk', 'shield', 'heal'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'heal') {
+        return {
+          name: '治疗术', icon: '➕', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            const wounded = combat.enemies.filter(a => a.hp > 0 && a.hp < a.maxHp && a.id !== e.id);
+            if (wounded.length > 0) {
+              const target = wounded.reduce((best, a) => (a.maxHp - a.hp) > (best.maxHp - best.hp) ? a : best, wounded[0]);
+              const amt = 6;
+              combat.healEnemy(target.id, amt);
+              combat.log(`➕ ${e.name} 为 ${target.name} 恢复 ${amt} 点生命！`, 'enemy');
+            } else {
+              const amt = 4;
+              combat.healEnemy(e.id, amt);
+              combat.log(`➕ ${e.name} 为自己恢复 ${amt} 点生命`, 'enemy');
+            }
+          },
+        };
+      }
+      if (pattern[step] === 'shield') {
+        return {
+          name: '护盾祝福', icon: '🛡️', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            const allies = combat.enemies.filter(a => a.hp > 0 && a.id !== e.id);
+            if (allies.length > 0) {
+              allies.forEach(a => combat.gainBlockEnemy(a.id, 5));
+              combat.log(`🛡️ ${e.name} 为所有队友施加 5 点格挡！`, 'enemy');
+            } else {
+              combat.gainBlockEnemy(e.id, 8);
+              combat.log(`🛡️ ${e.name} 为自己获得 8 点格挡`, 'enemy');
+            }
+          },
+        };
+      }
+      return {
+        name: '暗影飞刃', icon: '🔪', type: 'attack', displayValue: 5,
+        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); },
+      };
+    },
+  },
+  bulwark: {
+    id: 'bulwark', name: '巨盾守卫', icon: '🛡️', hpRange: [40, 50], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['guard', 'taunt', 'atk', 'guard'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'guard') {
+        return {
+          name: '坚壁防御', icon: '🛡️', type: 'skill', displayValue: null,
+          execute(combat, e) {
+            combat.gainBlockEnemy(e.id, 12);
+            const allies = combat.enemies.filter(a => a.hp > 0 && a.id !== e.id);
+            if (allies.length > 0) {
+              allies.forEach(a => combat.gainBlockEnemy(a.id, 4));
+              combat.log(`🛡️ ${e.name} 举起巨盾，自身获得 12 格挡，队友各获得 4 格挡！`, 'enemy');
+            } else {
+              combat.log(`🛡️ ${e.name} 举起巨盾，获得 12 点格挡！`, 'enemy');
+            }
+          },
+        };
+      }
+      if (pattern[step] === 'taunt') {
+        return {
+          name: '嘲讽怒吼', icon: '📢', type: 'skill', displayValue: null,
+          execute(combat, e) {
+            e.taunt = 2;
+            combat.gainBlockEnemy(e.id, 6);
+            combat.log(`📢 ${e.name} 发出嘲讽怒吼！接下来 2 回合你的攻击会优先命中它！`, 'enemy');
+          },
+        };
+      }
+      return {
+        name: '盾击', icon: '⚔️', type: 'attack', displayValue: 7,
+        execute(combat, e) { combat.dealDamageToPlayer(7, e.id); },
+      };
+    },
+  },
+  war_drummer: {
+    id: 'war_drummer', name: '战鼓手', icon: '🥁', hpRange: [20, 26], rarity: 'normal',
+    chooseMove(enemy, combat) {
+      const pattern = ['drum', 'drum', 'atk'];
+      const step = enemy.aiState.cycle || 0;
+      enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'drum') {
+        return {
+          name: '战鼓激励', icon: '🥁', type: 'buff', displayValue: null,
+          execute(combat, e) {
+            const allies = combat.enemies.filter(a => a.hp > 0 && a.id !== e.id);
+            const amt = 2;
+            if (allies.length > 0) {
+              allies.forEach(a => combat.applyStatusEnemy(a.id, 'strength', amt));
+              combat.log(`🥁 ${e.name} 擂响战鼓，所有队友获得 ${amt} 点力量！`, 'enemy');
+            } else {
+              combat.applyStatusEnemy(e.id, 'strength', amt);
+              combat.log(`🥁 ${e.name} 擂响战鼓，自身获得 ${amt} 点力量！`, 'enemy');
+            }
+          },
+        };
+      }
+      return {
+        name: '鼓槌猛击', icon: '⚔️', type: 'attack', displayValue: 5,
+        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); },
+      };
+    },
+  },
+};
 const ACT1_EARLY_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard'];
-// Act 1 late pool (floors 15+): higher damage / HP
+// Act 1 late pool (floors 10+): higher damage / HP
 const ACT1_LATE_IDS = ['slime', 'bat', 'rampaging_hound', 'tentacle', 'hornet_swarm', 'fungi_beast', 'shieldbearer', 'raider', 'skeleton_guard', 'gargoyle', 'shadow_assassin', 'jaw_worm', 'gremlin_nob'];
 
 const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror_sprite', 'rust_sentinel', 'chosen', 'spheric_guardian', 'snake_plant', 'gargoyle', 'shadow_assassin', 'stone_guardian'];
+
+// ============================================================
+// Predefined encounter groups with enemy synergy.
+// Each group is a fixed composition designed to create tactical
+// decisions: kill the support first, or burst the damage dealer?
+// ============================================================
+const ENCOUNTER_GROUPS = [
+  // 3-enemy synergy groups
+  ['shaman', 'raider', 'skeleton_guard'],     // buffer + 2 fighters
+  ['healer', 'bat', 'hornet_swarm'],          // healer keeps glass cannons alive
+  ['war_drummer', 'rampaging_hound', 'tentacle'], // drummer buffs 2 attackers
+  ['bulwark', 'fungi_beast', 'fungi_beast'],   // tank protects 2 spore spammers
+  ['shaman', 'war_drummer', 'gargoyle'],       // double buffer + bruiser
+  ['healer', 'bulwark', 'jaw_worm'],           // healer + tank + damage
+  ['shaman', 'healer', 'raider'],              // double support + fighter
+  // 4-enemy swarm groups
+  ['war_drummer', 'bat', 'bat', 'skeleton_guard'], // drummer + swarm
+  ['shaman', 'raider', 'raider', 'shieldbearer'],  // buffer + 2 fighters + tank
+  ['healer', 'hornet_swarm', 'hornet_swarm', 'tentacle'], // healer + double swarm
+  // Act 2 flavored groups
+  ['shaman', 'mirror_sprite', 'rust_sentinel'],
+  ['healer', 'stone_guardian', 'snake_plant'],
+  ['war_drummer', 'chosen', 'spheric_guardian'],
+  ['bulwark', 'necromancer', 'silence_warden'],
+];
 
 // ============================================================
 // Acts ("dimensions") — the run is a sequence of acts, each with its
@@ -1054,18 +1216,20 @@ const ACT2_ENEMY_IDS = ['card_reactor', 'necromancer', 'silence_warden', 'mirror
 // enemies (normal/elite/boss) spawned within that act.
 // ============================================================
 const ACT_DEFS = [
-  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest', 'cultist_summoner'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: ACT1_EARLY_IDS, lateEnemyPool: ACT1_LATE_IDS, lateFloorThreshold: 15 },
+  { name: '第一维度：坠落回廊', bossId: 'abyss_lord', eliteIds: ['iron_guard', 'shadow_priest', 'cultist_summoner'], scaling: 1.0, dmgScaling: 1.0, doubleSpawnChance: 0.30, enemyPool: ACT1_EARLY_IDS, lateEnemyPool: ACT1_LATE_IDS, lateFloorThreshold: 10 },
   { name: '第二维度：锈蚀熔炉', bossId: 'iron_colossus', eliteIds: ['iron_guard', 'shadow_priest', 'plague_bearer'], scaling: 1.15, dmgScaling: 1.1, doubleSpawnChance: 0.35, enemyPool: ACT2_ENEMY_IDS },
   { name: '第三维度：虚空深渊', bossId: 'void_progenitor', eliteIds: ['shadow_priest', 'plague_bearer', 'void_reaver'], scaling: 1.35, dmgScaling: 1.2, doubleSpawnChance: 0.45, enemyPool: ACT2_ENEMY_IDS },
 ];
 
 function spawnEnemyGroup(rarity, act = 1, floor = 0) {
   const actDef = ACT_DEFS[act - 1] || ACT_DEFS[ACT_DEFS.length - 1];
-  // Returns an array of enemy defIds for a combat node.
   if (rarity === 'boss') return [actDef.bossId];
   if (rarity === 'elite') return [pick(actDef.eliteIds)];
-  // normal: 1-2 enemies — use late pool if floor is high enough
-  const pool = (actDef.lateEnemyPool && floor >= (actDef.lateFloorThreshold || 15))
+  // normal: 35% chance for a predefined synergy group, otherwise 1-2 random enemies
+  if (Math.random() < 0.35) {
+    return pick(ENCOUNTER_GROUPS).slice();
+  }
+  const pool = (actDef.lateEnemyPool && floor >= (actDef.lateFloorThreshold || 10))
     ? actDef.lateEnemyPool
     : (actDef.enemyPool || ACT1_EARLY_IDS);
   const count = Math.random() < (actDef.doubleSpawnChance ?? 0.45) ? 2 : 1;
