@@ -219,9 +219,15 @@ const ENEMIES = {
   fungi_beast: {
     id: 'fungi_beast', name: '真菌兽', icon: '🍄', hpRange: [22, 28], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['atk', 'grow', 'spore', 'atk'];
+      const pattern = ['atk', 'grow', 'entangle', 'atk'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'entangle') {
+        return {
+          name: '寄生藤蔓', icon: '🌿', type: 'debuff', displayValue: 1, statusPreview: [{ name: 'entangle', amount: 1 }],
+          execute(combat, e) { combat.applyStatusPlayer('entangle', 1); combat.log(`🌿 ${e.name} 释放寄生藤蔓！1 张手牌将被封印！`, 'enemy'); },
+        };
+      }
       if (pattern[step] === 'grow') {
         return {
           name: '菌丝生长', icon: '🛡️', type: 'defend', displayValue: 6, statusPreview: [{ name: 'strength', amount: 2 }],
@@ -312,9 +318,15 @@ const ENEMIES = {
   snake_plant: {
     id: 'snake_plant', name: '蛇花', icon: '🐍', hpRange: [52, 60], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['chomp', 'atk', 'chomp'];
+      const pattern = ['chomp', 'entangle', 'atk', 'chomp'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'entangle') {
+        return {
+          name: '蛇藤缠绕', icon: '🌿', type: 'debuff', displayValue: 2, statusPreview: [{ name: 'entangle', amount: 2 }],
+          execute(combat, e) { combat.applyStatusPlayer('entangle', 2); combat.log(`🌿 ${e.name} 释放蛇藤缠绕！2 张手牌将被封印！`, 'enemy'); },
+        };
+      }
       if (pattern[step] === 'chomp') {
         return {
           name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 7, hitsCount: 3,
@@ -403,9 +415,15 @@ const ENEMIES = {
   silence_warden: {
     id: 'silence_warden', name: '沉默守望者', icon: '🔇', hpRange: [48, 56], rarity: 'normal',
     chooseMove(enemy, combat) {
-      const pattern = ['silence', 'atk', 'atk'];
+      const pattern = ['silence', 'chaos', 'atk', 'atk'];
       const step = enemy.aiState.cycle || 0;
       enemy.aiState.cycle = (step + 1) % pattern.length;
+      if (pattern[step] === 'chaos') {
+        return {
+          name: '混乱领域', icon: '🌀', type: 'debuff', displayValue: null, statusPreview: [{ name: 'chaos', amount: 1 }],
+          execute(combat, e) { combat.applyStatusPlayer('chaos', 1); combat.log(`🌀 ${e.name} 展开混乱领域！你的卡牌费用被打乱！`, 'enemy'); },
+        };
+      }
       if (pattern[step] === 'silence') {
         return {
           name: '封印术', icon: '🔒', type: 'debuff', displayValue: null, statusPreview: [{ name: 'cardLock', amount: 1 }],
@@ -697,13 +715,19 @@ const ENEMIES = {
     chooseMove(enemy, combat) {
       const turn = enemy.aiState.turn || 0;
       enemy.aiState.turn = turn + 1;
-      if (turn % 3 === 2) {
+      if (turn % 4 === 3) {
+        return {
+          name: '暗影缠绕', icon: '🌿', type: 'debuff', displayValue: 2, statusPreview: [{ name: 'entangle', amount: 2 }],
+          execute(combat, e) { combat.applyStatusPlayer('entangle', 2); combat.log(`🌿 ${e.name} 释放暗影缠绕！2 张手牌将被封印！`, 'enemy'); },
+        };
+      }
+      if (turn % 4 === 2) {
         return {
           name: '暗影恢复', icon: '💚', type: 'heal', displayValue: 15,
           execute(combat, e) { combat.healEnemy(e.id, 15); combat.log(`${e.name} 吸收暗影能量，回复 15 点生命`, 'enemy'); },
         };
       }
-      if (turn % 3 === 1) {
+      if (turn % 4 === 1) {
         return {
           name: '能量虹吸', icon: '🌀', type: 'debuff', displayValue: null, statusPreview: [{ name: 'strength', amount: 1 }],
           execute(combat, e) {
@@ -897,6 +921,17 @@ const ENEMIES = {
   },
   abyss_lord: {
     id: 'abyss_lord', name: '深渊领主', icon: '👹', hpRange: [190, 210], rarity: 'boss',
+    onCombatStart(enemy, combat) {
+      const deckSize = combat.drawPile.length + combat.hand.length + combat.discardPile.length;
+      const burnCount = Math.floor(deckSize / 2);
+      combat.shuffleStatusIntoDrawPile('burn', burnCount);
+      combat.log(`👹 深渊领主：我的怒火将吞噬你！${burnCount} 张灼烧牌洗入你的抽牌堆！`, 'enemy');
+      enemy.aiState.introShown = true;
+    },
+    onTurnEnd(enemy, combat) {
+      combat.shuffleStatusIntoDrawPile('burn', 1);
+      combat.log(`🔥 深渊领主的怒火持续燃烧，1 张灼烧牌洗入抽牌堆`, 'enemy');
+    },
     // 护盾之眼机制：领主会召唤一只深渊之眼为自己提供 50% 减伤，
     // 减伤在眼被击杀前持续生效——必须优先解决眼才能正常输出。
     chooseMove(enemy, combat) {

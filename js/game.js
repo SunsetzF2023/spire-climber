@@ -884,7 +884,39 @@ function startCombat(enemyDefIds, tier, node) {
   delete el.playerBlockBadge.dataset.lastBlock;
   delete el.energyBadge.dataset.lastEnergy;
   showScreen('combatScreen');
-  renderCombat();
+  // Boss intro speech bubble
+  const boss = combat.enemies.find(e => ENEMIES[e.defId] && ENEMIES[e.defId].rarity === 'boss');
+  if (boss) {
+    showBossIntro(boss);
+  } else {
+    renderCombat();
+  }
+}
+
+function showBossIntro(boss) {
+  const overlay = document.createElement('div');
+  overlay.className = 'boss-intro-overlay';
+  const speechMap = {
+    abyss_lord: '我的怒火将吞噬你。',
+    iron_colossus: '系统过载……歼灭模式启动。',
+    void_progenitor: '虚空已在你们心中生根。',
+  };
+  const speech = speechMap[boss.defId] || '你无法战胜我。';
+  overlay.innerHTML = `
+    <div class="boss-intro-content">
+      <div class="boss-intro-icon">${artIcon('enemies', boss.defId, boss.icon)}</div>
+      <div class="boss-intro-name">${boss.name}</div>
+      <div class="boss-speech-bubble">💬 "${speech}"</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.classList.add('boss-intro-fade-out');
+    setTimeout(() => {
+      overlay.remove();
+      renderCombat();
+    }, 600);
+  }, 2500);
 }
 
 function startCombatFromEvent(enemyDefIds, tier) {
@@ -902,7 +934,12 @@ function startCombatFromEvent(enemyDefIds, tier) {
   delete el.playerBlockBadge.dataset.lastBlock;
   delete el.energyBadge.dataset.lastEnergy;
   showScreen('combatScreen');
-  renderCombat();
+  const boss = combat.enemies.find(e => ENEMIES[e.defId] && ENEMIES[e.defId].rarity === 'boss');
+  if (boss) {
+    showBossIntro(boss);
+  } else {
+    renderCombat();
+  }
 }
 
 function buildStatusBadge(name, amount, showLabel) {
@@ -1186,6 +1223,13 @@ function afterCombatAction() {
 
 // ---------------- Reward screen ----------------
 function showRewardScreen() {
+  // Remove cards with removeFromDeck trait from run.deck
+  if (combat.removedFromDeck && combat.removedFromDeck.length > 0) {
+    combat.removedFromDeck.forEach(removed => {
+      const idx = run.deck.findIndex(c => c.defId === removed.defId && c.upgraded === removed.upgraded);
+      if (idx !== -1) run.deck.splice(idx, 1);
+    });
+  }
   showScreen('rewardScreen');
   const tier = combat.rewardTier;
   const actScaling = ACT_DEFS[run.act - 1].scaling;

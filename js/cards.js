@@ -25,9 +25,9 @@ const CARDS = {
 
   // ---------------- Neutral (colorless) pool ----------------
   bandage_up: {
-    id: 'bandage_up', name: '包扎', icon: '🩹', type: 'skill', cost: 0, target: 'none', rarity: 'common', cls: 'neutral', exhaust: true,
+    id: 'bandage_up', name: '包扎', icon: '🩹', type: 'skill', cost: 0, target: 'none', rarity: 'common', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { heal: up ? 8 : 5 }; },
-    descTemplate(v) { return `回复 ${v.heal} 点生命（消耗）`; },
+    descTemplate(v) { return `回复 ${v.heal} 点生命（移除）`; },
     effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); },
   },
   purify: {
@@ -999,39 +999,39 @@ const CARDS = {
 
   // ================= 药剂卡牌（商店特供，消耗特性）==================
   ether_potion: {
-    id: 'ether_potion', name: '治疗药水', icon: '🧪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_potion', name: '治疗药水', icon: '🧪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { heal: up ? 12 : 8 }; },
-    descTemplate(v) { return `回复 ${v.heal} 点生命。消耗`; },
+    descTemplate(v) { return `回复 ${v.heal} 点生命。移除`; },
     effect(ctx) { ctx.combat.healPlayer(ctx.vars.heal); },
   },
   ether_strength: {
-    id: 'ether_strength', name: '力量药剂', icon: '💪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_strength', name: '力量药剂', icon: '💪', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { str: up ? 3 : 2 }; },
-    descTemplate(v) { return `获得 ${v.str} 层力量。消耗`; },
+    descTemplate(v) { return `获得 ${v.str} 层力量。移除`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('strength', ctx.vars.str); },
   },
   ether_block: {
-    id: 'ether_block', name: '护盾药剂', icon: '🛡️', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_block', name: '护盾药剂', icon: '🛡️', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { block: up ? 18 : 12 }; },
-    descTemplate(v) { return `获得 ${v.block} 点格挡。消耗`; },
+    descTemplate(v) { return `获得 ${v.block} 点格挡。移除`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   ether_bomb: {
-    id: 'ether_bomb', name: '炸弹', icon: '💣', type: 'attack', cost: 0, target: 'all_enemies', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_bomb', name: '炸弹', icon: '💣', type: 'attack', cost: 0, target: 'all_enemies', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { dmg: up ? 12 : 8 }; },
-    descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害。消耗`; },
+    descTemplate(v) { return `对所有敌人造成 ${v.dmg} 点伤害。移除`; },
     effect(ctx) { ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '炸弹', isAoE: true, bypassTaunt: true }); }); },
   },
   ether_draw: {
-    id: 'ether_draw', name: '洞察药剂', icon: '🔮', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_draw', name: '洞察药剂', icon: '🔮', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars(up) { return { draw: up ? 3 : 2 }; },
-    descTemplate(v) { return `抽 ${v.draw} 张牌。消耗`; },
+    descTemplate(v) { return `抽 ${v.draw} 张牌。移除`; },
     effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); },
   },
   ether_cleanse: {
-    id: 'ether_cleanse', name: '净化药剂', icon: '✨', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true,
+    id: 'ether_cleanse', name: '净化药剂', icon: '✨', type: 'skill', cost: 0, target: 'self', rarity: 'special', cls: 'neutral', exhaust: true, removeFromDeck: true,
     vars() { return {}; },
-    descTemplate() { return `消耗手牌中所有状态牌和诅咒牌。消耗`; },
+    descTemplate() { return `消耗手牌中所有状态牌和诅咒牌。移除`; },
     effect(ctx) {
       const junk = ctx.combat.hand.filter(c => {
         const d = CARDS[c.defId];

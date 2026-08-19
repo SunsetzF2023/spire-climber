@@ -122,6 +122,21 @@ body{
 .game-card.entangled{border-color:#2d8a2d; box-shadow:0 0 8px rgba(45,138,45,.5);}
 .game-card.entangled::before{content:'🌿'; position:absolute; top:2px; right:50%; transform:translateX(50%); font-size:14px; z-index:2; filter:drop-shadow(0 0 2px rgba(0,0,0,.8));}
 
+/* Boss intro overlay */
+.boss-intro-overlay{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.85); z-index:9999; display:flex; align-items:center; justify-content:center; animation:bossIntroFadeIn .4s ease-out;}
+.boss-intro-overlay.boss-intro-fade-out{animation:bossIntroFadeOut .6s ease-in forwards;}
+.boss-intro-content{text-align:center; animation:bossIntroZoom .5s ease-out;}
+.boss-intro-icon{font-size:80px; margin-bottom:12px; filter:drop-shadow(0 0 12px rgba(255,50,50,.6));}
+.boss-intro-icon .art-icon{width:80px; height:80px;}
+.boss-intro-icon .art-icon-fallback{width:80px; height:80px; font-size:80px;}
+.boss-intro-name{font-size:28px; font-weight:700; color:var(--red); margin-bottom:16px; text-shadow:0 0 10px rgba(255,50,50,.5);}
+.boss-speech-bubble{display:inline-block; background:var(--bg3); border:2px solid var(--red); border-radius:16px; padding:14px 24px; font-size:16px; color:var(--text); max-width:80vw; position:relative; animation:speechBubblePop .4s ease-out .3s both;}
+.boss-speech-bubble::before{content:''; position:absolute; top:-10px; left:50%; transform:translateX(-50%); border:10px solid transparent; border-bottom-color:var(--red);}
+@keyframes bossIntroFadeIn{from{opacity:0;} to{opacity:1;}}
+@keyframes bossIntroFadeOut{from{opacity:1;} to{opacity:0;}}
+@keyframes bossIntroZoom{from{transform:scale(.5); opacity:0;} to{transform:scale(1); opacity:1;}}
+@keyframes speechBubblePop{from{transform:scale(0); opacity:0;} to{transform:scale(1); opacity:1;}}
+
 .relic-card{
   width:64px; height:64px; border-radius:10px; border:2px solid var(--border);
   background:var(--bg3); display:flex; align-items:center; justify-content:center;

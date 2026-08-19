@@ -81,6 +81,7 @@ class CombatEngine {
     this.hand = [];
     this.discardPile = [];
     this.exhaustPile = [];
+    this.removedFromDeck = []; // cards with removeFromDeck trait, removed from run.deck after combat
   }
 
   log(text, cls) { this.log_.push({ text, cls: cls || 'info' }); }
@@ -94,6 +95,12 @@ class CombatEngine {
 
   start() {
     this.runRelicHook('onCombatStart');
+    this.enemies.forEach(e => {
+      if (e.hp > 0) {
+        const eDef = ENEMIES[e.defId];
+        if (eDef && typeof eDef.onCombatStart === 'function') eDef.onCombatStart(e, this);
+      }
+    });
     this.startTurn();
   }
 
@@ -345,6 +352,7 @@ class CombatEngine {
     });
 
     if (def.exhaust || isCorrupted || def.type === 'power') { this.exhaustPile.push(card); this.onCardExhausted(); }
+    else if (def.removeFromDeck) { this.exhaustPile.push(card); this.onCardExhausted(); this.removedFromDeck.push({ defId: card.defId, upgraded: card.upgraded }); this.log(`🗑️ 【${def.name}】已从牌组中移除`, 'info'); }
     else this.discardPile.push(card);
 
     this.log(`🎴 打出【${def.name}${card.upgraded ? '+' : ''}】`, 'player');
