@@ -682,7 +682,7 @@ const ENEMIES = {
 
   // ---------------- Elites ----------------
   iron_guard: {
-    id: 'iron_guard', name: '钢铁卫兵', icon: '🤖', hpRange: [95, 105], rarity: 'elite',
+    id: 'iron_guard', name: '钢铁卫兵', icon: '🤖', hpRange: [70, 80], rarity: 'elite',
     // 尖刺护甲机制：铸铁强化后获得的护甲带有反伤尖刺，只要护甲未被打穿，
     // 每次直接攻击它都会反弹固定伤害；护甲耗尽后尖刺自动失效。
     chooseMove(enemy, combat) {
@@ -692,16 +692,16 @@ const ENEMIES = {
       const enraged = enemy.hp <= enemy.maxHp * 0.5;
       if (pattern[step] === 'fortify') {
         return {
-          name: '铸铁强化', icon: '�', type: 'buff', displayValue: 15, statusPreview: [{ name: 'strength', amount: 2 }],
+          name: '铸铁强化', icon: '🔩', type: 'buff', displayValue: 12, statusPreview: [{ name: 'strength', amount: 1 }],
           execute(combat, e) {
-            combat.gainBlockEnemy(e.id, 15);
-            combat.applyStatusEnemy(e.id, 'strength', 2);
-            e.thorns = 6;
-            combat.log(`🔩 ${e.name} 铸铁强化：获得护甲与力量，护甲带有尖刺（未破甲前攻击它会反弹 6 点伤害）`, 'enemy');
+            combat.gainBlockEnemy(e.id, 12);
+            combat.applyStatusEnemy(e.id, 'strength', 1);
+            e.thorns = 4;
+            combat.log(`🔩 ${e.name} 铸铁强化：获得护甲与力量，护甲带有尖刺（未破甲前攻击它会反弹 4 点伤害）`, 'enemy');
           },
         };
       }
-      const dmg = enraged ? 18 : 15;
+      const dmg = enraged ? 14 : 11;
       return {
         name: enraged ? '狂暴重击' : '重击', icon: '⚔️', type: 'attack', displayValue: dmg,
         execute(combat, e) { combat.dealDamageToPlayer(dmg, e.id); },
