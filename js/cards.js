@@ -651,7 +651,7 @@ const CARDS = {
   // ================= 扩展卡牌（第三批）==================
   // ---------------- Warrior new (batch 3) ----------------
   armaments: {
-    id: 'armaments', name: '武装', icon: '🛡️', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
+    id: 'armaments', name: '披甲砺刃', icon: '🛡️', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
     vars(up) { return { block: up ? 8 : 5 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡，随机升级手牌中一张牌`; },
     effect(ctx) {
@@ -660,7 +660,7 @@ const CARDS = {
       if (upgradable.length > 0) {
         const target = upgradable[Math.floor(Math.random() * upgradable.length)];
         target.upgraded = true;
-        ctx.combat.log(`🛡️ 武装升级了【${CARDS[target.defId].name}】`, 'player');
+        ctx.combat.log(`🛡️ 披甲砺刃升级了【${CARDS[target.defId].name}】`, 'player');
       } else {
         ctx.combat.log('🛡️ 没有可升级的卡牌', 'info');
       }
