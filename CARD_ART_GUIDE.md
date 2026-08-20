@@ -15,18 +15,8 @@ Spire Climber 是一个类杀戮尖塔的网页卡牌游戏。卡牌可以使用
 ### 图片存放路径
 
 ```
-assets/cards/{card_id}.png          # 基础版
-assets/cards/{card_id}_up.png       # 升级版（可选）
+assets/cards/{card_id}.png
 ```
-
-### 升级版图片
-
-如果卡牌被升级（在篝火或事件中强化），游戏会自动尝试加载 `{card_id}_up.png`。
-如果升级版图片不存在，会自动回退到基础版 `{card_id}.png`。
-
-升级版图片的文件名规则：在卡牌ID后加 `_up`，例如：
-- `defend.png` → `defend_up.png`
-- `iron_arm.png` → `iron_arm_up.png`
 
 ### 图片要求
 
@@ -60,7 +50,6 @@ assets/cards/{card_id}_up.png       # 升级版（可选）
 ### 显示效果
 
 - **有图片的卡牌**：整张卡牌显示为图片，左上角叠加费用角标，升级卡牌右上角显示金色 `+`
-- **升级版图片**：卡牌升级后自动切换到 `{card_id}_up.png`，如果没有升级版图片则继续使用基础版
 - **没有图片的卡牌**：保持原有 emoji UI（费用、图标、名称、类型、描述）
 - 鼠标悬停图片卡牌时显示 tooltip（名称、类型、费用、描述）
 
