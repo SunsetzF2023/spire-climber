@@ -1071,7 +1071,7 @@ const CARDS = {
     },
   },
   scavenger: {
-    id: 'scavenger', name: '拾荒者', icon: '🎒', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
+    id: 'scavenger', name: '拾荒者', icon: '🎒', type: 'skill', cost: 0, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { draw: up ? 3 : 2, block: up ? 6 : 5 }; },
     descTemplate(v) { return `抽 ${v.draw} 张牌，获得 ${v.block} 点格挡`; },
     effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); ctx.combat.gainBlockPlayer(ctx.vars.block); },
