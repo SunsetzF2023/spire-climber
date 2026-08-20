@@ -287,9 +287,9 @@ const CARDS = {
     effect(ctx) { ctx.combat.applyStatusEnemy(ctx.target.id, 'strength', -ctx.vars.amt); },
   },
   barricade: {
-    id: 'barricade', name: '壁垒', icon: '🧱', type: 'power', cost: 2, upgradedCost: 1, target: 'none', rarity: 'rare', cls: 'warrior',
+    id: 'barricade', name: '安如磐石', icon: '🧱', type: 'power', cost: 2, upgradedCost: 1, target: 'none', rarity: 'rare', cls: 'warrior',
     vars() { return {}; },
-    descTemplate() { return `永久获得壁垒：你的格挡不再在回合开始时清除`; },
+    descTemplate() { return `永久获得安如磐石：你的格挡不再在回合开始时清除`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('barricade', 1); },
   },
   juggernaut: {

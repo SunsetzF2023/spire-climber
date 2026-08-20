@@ -13,7 +13,7 @@ const STATUS_META = {
   venom: { icon: '🐍', label: '渗毒', desc: '你的攻击牌命中造成伤害时，额外对目标施加等同于层数的中毒。' },
   darkEmbrace: { icon: '🖤', label: '残烬回响', desc: '每当你消耗一张卡牌，抽取等同于层数的牌。' },
   feelNoPain: { icon: '🦴', label: '化烬铸甲', desc: '每当你消耗一张卡牌，获得等同于层数的格挡。' },
-  barricade: { icon: '🧱', label: '壁垒', desc: '你的格挡不再在回合开始时清除。' },
+  barricade: { icon: '🧱', label: '安如磐石', desc: '你的格挡不再在回合开始时清除。' },
   juggernaut: { icon: '🐘', label: '势不可当', desc: '每当你获得格挡，对一个随机敌人造成等同于层数的伤害。' },
   noxiousFumes: { icon: '☠️', label: '毒雾', desc: '每回合开始时，对所有敌人施加等同于层数的中毒。' },
   wellLaidPlans: { icon: '📋', label: '计划妥当', desc: '回合结束时保留等同于层数的手牌，不会被弃置。' },
