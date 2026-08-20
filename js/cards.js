@@ -53,8 +53,8 @@ const CARDS = {
     descTemplate(v) { return `造成 ${v.dmg} 点伤害`; },
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '闪击' }); },
   },
-  second_skin: {
-    id: 'second_skin', name: '铁臂', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+  iron_arm: {
+    id: 'iron_arm', name: '铁臂', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
     vars(up) { return { block: up ? 17 : 13 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡（消耗）`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
@@ -1143,7 +1143,7 @@ const REWARD_POOLS = {
     automaton: ['chain_lightning', 'emp', 'overclock'],
   },
   uncommon: {
-    neutral: ['second_skin', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify', 'weakening_mist'],
+    neutral: ['iron_arm', 'swift_focus', 'battle_hymn', 'panacea', 'bite', 'purify', 'weakening_mist'],
     warrior: ['uppercut', 'whirlwind', 'bloodletting', 'second_wind', 'inflame', 'rampage', 'dark_embrace', 'feel_no_pain', 'entrench', 'spot_weakness', 'clothesline', 'sword_boomerang'],
     huntress: ['deadly_poison', 'ambush', 'nimble_strike', 'noxious_fumes', 'well_laid_plans', 'catalyst', 'piercing_wail', 'terror', 'hex'],
     automaton: ['force_field', 'storm_surge'],
