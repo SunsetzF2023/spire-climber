@@ -70,7 +70,7 @@
 - 解决能力牌（如渗毒獠牙）可被反复抽到并无限叠加的问题。
 
 #### 5b. 升级费用减免（`js/cards.js`）
-- `entrench`（巩固）：新增 `upgradedCost: 0`（原 1 → 升级后 0）。
+- `entrench`（叠甲术）：新增 `upgradedCost: 0`（原 1 → 升级后 0）。
 - `limit_break`（极限突破）：新增 `upgradedCost: 0`（原 1 → 升级后 0）。
 - 与已有的 `barricade`/`corruption`/`demon_form`/`tools_of_the_trade` 保持一致。
 

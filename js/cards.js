@@ -275,7 +275,7 @@ const CARDS = {
     effect(ctx) { ctx.combat.applyStatusPlayer('feelNoPain', ctx.vars.amt); },
   },
   entrench: {
-    id: 'entrench', name: '巩固', icon: '📐', type: 'skill', cost: 1, upgradedCost: 0, target: 'self', rarity: 'uncommon', cls: 'warrior',
+    id: 'entrench', name: '叠甲术', icon: '📐', type: 'skill', cost: 1, upgradedCost: 0, target: 'self', rarity: 'uncommon', cls: 'warrior',
     vars() { return {}; },
     descTemplate() { return `将你当前的格挡翻倍`; },
     effect(ctx) { ctx.combat.doubleBlockPlayer(); },

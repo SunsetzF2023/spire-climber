@@ -73,7 +73,7 @@ assets/cards/{card_id}.png
 - `rampage` - 暴走
 - `dark_embrace` - 暗影之拥
 - `feel_no_pain` - 痛感
-- `entrench` - 巩固
+- `entrench` - 叠甲术
 - `spot_weakness` - 寻找弱点
 
 ### 女猎手卡牌
