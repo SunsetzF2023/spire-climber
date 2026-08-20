@@ -671,7 +671,17 @@ function patchCardEl(node, card, combat) {
   if (costEl) costEl.textContent = (combat && ((combat.firstAttackFree && def.type === 'attack') || (combat.geminiLeftActive && def.type !== 'status' && def.type !== 'curse'))) ? 0 : baseCost;
   node.classList.toggle('entangled', !!isEntangled);
   if (hasImage) {
-    // Full-image cards only need cost updated (already done above)
+    // Update image src if upgrade status changed
+    const imgEl = node.querySelector('.card-full-image');
+    if (imgEl) {
+      const wantSrc = card.upgraded ? `assets/cards/${def.id}_up.png` : `assets/cards/${def.id}.png`;
+      const currentBase = imgEl.src.split('/').pop();
+      const wantBase = wantSrc.split('/').pop();
+      if (currentBase !== wantBase) {
+        imgEl.dataset.fb = '';
+        imgEl.src = wantSrc;
+      }
+    }
     return;
   }
   const rarityEl = node.querySelector('.rarity-tag');
@@ -704,8 +714,10 @@ function renderCardEl(cardInstance, opts = {}) {
   const hasImage = CARD_IMAGE_IDS.has(def.id);
   if (hasImage) {
     div.classList.add('card-has-image');
+    const imgSrc = cardInstance.upgraded ? `assets/cards/${def.id}_up.png` : `assets/cards/${def.id}.png`;
+    const fallbackSrc = `assets/cards/${def.id}.png`;
     div.innerHTML = `
-      <img class="card-full-image" src="assets/cards/${def.id}.png" alt="${def.name}">
+      <img class="card-full-image" src="${imgSrc}" alt="${def.name}" onerror="if(this.src!==this.dataset.fb){this.dataset.fb='1';this.src='${fallbackSrc}'}">
       <div class="cost">${cost}</div>
       ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
     `;

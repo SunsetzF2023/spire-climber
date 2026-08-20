@@ -15,8 +15,18 @@ Spire Climber 是一个类杀戮尖塔的网页卡牌游戏。卡牌可以使用
 ### 图片存放路径
 
 ```
-assets/cards/{card_id}.png
+assets/cards/{card_id}.png          # 基础版
+assets/cards/{card_id}_up.png       # 升级版（可选）
 ```
+
+### 升级版图片
+
+如果卡牌被升级（在篝火或事件中强化），游戏会自动尝试加载 `{card_id}_up.png`。
+如果升级版图片不存在，会自动回退到基础版 `{card_id}.png`。
+
+升级版图片的文件名规则：在卡牌ID后加 `_up`，例如：
+- `defend.png` → `defend_up.png`
+- `iron_arm.png` → `iron_arm_up.png`
 
 ### 图片要求
 
@@ -31,7 +41,7 @@ assets/cards/{card_id}.png
 2. 打开 `js/game.js`，找到 `CARD_IMAGE_IDS`（约第23行）
 3. 在 Set 数组中添加卡牌ID：
    ```js
-   const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'defend', 'purify', 'second_skin', 'swift_focus', '新卡牌ID']);
+   const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'defend', 'purify', 'iron_arm', 'swift_focus', '新卡牌ID']);
    ```
 4. 修改 `index.html` 中 `game.js` 的缓存版本号（`?v=XX` 加1）
 5. `git add -A && git commit -m "feat: add card image for {card_id}" && git push origin`
@@ -44,12 +54,13 @@ assets/cards/{card_id}.png
 | bandage_up | 包扎 | 🩹 |
 | defend | 防御 | 🛡️ |
 | purify | 净化 | 🌿 |
-| second_skin | 铁壁 | 🦾 |
+| iron_arm | 铁臂 | 🦾 |
 | swift_focus | 专注 | 🎯 |
 
 ### 显示效果
 
 - **有图片的卡牌**：整张卡牌显示为图片，左上角叠加费用角标，升级卡牌右上角显示金色 `+`
+- **升级版图片**：卡牌升级后自动切换到 `{card_id}_up.png`，如果没有升级版图片则继续使用基础版
 - **没有图片的卡牌**：保持原有 emoji UI（费用、图标、名称、类型、描述）
 - 鼠标悬停图片卡牌时显示 tooltip（名称、类型、费用、描述）
 
@@ -63,7 +74,7 @@ assets/cards/{card_id}.png
 - `bandage_up` - 包扎
 - `purify` - 净化
 - `flash_strike` - 闪击
-- `second_skin` - 铁壁
+- `iron_arm` - 铁臂
 - `swift_focus` - 专注
 - `apex_form` - 巅峰形态
 
