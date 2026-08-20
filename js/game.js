@@ -108,15 +108,15 @@ function attachTooltip(elm, html) {
   elm.addEventListener('mouseenter', (e) => { el.tooltip.innerHTML = html; el.tooltip.style.display = 'block'; positionTooltip(e); });
   elm.addEventListener('mousemove', positionTooltip);
   elm.addEventListener('mouseleave', () => { el.tooltip.style.display = 'none'; });
-  // Mobile: tap to show, auto-hide after 3s
+  // Mobile: tap to show tooltip, auto-hide after 3s
+  // Do NOT preventDefault — that would block the click event for playable cards
   elm.addEventListener('touchstart', (e) => {
-    e.preventDefault();
     el.tooltip.innerHTML = html;
     el.tooltip.style.display = 'block';
     positionTooltip(e);
     if (tooltipTouchTimer) clearTimeout(tooltipTouchTimer);
     tooltipTouchTimer = setTimeout(() => { el.tooltip.style.display = 'none'; }, 3000);
-  }, { passive: false });
+  }, { passive: true });
 }
 // Global touch to dismiss tooltip
 document.addEventListener('touchstart', (e) => {
