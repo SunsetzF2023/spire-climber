@@ -68,16 +68,45 @@ assets/cards/{card_id}.png
 - `uppercut` - 上勾拳
 - `whirlwind` - 旋风斩
 - `bloodletting` - 放血
-- `second_wind` - 第二口
-- `inflame` - 燃烧
-- `rampage` - 暴走
-- `dark_embrace` - 暗影之拥
-- `feel_no_pain` - 痛感
+- `second_wind` - 喘息之机
+- `inflame` - 战意
+- `rampage` - 狂暴打击
+- `dark_embrace` - 残烬回响
+- `feel_no_pain` - 化烬铸甲
 - `entrench` - 叠甲术
 - `spot_weakness` - 寻找弱点
 
 ### 女猎手卡牌
 在 `js/cards.js` 中搜索 `cls: 'huntress'` 查找所有女猎手卡牌
+
+## 角色美术设定
+
+为保证同一职业的卡牌插画角色一致性，所有该职业的卡牌插图都应遵循以下设定。
+
+### 女猎手（Huntress）
+
+| 部位 | 设定 |
+|------|------|
+| 性别/种族 | 女性，黄种人 |
+| 年龄感 | 25-30 岁，成熟干练 |
+| 体型 | 纤瘦矫健，运动型肌肉线条，不臃肿 |
+| 面部 | 锐利的杏眼，高颧骨，薄唇，冷峻表情 |
+| 肤色 | 白皙 |
+| 发型/发色 | 黑色长发，高马尾 |
+| 穿着 | 深绿/棕色皮甲短上衣 + 皮护腿 + 连帽斗篷（兜帽可拉起可放下） |
+| 装备 | 胸前飞刀绑带、腰间短剑/匕首、背后小弓 |
+| 气质 | 冷峻、沉静、猎食者般的锐利，不苟言笑 |
+| 色调 | 森林绿 + 皮革棕 + 银色金属点缀 |
+
+**AI 生图提示词模板（英文，可嵌入各卡牌提示词）：**
+
+```
+A young East Asian woman huntress, fair skin, sharp almond eyes, high
+cheekbones, thin lips, cold stern expression, black hair in a high
+ponytail, slim athletic build, wearing dark green and brown leather
+armor with a hooded cloak, throwing daggers in a chest bandolier,
+a short sword at the hip, a small bow on the back
+```
 
 ## 遗物图片系统（预留）
 
