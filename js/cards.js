@@ -269,9 +269,9 @@ const CARDS = {
     effect(ctx) { ctx.combat.applyStatusPlayer('darkEmbrace', ctx.vars.amt); },
   },
   feel_no_pain: {
-    id: 'feel_no_pain', name: '无惧疼痛', icon: '🦴', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    id: 'feel_no_pain', name: '化烬铸甲', icon: '🦴', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
     vars(up) { return { amt: up ? 5 : 3 }; },
-    descTemplate(v) { return `永久获得无惧疼痛：此后每当你消耗一张牌，获得 ${v.amt} 点格挡`; },
+    descTemplate(v) { return `永久获得化烬铸甲：此后每当你消耗一张牌，获得 ${v.amt} 点格挡`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('feelNoPain', ctx.vars.amt); },
   },
   entrench: {
