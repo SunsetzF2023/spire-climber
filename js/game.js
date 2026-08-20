@@ -20,7 +20,7 @@ const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-
 const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
 // Card IDs that have image assets in assets/cards/
-const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'strike', 'heavy_slam']);
+const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'strike', 'heavy_slam', 'defend', 'flash_strike', 'purify']);
 
 let run = null;
 let combat = null;
