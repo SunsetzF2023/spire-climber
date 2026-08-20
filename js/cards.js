@@ -263,9 +263,9 @@ const CARDS = {
 
   // ---------------- Warrior uncommon (power synergy) ----------------
   dark_embrace: {
-    id: 'dark_embrace', name: '暗影拥抱', icon: '🖤', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
+    id: 'dark_embrace', name: '残烬回响', icon: '🖤', type: 'power', cost: 1, target: 'none', rarity: 'uncommon', cls: 'warrior',
     vars(up) { return { amt: up ? 2 : 1 }; },
-    descTemplate(v) { return `永久获得 ${v.amt} 层暗影拥抱：此后每当你消耗一张牌，抽 ${v.amt} 张牌`; },
+    descTemplate(v) { return `永久获得 ${v.amt} 层残烬回响：此后每当你消耗一张牌，抽 ${v.amt} 张牌`; },
     effect(ctx) { ctx.combat.applyStatusPlayer('darkEmbrace', ctx.vars.amt); },
   },
   feel_no_pain: {

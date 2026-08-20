@@ -11,7 +11,7 @@ const STATUS_META = {
   poison: { icon: '☠️', label: '中毒', desc: '每回合开始时损失等同于层数的生命值，之后层数 -1。' },
   metallicize: { icon: '🔩', label: '金属化', desc: '每回合结束时自动获得等同于层数的格挡。' },
   venom: { icon: '🐍', label: '渗毒', desc: '你的攻击牌命中造成伤害时，额外对目标施加等同于层数的中毒。' },
-  darkEmbrace: { icon: '🖤', label: '暗影拥抱', desc: '每当你消耗一张卡牌，抽取等同于层数的牌。' },
+  darkEmbrace: { icon: '🖤', label: '残烬回响', desc: '每当你消耗一张卡牌，抽取等同于层数的牌。' },
   feelNoPain: { icon: '🦴', label: '无惧疼痛', desc: '每当你消耗一张卡牌，获得等同于层数的格挡。' },
   barricade: { icon: '🧱', label: '壁垒', desc: '你的格挡不再在回合开始时清除。' },
   juggernaut: { icon: '🐘', label: '势不可当', desc: '每当你获得格挡，对一个随机敌人造成等同于层数的伤害。' },
