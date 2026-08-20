@@ -54,7 +54,7 @@ const CARDS = {
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '闪击' }); },
   },
   second_skin: {
-    id: 'second_skin', name: '铁壁', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
+    id: 'second_skin', name: '铁臂', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
     vars(up) { return { block: up ? 17 : 13 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡（消耗）`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
