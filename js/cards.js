@@ -307,7 +307,7 @@ const CARDS = {
     effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '飞刀' }); },
   },
   footwork: {
-    id: 'footwork', name: '脚步', icon: '🦶', type: 'skill', cost: 1, target: 'self', rarity: 'starter', cls: 'huntress',
+    id: 'footwork', name: '踏风步', icon: '🦶', type: 'skill', cost: 1, target: 'self', rarity: 'starter', cls: 'huntress',
     vars(up) { return { block: up ? 8 : 5 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
