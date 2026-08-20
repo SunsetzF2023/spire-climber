@@ -467,7 +467,7 @@ const CARDS = {
     },
   },
   spot_weakness: {
-    id: 'spot_weakness', name: '洞察弱点', icon: '👁️', type: 'skill', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'warrior',
+    id: 'spot_weakness', name: '洞察之眼', icon: '👁️', type: 'skill', cost: 1, target: 'enemy', rarity: 'uncommon', cls: 'warrior',
     vars(up) { return { str: up ? 4 : 3 }; },
     descTemplate(v) { return `若目标意图攻击，获得 ${v.str} 点力量`; },
     effect(ctx) {
