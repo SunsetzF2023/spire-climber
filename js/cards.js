@@ -1077,12 +1077,12 @@ const CARDS = {
     effect(ctx) { ctx.combat.drawCards(ctx.vars.draw); ctx.combat.gainBlockPlayer(ctx.vars.block); },
   },
   power_surge: {
-    id: 'power_surge', name: '力量涌动', icon: '💪', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
+    id: 'power_surge', name: '势压群雄', icon: '💪', type: 'skill', cost: 1, target: 'self', rarity: 'uncommon', cls: 'neutral',
     vars(up) { return { str: up ? 2 : 1, dmg: up ? 8 : 6 }; },
     descTemplate(v) { return `获得 ${v.str} 层力量，对所有敌人造成 ${v.dmg} 点伤害`; },
     effect(ctx) {
       ctx.combat.applyStatusPlayer('strength', ctx.vars.str);
-      ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '力量涌动', isAoE: true, bypassTaunt: true }); });
+      ctx.combat.enemies.forEach(e => { if (e.hp > 0) ctx.combat.dealDamageToEnemy(e.id, ctx.vars.dmg, { source: '势压群雄', isAoE: true, bypassTaunt: true }); });
     },
   },
   survivor_instinct: {
