@@ -31,7 +31,7 @@ assets/cards/{card_id}.png
 2. 打开 `js/game.js`，找到 `CARD_IMAGE_IDS`（约第23行）
 3. 在 Set 数组中添加卡牌ID：
    ```js
-   const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'defend', 'purify', 'iron_arm', 'swift_focus', '新卡牌ID']);
+   const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'strike', '新卡牌ID']);
    ```
 4. 修改 `index.html` 中 `game.js` 的缓存版本号（`?v=XX` 加1）
 5. `git add -A && git commit -m "feat: add card image for {card_id}" && git push origin`
@@ -42,10 +42,7 @@ assets/cards/{card_id}.png
 |--------|--------|------|
 | apex_form | 巅峰形态 | 🌟 |
 | bandage_up | 包扎 | 🩹 |
-| defend | 防御 | 🛡️ |
-| purify | 净化 | 🌿 |
-| iron_arm | 铁臂 | 🦾 |
-| swift_focus | 专注 | 🎯 |
+| strike | 打击 | ⚔️ |
 
 ### 显示效果
 
