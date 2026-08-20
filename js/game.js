@@ -20,7 +20,7 @@ const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-
 const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
 // Card IDs that have image assets in assets/cards/
-const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'strike', 'heavy_slam', 'defend', 'flash_strike', 'purify', 'iron_arm', 'swift_focus', 'anger', 'battle_trance', 'cleave', 'iron_wave', 'thunderclap', 'twin_strike', 'bloodletting', 'bludgeon', 'dark_embrace', 'feel_no_pain', 'immolate', 'inflame', 'offering', 'rampage', 'reaper', 'second_wind', 'uppercut', 'whirlwind']);
+const CARD_IMAGE_IDS = new Set(['apex_form', 'bandage_up', 'strike', 'heavy_slam', 'defend', 'flash_strike', 'purify', 'iron_arm', 'swift_focus', 'anger', 'battle_trance', 'cleave', 'iron_wave', 'thunderclap', 'twin_strike', 'bloodletting', 'bludgeon', 'dark_embrace', 'feel_no_pain', 'immolate', 'inflame', 'offering', 'rampage', 'reaper', 'second_wind', 'uppercut', 'whirlwind', 'barricade', 'disarm', 'entrench', 'juggernaut']);
 
 let run = null;
 let combat = null;
