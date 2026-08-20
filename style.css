@@ -380,6 +380,14 @@ body{
 .game-card.card-has-image.unplayable .card-full-image{filter:grayscale(.6) brightness(.7);}
 .game-card.card-has-image.unplayable{opacity:.5;}
 
+/* Modal card image: larger display in card info modal */
+.modal-card-image{width:120px; height:160px; object-fit:cover; border-radius:10px; border:2px solid var(--border);}
+
+/* Collection grid: image cards fill the item */
+.collection-item .art-icon{width:40px; height:40px;}
+.collection-item.has-card-image{padding:0; overflow:hidden;}
+.collection-item.has-card-image .art-icon{width:100%; height:100%; object-fit:cover; border-radius:7px;}
+
 /* Card icons: 48x48 within the .game-card .icon area */
 .game-card .icon .art-icon{width:48px; height:48px;}
 

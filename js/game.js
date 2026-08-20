@@ -146,7 +146,10 @@ function cardInfoHtml(defId, upgraded) {
   const toggleBtn = hasUpgrade
     ? `<button id="cardInfoToggle" class="btn btn-ghost" style="margin-top:12px">${upgraded ? '查看基础形态' : '查看升级形态'}</button>`
     : '<p class="hint" style="margin-top:12px">此卡牌无升级变化</p>';
-  return `<div class="modal-icon">${def.icon}${badge}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(vars)}</div>${toggleBtn}`;
+  const iconHtml = CARD_IMAGE_IDS.has(defId)
+    ? `<img class="modal-card-image" src="assets/cards/${defId}.png" alt="${def.name}">`
+    : `${def.icon}`;
+  return `<div class="modal-icon">${iconHtml}${badge}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(vars)}</div>${toggleBtn}`;
 }
 function showCardInfoModal(defId) {
   let upgraded = false;
@@ -1794,6 +1797,7 @@ function showProfileScreen() {
       const discovered = discoveredList.includes(id);
       const div = document.createElement('div');
       div.className = `collection-item ${discovered ? '' : 'undiscovered'}`;
+      if (isCard && CARD_IMAGE_IDS.has(id)) div.classList.add('has-card-image');
       div.innerHTML = discovered ? infoFn.icon(id) : '❔';
       div.addEventListener('click', () => {
         if (!discovered) { showInfoModal(unknownInfoHtml(label)); return; }
@@ -1805,7 +1809,7 @@ function showProfileScreen() {
 
   const cardIds = Object.keys(CARDS);
   el.profileCardProgress.textContent = `(${meta.discoveredCards.length} / ${cardIds.length})`;
-  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => artIcon('cards', id, CARDS[id].icon), html: cardInfoHtml }, '卡牌', true);
+  buildCollectionGrid(el.profileCards, cardIds, meta.discoveredCards, { icon: (id) => CARD_IMAGE_IDS.has(id) ? artIconHtml('cards', id, CARDS[id].icon) : artIcon('cards', id, CARDS[id].icon), html: cardInfoHtml }, '卡牌', true);
 
   const relicIds = Object.keys(RELICS);
   el.profileRelicProgress.textContent = `(${meta.discoveredRelics.length} / ${relicIds.length})`;
