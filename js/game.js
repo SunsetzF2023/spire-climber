@@ -132,6 +132,27 @@ function showInfoModal(html) {
 }
 function hideInfoModal() { el.infoModal.classList.add('hidden'); }
 
+function triggerUpgradeEffect(cardEl) {
+  if (!cardEl) return;
+  cardEl.classList.add('upgrading');
+  setTimeout(() => cardEl.classList.remove('upgrading'), 1200);
+  const rect = cardEl.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'upgrade-particle';
+    const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
+    const dist = 40 + Math.random() * 30;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+    cardEl.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
 function relicInfoHtml(relicId) {
   const r = RELICS[relicId];
   return `<div class="modal-icon">${r.icon}</div><div class="modal-name">${r.name}</div><div class="modal-meta">遗物 · ${r.rarity}</div><div class="modal-desc">${r.desc}</div>`;
@@ -908,7 +929,12 @@ function showRestScreen(node) {
     el.restPreviewAfter.innerHTML = '';
     el.restPreviewBefore.appendChild(renderCardEl(card, { clickable: false }));
     el.restPreviewAfter.appendChild(renderCardEl({ uid: card.uid + '_preview', defId: card.defId, upgraded: true }, { clickable: false }));
-    el.restConfirmUpgradeBtn.onclick = () => { card.upgraded = true; backToMapOrVictory(node); };
+    el.restConfirmUpgradeBtn.onclick = () => {
+      const upgradedCardEl = el.restPreviewAfter.querySelector('.game-card');
+      triggerUpgradeEffect(upgradedCardEl);
+      card.upgraded = true;
+      setTimeout(() => backToMapOrVictory(node), 1000);
+    };
     el.restCancelUpgradeBtn.onclick = () => renderUpgradeList();
   };
 
