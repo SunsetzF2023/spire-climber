@@ -7,25 +7,18 @@ const STARTING_HP = 70;
 
 // ---------------- Card image preloading ----------------
 const cardImageCache = new Map(); // defId -> 'loaded' | 'loading' | 'error'
-const cardImageExt = new Map(); // defId -> '.webp' | '.png'
 function preloadCardImages() {
   CARD_IMAGE_IDS.forEach(id => {
     if (cardImageCache.has(id)) return;
     cardImageCache.set(id, 'loading');
-    const tryWebp = new Image();
-    tryWebp.onload = () => { cardImageCache.set(id, 'loaded'); cardImageExt.set(id, '.webp'); };
-    tryWebp.onerror = () => {
-      // Fallback to PNG
-      const tryPng = new Image();
-      tryPng.onload = () => { cardImageCache.set(id, 'loaded'); cardImageExt.set(id, '.png'); };
-      tryPng.onerror = () => cardImageCache.set(id, 'error');
-      tryPng.src = `assets/cards/${id}.png`;
-    };
-    tryWebp.src = `assets/cards/${id}.webp`;
+    const img = new Image();
+    img.onload = () => cardImageCache.set(id, 'loaded');
+    img.onerror = () => cardImageCache.set(id, 'error');
+    img.src = `assets/cards/${id}.png`;
   });
 }
 function getCardImagePath(id) {
-  return `assets/cards/${id}${cardImageExt.get(id) || '.webp'}`;
+  return `assets/cards/${id}.png`;
 }
 function isCardImageReady(id) {
   return cardImageCache.get(id) === 'loaded';
@@ -194,7 +187,7 @@ function cardInfoHtml(defId, upgraded) {
     ? `<button id="cardInfoToggle" class="btn btn-ghost" style="margin-top:12px">${upgraded ? '查看基础形态' : '查看升级形态'}</button>`
     : '<p class="hint" style="margin-top:12px">此卡牌无升级变化</p>';
   const iconHtml = CARD_IMAGE_IDS.has(defId)
-    ? `<img class="modal-card-image" src="${getCardImagePath(defId)}" alt="${def.name}" onerror="this.onerror=null;this.src='assets/cards/${defId}.png'">`
+    ? `<img class="modal-card-image" src="${getCardImagePath(defId)}" alt="${def.name}">`
     : `${def.icon}`;
   return `<div class="modal-icon">${iconHtml}${badge}</div><div class="modal-name">${def.name}</div><div class="modal-meta">${typeLabel} · 费用 ${cost} · ${def.rarity}</div><div class="modal-desc">${def.descTemplate(vars)}</div>${toggleBtn}`;
 }
@@ -757,7 +750,7 @@ function renderCardEl(cardInstance, opts = {}) {
     const imgReady = isCardImageReady(def.id);
     if (imgReady) {
       div.innerHTML = `
-        <img class="card-full-image" src="${imgSrc}" alt="${def.name}" onerror="this.onerror=null;this.src='assets/cards/${def.id}.png'">
+        <img class="card-full-image" src="${imgSrc}" alt="${def.name}">
         <div class="cost">${cost}</div>
         ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
       `;
@@ -770,7 +763,7 @@ function renderCardEl(cardInstance, opts = {}) {
           <div class="type-label">${typeLabel}</div>
           <div class="desc">${descText}</div>
         </div>
-        <img class="card-full-image hidden" src="${imgSrc}" alt="${def.name}" onload="this.classList.remove('hidden');this.previousElementSibling.classList.add('hidden')" onerror="this.onerror=null;this.src='assets/cards/${def.id}.png';if(this.complete)this.onload()">
+        <img class="card-full-image hidden" src="${imgSrc}" alt="${def.name}" onload="this.classList.remove('hidden');this.previousElementSibling.classList.add('hidden')">
         <div class="cost">${cost}</div>
         ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
       `;
