@@ -5,6 +5,25 @@
 
 const STARTING_HP = 70;
 
+// ---------------- Card image preloading ----------------
+const cardImageCache = new Map(); // defId -> 'loaded' | 'loading' | 'error'
+function preloadCardImages() {
+  CARD_IMAGE_IDS.forEach(id => {
+    if (cardImageCache.has(id)) return;
+    cardImageCache.set(id, 'loading');
+    const img = new Image();
+    img.onload = () => cardImageCache.set(id, 'loaded');
+    img.onerror = () => cardImageCache.set(id, 'error');
+    img.src = getCardImagePath(id);
+  });
+}
+function getCardImagePath(id) {
+  return `assets/cards/${id}.png`;
+}
+function isCardImageReady(id) {
+  return cardImageCache.get(id) === 'loaded';
+}
+
 // Art asset system: tries to load an image from assets/, falls back to emoji on error.
 // Usage: $2 -> <img> or emoji string
 function artIcon(folder, id, fallbackEmoji) {
@@ -727,12 +746,28 @@ function renderCardEl(cardInstance, opts = {}) {
   const hasImage = CARD_IMAGE_IDS.has(def.id);
   if (hasImage) {
     div.classList.add('card-has-image');
-    const imgSrc = `assets/cards/${def.id}.png`;
-    div.innerHTML = `
-      <img class="card-full-image" src="${imgSrc}" alt="${def.name}">
-      <div class="cost">${cost}</div>
-      ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
-    `;
+    const imgSrc = getCardImagePath(def.id);
+    const imgReady = isCardImageReady(def.id);
+    if (imgReady) {
+      div.innerHTML = `
+        <img class="card-full-image" src="${imgSrc}" alt="${def.name}">
+        <div class="cost">${cost}</div>
+        ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
+      `;
+    } else {
+      // Show emoji fallback while image loads, with hidden img to trigger load
+      div.innerHTML = `
+        <div class="card-loading-fallback">
+          <div class="icon">${def.icon}</div>
+          <div class="name">${def.name}</div>
+          <div class="type-label">${typeLabel}</div>
+          <div class="desc">${descText}</div>
+        </div>
+        <img class="card-full-image hidden" src="${imgSrc}" alt="${def.name}" onload="this.classList.remove('hidden');this.previousElementSibling.classList.add('hidden')">
+        <div class="cost">${cost}</div>
+        ${cardInstance.upgraded ? '<div class="card-upgrade-badge">+</div>' : ''}
+      `;
+    }
     attachTooltip(div, `<b>${def.name}${cardInstance.upgraded ? '+' : ''}</b><br>${typeLabel} · 费用 ${cost}<br>${descText}`);
   } else {
     div.innerHTML = `
@@ -2143,6 +2178,7 @@ function setCombatZoom(z) {
 document.addEventListener('DOMContentLoaded', () => {
   cacheEls();
   meta = loadMeta();
+  preloadCardImages();
   el.startRunBtn.addEventListener('click', () => {
     if (loadRunState() && !confirm('你有一局未完成的冒险，开始新的一局将会覆盖它，是否继续？')) return;
     clearRunState();
