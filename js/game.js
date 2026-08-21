@@ -1816,10 +1816,12 @@ function renderCloudSyncStatus() {
     const name = cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name);
     if (isAnon) {
       el.cloudSyncStatus.textContent = '☁️ 已自动登录（游客）— 评分和排行榜已可用';
+      el.cloudLoginBtn.classList.remove('hidden');
+      el.cloudLoginBtn.textContent = '🔗 使用 GitHub 登录，跨设备同步进度';
     } else {
       el.cloudSyncStatus.textContent = `☁️ 已登录${name ? '：' + name : ''} — 进度已同步到云端`;
+      el.cloudLoginBtn.classList.add('hidden');
     }
-    el.cloudLoginBtn.classList.add('hidden');
     el.cloudLogoutBtn.classList.remove('hidden');
   } else {
     el.cloudSyncStatus.textContent = '☁️ 连接中…';
