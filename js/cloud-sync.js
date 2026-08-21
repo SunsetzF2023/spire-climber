@@ -62,6 +62,12 @@ async function signInWithGitHub() {
   });
 }
 
+async function signInAnonymously() {
+  const { data, error } = await supabaseClient.auth.signInAnonymously();
+  if (error) console.error('[cloud-sync] anonymous sign-in failed:', error.message);
+  return data;
+}
+
 async function signOutCloud() {
   await supabaseClient.auth.signOut();
   cloudUser = null;
@@ -83,6 +89,9 @@ async function initCloudSync() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session && session.user) {
     await handleSignedIn(session.user);
+  } else {
+    // Auto anonymous sign-in for cloud features (ratings, leaderboard)
+    await signInAnonymously();
   }
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session && session.user) {
@@ -91,6 +100,8 @@ async function initCloudSync() {
       cloudUser = null;
       cloudSyncEnabled = false;
       if (typeof onCloudAuthChanged === 'function') onCloudAuthChanged(null);
+      // Re-sign-in anonymously after explicit logout
+      setTimeout(() => signInAnonymously(), 500);
     }
   });
 }

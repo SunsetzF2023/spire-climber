@@ -1812,13 +1812,18 @@ function finishRun(victory, desc) {
 // ---------------- Cloud sync UI ----------------
 function renderCloudSyncStatus() {
   if (cloudUser) {
+    const isAnon = cloudUser.is_anonymous;
     const name = cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name);
-    el.cloudSyncStatus.textContent = `☁️ 已登录${name ? '：' + name : ''} — 进度已同步到云端`;
+    if (isAnon) {
+      el.cloudSyncStatus.textContent = '☁️ 已自动登录（游客）— 评分和排行榜已可用';
+    } else {
+      el.cloudSyncStatus.textContent = `☁️ 已登录${name ? '：' + name : ''} — 进度已同步到云端`;
+    }
     el.cloudLoginBtn.classList.add('hidden');
     el.cloudLogoutBtn.classList.remove('hidden');
   } else {
-    el.cloudSyncStatus.textContent = '☁️ 未登录 — 进度仅保存在本设备';
-    el.cloudLoginBtn.classList.remove('hidden');
+    el.cloudSyncStatus.textContent = '☁️ 连接中…';
+    el.cloudLoginBtn.classList.add('hidden');
     el.cloudLogoutBtn.classList.add('hidden');
   }
 }
