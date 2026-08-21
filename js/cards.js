@@ -574,7 +574,7 @@ const CARDS = {
 
   // ---------------- Neutral (batch 2 additions) ----------------
   deflect: {
-    id: 'deflect', name: '闪避格挡', icon: '🔰', type: 'skill', cost: 0, target: 'self', rarity: 'common', cls: 'neutral',
+    id: 'deflect', name: '紧急格挡', icon: '🔰', type: 'skill', cost: 0, target: 'self', rarity: 'common', cls: 'neutral',
     vars(up) { return { block: up ? 7 : 4 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); },
