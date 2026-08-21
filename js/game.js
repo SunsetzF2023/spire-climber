@@ -16,7 +16,7 @@ function artIconHtml(folder, id, fallbackEmoji) {
   return `<img class="art-icon" src="assets/${folder}/${id}.png" alt="${fallbackEmoji}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="art-icon-fallback" style="display:none">${fallbackEmoji}</span>`;
 }
 const STARTING_GOLD = 99;
-const ACT_FLOOR_COUNT = 16; // travel floors per act, before the guaranteed pre-boss rest + boss floor
+const ACT_FLOOR_COUNT = 26; // travel floors per act, before the guaranteed pre-boss rest + boss floor
 const RUN_STORAGE_KEY = 'spireClimberRun_v1';
 
 // Card IDs that have image assets in assets/cards/

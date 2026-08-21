@@ -292,8 +292,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '戳刺', icon: '⚔️', type: 'attack', displayValue: 5, hitsCount: 2,
-        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); if (e.hp > 0) combat.dealDamageToPlayer(5, e.id); },
+        name: '毒刺', icon: '⚔️', type: 'attack', displayValue: 5, hitsCount: 2, statusPreview: [{ name: 'poison', amount: 1 }],
+        execute(combat, e) { combat.dealDamageToPlayer(5, e.id); if (e.hp > 0) combat.dealDamageToPlayer(5, e.id); combat.applyStatusPlayer('poison', 1); },
       };
     },
   },
@@ -310,8 +310,8 @@ const ENEMIES = {
         };
       }
       return {
-        name: '冲撞', icon: '⚔️', type: 'attack', displayValue: 12,
-        execute(combat, e) { combat.dealDamageToPlayer(12, e.id); },
+        name: '毒撞', icon: '⚔️', type: 'attack', displayValue: 12, statusPreview: [{ name: 'poison', amount: 2 }],
+        execute(combat, e) { combat.dealDamageToPlayer(12, e.id); combat.applyStatusPlayer('poison', 2); },
       };
     },
   },
@@ -329,13 +329,13 @@ const ENEMIES = {
       }
       if (pattern[step] === 'chomp') {
         return {
-          name: '撕咬', icon: '⚔️', type: 'attack', displayValue: 7, hitsCount: 3,
-          execute(combat, e) { combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); },
+          name: '毒咬', icon: '⚔️', type: 'attack', displayValue: 7, hitsCount: 3, statusPreview: [{ name: 'poison', amount: 2 }],
+          execute(combat, e) { combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); if (e.hp > 0) combat.dealDamageToPlayer(7, e.id); combat.applyStatusPlayer('poison', 2); },
         };
       }
       return {
-        name: '缠绕', icon: '⚔️', type: 'attack', displayValue: 15,
-        execute(combat, e) { combat.dealDamageToPlayer(15, e.id); },
+        name: '毒液缠绕', icon: '⚔️', type: 'attack', displayValue: 15, statusPreview: [{ name: 'poison', amount: 3 }],
+        execute(combat, e) { combat.dealDamageToPlayer(15, e.id); combat.applyStatusPlayer('poison', 3); },
       };
     },
   },
