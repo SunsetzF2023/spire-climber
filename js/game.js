@@ -999,7 +999,13 @@ function showShopScreen(node) {
 
 function getShopCost(offer) {
   if (currentShop.shopType === 'shop_free' && !currentShop.firstFreeUsed) return 0;
-  return offer.cost;
+  let cost = offer.cost;
+  // Cards already in deck cost more — +50% per copy owned
+  if (CARDS[offer.id]) {
+    const owned = run.deck.filter(cid => cid === offer.id).length;
+    if (owned > 0) cost = Math.round(cost * (1 + 0.5 * owned));
+  }
+  return cost;
 }
 
 function payShopCost(offer) {
@@ -1046,7 +1052,8 @@ function renderShop(node) {
     const card = renderCardEl(inst, { clickable: run.gold >= effectiveCost, unplayable: run.gold < effectiveCost });
     const priceTag = document.createElement('div');
     priceTag.className = 'hint';
-    priceTag.textContent = isFree ? '🎁 免费!' : `💰 ${offer.cost}`;
+    const owned = run.deck.filter(cid => cid === offer.id).length;
+    priceTag.textContent = isFree ? '🎁 免费!' : `💰 ${effectiveCost}${owned > 0 ? ' (已有' + owned + '张)' : ''}`;
     const wrap = document.createElement('div');
     wrap.appendChild(card);
     wrap.appendChild(priceTag);
