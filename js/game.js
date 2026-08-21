@@ -2007,8 +2007,8 @@ function showLeaderboardScreen() {
   showScreen('leaderboardScreen');
   if (el.cloudSyncStatus2) {
     el.cloudSyncStatus2.textContent = cloudUser
-      ? `☁️ 已登录 — 显示全球玩家最近游玩记录`
-      : `☁️ 未登录 — 仅显示本地记录。登录后可查看全球玩家记录`;
+      ? `☁️ 已连接 — 显示全球玩家最近游玩记录`
+      : `☁️ 连接中…`;
   }
   el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">加载中…</div>';
   fetchLeaderboard();

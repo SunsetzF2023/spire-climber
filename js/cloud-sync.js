@@ -109,7 +109,13 @@ async function initCloudSync() {
 async function uploadRunToLeaderboard(record) {
   if (!cloudSyncEnabled || !cloudUser) return;
   try {
-    const playerName = (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
+    let playerName;
+    if (cloudUser.is_anonymous) {
+      const shortId = cloudUser.id.substring(0, 6);
+      playerName = `游客#${shortId}`;
+    } else {
+      playerName = (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
+    }
     const { error } = await supabaseClient
       .from('leaderboard')
       .insert({
