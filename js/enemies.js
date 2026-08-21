@@ -577,9 +577,16 @@ const ENEMIES = {
       enemy.aiState.revealed = false;
     },
     chooseMove(enemy, combat) {
+      if (!enemy.aiState) enemy.aiState = {};
+      if (!enemy.aiState.disguiseAs) {
+        const pool = ['slime', 'bat', 'rampaging_hound', 'skeleton_guard', 'jaw_worm', 'gremlin_nob'];
+        enemy.aiState.disguiseAs = pool[Math.floor(Math.random() * pool.length)];
+        enemy.aiState.revealed = false;
+      }
       if (!enemy.aiState.revealed) {
         enemy.aiState.revealed = true;
         const realDef = ENEMIES[enemy.aiState.disguiseAs];
+        if (!realDef) return { name: '攻击', icon: '⚔️', type: 'attack', displayValue: 6, execute(combat, e) { combat.dealDamageToPlayer(6, e.id); } };
         return {
           name: '撕下伪装', icon: '🎭', type: 'buff', displayValue: null,
           execute(combat, e) {
@@ -592,6 +599,7 @@ const ENEMIES = {
         };
       }
       const realDef = ENEMIES[enemy.aiState.disguiseAs];
+      if (!realDef) return { name: '攻击', icon: '⚔️', type: 'attack', displayValue: 6, execute(combat, e) { combat.dealDamageToPlayer(6, e.id); } };
       enemy.name = realDef.name;
       enemy.icon = realDef.icon;
       return realDef.chooseMove(enemy, combat);

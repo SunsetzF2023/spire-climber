@@ -744,7 +744,7 @@ function renderCardEl(cardInstance, opts = {}) {
       <div class="desc">${descText}</div>
     `;
   }
-  if (opts.clickable) div.addEventListener('click', () => opts.onClick(cardInstance));
+  if (opts.clickable && typeof opts.onClick === 'function') div.addEventListener('click', () => opts.onClick(cardInstance));
   return div;
 }
 
