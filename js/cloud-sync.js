@@ -92,6 +92,8 @@ async function initCloudSync() {
   } else {
     // Auto anonymous sign-in for cloud features (ratings, leaderboard)
     await signInAnonymously();
+    // If anonymous sign-in failed, update UI to show GitHub login button
+    if (!cloudUser && typeof onCloudAuthChanged === 'function') onCloudAuthChanged(null);
   }
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session && session.user) {

@@ -1824,8 +1824,9 @@ function renderCloudSyncStatus() {
     }
     el.cloudLogoutBtn.classList.remove('hidden');
   } else {
-    el.cloudSyncStatus.textContent = '☁️ 连接中…';
-    el.cloudLoginBtn.classList.add('hidden');
+    el.cloudSyncStatus.textContent = '☁️ 未登录 — 进度仅保存在本设备';
+    el.cloudLoginBtn.classList.remove('hidden');
+    el.cloudLoginBtn.textContent = '🔗 使用 GitHub 登录，跨设备同步进度';
     el.cloudLogoutBtn.classList.add('hidden');
   }
 }
@@ -2010,7 +2011,7 @@ function showLeaderboardScreen() {
   if (el.cloudSyncStatus2) {
     el.cloudSyncStatus2.textContent = cloudUser
       ? `☁️ 已连接 — 显示全球玩家最近游玩记录`
-      : `☁️ 连接中…`;
+      : `☁️ 未登录 — 仅显示本地记录`;
   }
   el.leaderboardList.innerHTML = '<div class="hint" style="padding:1rem">加载中…</div>';
   fetchLeaderboard();
