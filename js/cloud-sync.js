@@ -77,11 +77,15 @@ async function signOutCloud() {
 
 async function handleSignedIn(user) {
   cloudUser = user;
-  const cloudMeta = await pullCloudMeta(user.id);
-  const merged = mergeMeta(meta, cloudMeta);
-  meta = merged;
-  saveMeta(meta); // writes localStorage + triggers onMetaSaved -> pushes merged copy to cloud
   cloudSyncEnabled = true;
+  try {
+    const cloudMeta = await pullCloudMeta(user.id);
+    const merged = mergeMeta(meta, cloudMeta);
+    meta = merged;
+    saveMeta(meta); // writes localStorage + triggers onMetaSaved -> pushes merged copy to cloud
+  } catch (e) {
+    console.error('[cloud-sync] handleSignedIn error:', e);
+  }
   if (typeof onCloudAuthChanged === 'function') onCloudAuthChanged(user);
 }
 
@@ -109,7 +113,10 @@ async function initCloudSync() {
 }
 
 async function uploadRunToLeaderboard(record) {
-  if (!cloudSyncEnabled || !cloudUser) return;
+  if (!cloudSyncEnabled || !cloudUser) {
+    console.warn('[cloud-sync] leaderboard upload skipped: cloudSyncEnabled=', cloudSyncEnabled, 'cloudUser=', !!cloudUser);
+    return;
+  }
   try {
     let playerName;
     if (cloudUser.is_anonymous) {
@@ -118,6 +125,7 @@ async function uploadRunToLeaderboard(record) {
     } else {
       playerName = (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
     }
+    console.log('[cloud-sync] uploading to leaderboard as', playerName, 'victory=', record.victory);
     const { error } = await supabaseClient
       .from('leaderboard')
       .insert({
