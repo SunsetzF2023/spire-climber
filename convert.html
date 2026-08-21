@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>PNG → WebP 批量转换</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:20px;background:#1a1a2e;color:#e0e0e0;}
+button{padding:12px 28px;font-size:16px;border:none;border-radius:8px;cursor:pointer;margin:8px 4px;}
+.btn-primary{background:#4caf50;color:#fff;}
+.btn-primary:disabled{background:#555;cursor:not-allowed;}
+.btn-ghost{background:#333;color:#ccc;border:1px solid #555;}
+#status{margin:16px 0;padding:12px;background:#16213e;border-radius:8px;min-height:60px;font-size:14px;line-height:1.6;}
+.progress-bar{width:100%;height:8px;background:#333;border-radius:4px;margin:8px 0;overflow:hidden;}
+.progress-fill{height:100%;background:#4caf50;transition:width .3s;width:0;}
+.quality-row{display:flex;align-items:center;gap:8px;margin:12px 0;}
+.quality-row input{width:80px;}
+.hint{color:#888;font-size:13px;margin:8px 0;}
+</style>
+</head>
+<body>
+<h1>🖼️ PNG → WebP 批量转换</h1>
+<p class="hint">把所有卡牌 PNG 图片转成 WebP，打包下载 zip。解压后放到 <code>assets/cards/</code> 目录即可。</p>
+<div class="quality-row">
+  <label>WebP 质量：</label>
+  <input type="number" id="quality" value="80" min="1" max="100">
+  <span class="hint">（80 是推荐值，肉眼几乎无区别）</span>
+</div>
+<button class="btn-primary" id="convertBtn">开始转换并下载</button>
+<button class="btn-ghost" id="downloadListBtn">下载文件清单</button>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div id="status">点击按钮开始…</div>
+
+<script>
+const CARD_IDS = ['apex_form','bandage_up','strike','heavy_slam','defend','flash_strike','purify','iron_arm','swift_focus','anger','battle_trance','cleave','iron_wave','thunderclap','twin_strike','bloodletting','bludgeon','dark_embrace','feel_no_pain','immolate','inflame','offering','rampage','reaper','second_wind','uppercut','whirlwind','barricade','disarm','entrench','juggernaut','armaments','dagger_throw','demon_form','footwork','power_surge','quick_slash','scavenger','spot_weakness','sunder','treasure_map','venom_strike','battle_hymn','panacea','shrug_it_off','venom_dart','bite','clothesline','deflect','headbutt','reckless_charge','sword_boomerang'];
+
+const statusEl = document.getElementById('status');
+const progressFill = document.getElementById('progressFill');
+const convertBtn = document.getElementById('convertBtn');
+
+function log(msg) {
+  statusEl.innerHTML += msg + '<br>';
+  statusEl.scrollTop = statusEl.scrollHeight;
+}
+
+async function convertPngToWebP(id, quality) {
+  const response = await fetch(`assets/cards/${id}.png`);
+  if (!response.ok) throw new Error(`Failed to load ${id}.png (${response.status})`);
+  const blob = await response.blob();
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0);
+  const webpBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality / 100));
+  bitmap.close();
+  return webpBlob;
+}
+
+convertBtn.addEventListener('click', async () => {
+  convertBtn.disabled = true;
+  statusEl.innerHTML = '';
+  const quality = parseInt(document.getElementById('quality').value) || 80;
+  log(`开始转换 ${CARD_IDS.length} 张图片，质量 ${quality}…`);
+
+  const zip = new JSZip();
+  const folder = zip.folder('cards');
+  let done = 0;
+  let totalOriginal = 0;
+  let totalWebP = 0;
+
+  for (const id of CARD_IDS) {
+    try {
+      const origResp = await fetch(`assets/cards/${id}.png`);
+      const origBlob = await origResp.blob();
+      totalOriginal += origBlob.size;
+
+      const webpBlob = await convertPngToWebP(id, quality);
+      totalWebP += webpBlob.size;
+      folder.file(`${id}.webp`, webpBlob);
+
+      done++;
+      const pct = Math.round(done / CARD_IDS.length * 100);
+      progressFill.style.width = pct + '%';
+      const saved = Math.round((1 - webpBlob.size / origBlob.size) * 100);
+      log(`✅ ${id}.png → ${id}.webp (${(origBlob.size/1024).toFixed(0)}KB → ${(webpBlob.size/1024).toFixed(0)}KB, -${saved}%)`);
+    } catch (e) {
+      log(`❌ ${id}: ${e.message}`);
+    }
+  }
+
+  log(`<br><b>转换完成！</b>`);
+  log(`原始总大小：${(totalOriginal/1024/1024).toFixed(1)} MB`);
+  log(`WebP 总大小：${(totalWebP/1024/1024).toFixed(1)} MB`);
+  log(`节省：${Math.round((1 - totalWebP/totalOriginal) * 100)}%`);
+  log(`<br>正在生成 zip 文件…`);
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cards-webp.zip';
+  a.click();
+  URL.revokeObjectURL(url);
+  log(`<br>✅ zip 已下载！解压后把 <code>cards/</code> 里的 <code>.webp</code> 文件放到项目的 <code>assets/cards/</code> 目录。`);
+  convertBtn.disabled = false;
+});
+
+document.getElementById('downloadListBtn').addEventListener('click', () => {
+  const text = CARD_IDS.map(id => `${id}.webp`).join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'card-list.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
