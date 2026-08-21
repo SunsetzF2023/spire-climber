@@ -133,7 +133,7 @@ const CARDS = {
     },
   },
   shrug_it_off: {
-    id: 'shrug_it_off', name: '一笑置之', icon: '😤', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
+    id: 'shrug_it_off', name: '蓄势待发', icon: '😤', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'warrior',
     vars(up) { return { block: up ? 11 : 8, draw: 1 }; },
     descTemplate(v) { return `获得 ${v.block} 点格挡，抽 1 张牌`; },
     effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); ctx.combat.drawCards(ctx.vars.draw); },
