@@ -177,6 +177,15 @@ body{
 
 /* ---- Reward ---- */
 .reward-panel{max-width:640px; margin:30px auto; text-align:center;}
+.reward-rating{display:flex; align-items:center; justify-content:center; gap:12px; margin:16px 0 8px;}
+.rating-btn{font-size:22px; width:44px; height:44px; border-radius:50%; border:2px solid var(--border); background:var(--bg2); cursor:pointer; transition:all .15s; padding:0;}
+.rating-btn:hover{transform:scale(1.15);}
+.rating-up:hover{border-color:#4caf50; background:rgba(76,175,80,.15);}
+.rating-down:hover{border-color:#f44336; background:rgba(244,67,54,.15);}
+.rating-btn.selected{transform:scale(1.1);}
+.rating-up.selected{border-color:#4caf50; background:rgba(76,175,80,.25);}
+.rating-down.selected{border-color:#f44336; background:rgba(244,67,54,.25);}
+.rating-thanks{color:var(--gold);}
 
 /* ---- Combat ---- */
 #combatScreen{max-width:1100px;}

@@ -72,7 +72,7 @@ function cacheEls() {
     'restScreen', 'restHealBtn', 'restUpgradeBtn', 'restLiftBtn', 'restUpgradeList',
     'restUpgradePreview', 'restPreviewBefore', 'restPreviewAfter', 'restConfirmUpgradeBtn', 'restCancelUpgradeBtn',
     'shopScreen', 'shopCards', 'shopEthereal', 'shopRelics', 'shopRemoveBtn', 'removeCost', 'shopLeaveBtn',
-    'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn',
+    'rewardScreen', 'rewardTitle', 'rewardGold', 'rewardCards', 'rewardSkipBtn', 'ratingUpBtn', 'ratingDownBtn', 'ratingThanks',
     'combatScreen', 'enemyRow', 'drawCount', 'discardCount', 'playerHpFill', 'playerHpText', 'playerBlockBadge', 'playerStatusRow',
     'energyBadge', 'handRow', 'endTurnBtn', 'combatLog',
     'endScreen', 'endTitle', 'endDesc', 'endStatsGrid', 'endNewAchievements', 'endAchievementList', 'endRestartBtn', 'endProfileBtn',
@@ -1676,6 +1676,37 @@ function showRewardScreen() {
     el.rewardSkipBtn.textContent = '继续';
   }
   el.rewardSkipBtn.onclick = () => backToMapOrVictory(combat.node);
+
+  // ---- Monster rating (thumbs up/down) ----
+  const enemyIds = combat.enemies.map(e => e.defId || e.id).filter(Boolean);
+  const combatKey = enemyIds.sort().join(',');
+  el.ratingThanks.classList.add('hidden');
+  el.ratingUpBtn.classList.remove('selected');
+  el.ratingDownBtn.classList.remove('selected');
+  el.ratingUpBtn.onclick = () => submitRating('up', combatKey, enemyIds, tier);
+  el.ratingDownBtn.onclick = () => submitRating('down', combatKey, enemyIds, tier);
+}
+
+const RATING_STORAGE_KEY = 'spireClimberRatings_v1';
+function loadRatings() {
+  try { return JSON.parse(localStorage.getItem(RATING_STORAGE_KEY)) || []; } catch (e) { return []; }
+}
+function submitRating(direction, combatKey, enemyIds, tier) {
+  const rating = { dir: direction, enemies: enemyIds, tier, ts: Date.now() };
+  const all = loadRatings();
+  all.push(rating);
+  try { localStorage.setItem(RATING_STORAGE_KEY, JSON.stringify(all)); } catch (e) {}
+  el.ratingUpBtn.classList.toggle('selected', direction === 'up');
+  el.ratingDownBtn.classList.toggle('selected', direction === 'down');
+  el.ratingThanks.classList.remove('hidden');
+  el.ratingUpBtn.onclick = null;
+  el.ratingDownBtn.onclick = null;
+  // Fire-and-forget cloud sync
+  if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+    supabaseClient.from('monster_ratings').insert({ direction, enemy_ids: enemyIds, combat_key: combatKey, tier }).then(({ error }) => {
+      if (error) console.error('[rating] cloud sync failed:', error.message);
+    });
+  }
 }
 
 // ---------------- End screen ----------------

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=39">
+<link rel="stylesheet" href="style.css?v=40">
 </head>
 <body>
 
@@ -115,6 +115,12 @@
     <p id="rewardGold" class="hint"></p>
     <p class="hint">选择一张卡牌加入卡组（也可以跳过）：</p>
     <div id="rewardCards" class="card-grid"></div>
+    <div id="rewardRating" class="reward-rating">
+      <span class="hint">这场战斗体验如何？</span>
+      <button id="ratingUpBtn" class="rating-btn rating-up" title="好玩！">👍</button>
+      <button id="ratingDownBtn" class="rating-btn rating-down" title="不太行">👎</button>
+      <span id="ratingThanks" class="hint rating-thanks hidden">感谢反馈！</span>
+    </div>
     <button id="rewardSkipBtn" class="btn btn-ghost">跳过，不选卡</button>
   </div>
 </section>
@@ -244,6 +250,6 @@
 <script src="js/meta.js?v=32"></script>
 <script src="js/characters.js?v=32"></script>
 <script src="js/cloud-sync.js?v=33"></script>
-<script src="js/game.js?v=83"></script>
+<script src="js/game.js?v=84"></script>
 </body>
 </html>

@@ -78,3 +78,32 @@ create policy "Users can insert their own runs"
 create policy "Users can delete their own runs"
   on public.leaderboard for delete
   using (auth.uid() = user_id);
+
+-- ================= MONSTER RATINGS =================
+-- Stores player thumbs-up/down ratings after combat.
+create table if not exists public.monster_ratings (
+  id bigint generated always as identity primary key,
+  user_id uuid references auth.users(id) on delete set null,
+  direction text not null check (direction in ('up', 'down')),
+  enemy_ids text[] not null default '{}',
+  combat_key text not null default '',
+  tier text not null default 'normal',
+  created_at timestamptz not null default now()
+);
+
+alter table public.monster_ratings enable row level security;
+
+-- Anyone can read aggregate ratings (for stats display).
+create policy "Anyone can view monster ratings"
+  on public.monster_ratings for select
+  using (true);
+
+-- Authenticated users can insert their own ratings.
+create policy "Users can insert their own ratings"
+  on public.monster_ratings for insert
+  with check (auth.uid() = user_id);
+
+-- Allow anonymous inserts (if anonymous auth is enabled).
+create policy "Anonymous can insert ratings"
+  on public.monster_ratings for insert
+  with check (true);
