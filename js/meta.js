@@ -98,7 +98,11 @@ function computeScore(stats) {
     + stats.goldEarned
     + stats.enemiesDefeated * 15
     + stats.elitesDefeated * 40
-    + (stats.won ? 5000 : 0);
+    + (stats.bossesDefeated || 0) * 200
+    + stats.relicsHeld * 50
+    + stats.cardsPlayed * 2
+    + (stats.won ? 5000 : 0)
+    + (stats.won && stats.finalHp > 0 ? Math.round(stats.finalHp / stats.maxHp * 1000) : 0);
 }
 
 // Applies a finished run's stats to the persistent meta object (mutates + saves it),

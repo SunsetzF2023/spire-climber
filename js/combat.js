@@ -46,7 +46,7 @@ class CombatEngine {
     this.pendingAttackBonus = 0;
     this.firstAttackDone = false;
     this.relicFlags = {};
-    this.combatStats = { blockUsed: false, damageTakenByTurn: [], eliteTurns: null };
+    this.combatStats = { blockUsed: false, damageTakenByTurn: [], eliteTurns: null, enemiesKilledCount: 0 };
     this.lastPlayerCardType = null; // last non-status/curse card type played this round; used by mirror-style enemy AI
     this.nextTurnEnergyPenalty = 0; // energy stolen by enemies during their turn; applied at the start of the player's next turn
     this.angerPlayedCount = 0; // tracks how many 'anger' cards have been played this combat
@@ -526,6 +526,7 @@ class CombatEngine {
     if (def.splitInto) this.splitEnemy(enemy, def);
     this.combatStats.killedTypes = this.combatStats.killedTypes || [];
     this.combatStats.killedTypes.push(enemy.defId);
+    this.combatStats.enemiesKilledCount = (this.combatStats.enemiesKilledCount || 0) + 1;
     this.runRelicHook('onEnemyKilled', enemy);
     this.checkVictory();
   }

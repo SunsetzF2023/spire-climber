@@ -1590,6 +1590,64 @@ function renderCombat() {
   el.endTurnBtn.disabled = combat.finished;
 }
 
+function generateDeathDesc(combat) {
+  const killer = combat.killerName;
+  const floor = run.stats.floorReached || 0;
+  const act = run.act || 1;
+  const hpLeft = run.player.hp;
+  const r = Math.random();
+
+  if (!killer) {
+    const noKillerDescs = [
+      '你在未知的黑暗中倒下了……',
+      '生命的火焰在风中熄灭了……',
+      '你再也支撑不住，倒在了冒险的路上。',
+      '你的意识逐渐模糊，最后什么也看不见了。',
+    ];
+    return noKillerDescs[Math.floor(r * noKillerDescs.length)];
+  }
+
+  // Killer-specific flavor text
+  const killerDescs = {
+    '腐蚀软泥怪': ['你被腐蚀软泥怪溶解成了……一滩。', '软泥怪的酸液侵蚀了你的最后一丝生机。'],
+    '尖啸蝙蝠': ['尖啸蝙蝠的声波震碎了你的耳膜，你倒下了。', '你在蝙蝠的尖啸中失去了意识。'],
+    '暴走猎犬': ['暴走猎犬的撕咬让你再也无法站起来。', '你没能从猎犬的獠牙下逃脱。'],
+    '骸骨卫兵': ['骸骨卫兵的长矛刺穿了你的心脏。', '你倒在了骸骨卫兵的脚下，成为了它的一部分。'],
+    '死灵法师': ['死灵法师收割了你的灵魂。', '你成为了死灵法师新召唤的亡灵。'],
+    '深渊领主': ['深渊领主将你拖入了无尽的黑暗。', '深渊领主低语着：「又一个愚蠢的挑战者。」'],
+    '钢铁巨像': ['钢铁巨像的铁拳将你碾成了齑粉。', '你被钢铁巨像踩在脚下，化为尘埃。'],
+    '虚空造物主': ['虚空造物主将你的存在从维度中抹去。', '虚空造物主吞噬了你的灵魂，你从未存在过。'],
+    '哥布林首领': ['哥布林首领的怒吼是你听到的最后声音。', '你倒在了哥布林首领的战吼之下。'],
+    '瘟疫使者': ['瘟疫使者的疫病侵蚀了你的全身。', '你成为了瘟疫使者的又一个牺牲品。'],
+    '虚空掠夺者': ['虚空掠夺者撕裂了你的维度裂缝。', '虚空掠夺者将你的生命力掠夺殆尽。'],
+    '冒险者前辈 Karen': ['Karen 冷笑一声：「就这？」你倒下了。', 'Karen 的嘲讽比她的攻击更致命。'],
+  };
+
+  const specific = killerDescs[killer];
+  if (specific) return specific[Math.floor(r * specific.length)];
+
+  // Generic death descriptions by act
+  const genericByAct = [
+    [ // Act 1
+      `你被${killer}击倒了，冒险在维度1终结。`,
+      `${killer}给了你致命一击，你的冒险到此为止。`,
+      `你没能抵挡住${killer}的攻势，倒在了维度1的路上。`,
+    ],
+    [ // Act 2
+      `在维度2的深处，${killer}终结了你的冒险。`,
+      `${killer}的攻击让你再也无法前进。`,
+      `你倒在了${killer}面前，维度2的秘密将永远对你封闭。`,
+    ],
+    [ // Act 3
+      `维度3的${killer}让你明白了什么叫绝望。`,
+      `${killer}的力量远超你的想象，你倒下了。`,
+      `在维度3的尽头，${killer}为你画上了句号。`,
+    ],
+  ];
+  const actDescs = genericByAct[Math.min(act - 1, 2)] || genericByAct[0];
+  return actDescs[Math.floor(r * actDescs.length)];
+}
+
 function afterCombatAction() {
   combat.cleanupDeadEnemies();
   renderHud();
@@ -1599,10 +1657,7 @@ function afterCombatAction() {
     setTimeout(() => {
       if (combat.winner === 'player') showRewardScreen();
       else {
-        const killer = combat.killerName;
-        const deathDesc = killer
-          ? `你被${killer}击败了……`
-          : '你在战斗中被击败了……';
+        const deathDesc = generateDeathDesc(combat);
         if (combat.rewardTier === 'boss') {
           showBossDefeatScreen(deathDesc);
         } else {
@@ -1667,7 +1722,7 @@ function showRewardScreen() {
     : 10 + Math.floor(Math.random() * 10)) * actScaling);
   run.gold += goldReward;
   run.stats.goldEarned += goldReward;
-  run.stats.enemiesDefeated += combat.enemies.length;
+  run.stats.enemiesDefeated += (combat.combatStats.enemiesKilledCount || 0);
   if (tier === 'elite') run.stats.elitesDefeated += 1;
   if (tier === 'boss') run.stats.bossesDefeated = (run.stats.bossesDefeated || 0) + 1;
   if (combat.combatStats.killedTypes) {
