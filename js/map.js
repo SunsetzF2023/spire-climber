@@ -24,14 +24,12 @@ function generateMap(travelFloors = 6, act = 1) {
 
   // Node weights vary by act for pacing
   const actWeights = act <= 1
-    ? { monster: 48, event: 18, shop: 10, treasure: 6, rest: 12 }  // act1: more monsters, warmup
-    : { monster: 34, event: 24, shop: 16, treasure: 12, rest: 10 }; // act2+: more rewards/events/shops
+    ? { monster: 58, event: 16, shop: 8, treasure: 3, rest: 8 }  // act1: more monsters, fewer rewards
+    : { monster: 44, event: 22, shop: 10, treasure: 5, rest: 7 }; // act2+: slightly more rewards but still tough
 
-  // For long acts, sprinkle a couple of guaranteed rest checkpoints roughly
-  // at the 1/3 and 2/3 marks so a 20-30 floor act isn't pure attrition.
+  // For very long acts, add one mid-checkpoint rest at the 2/3 mark.
   const midCheckpoints = new Set();
-  if (FLOOR_COUNT >= 10) {
-    midCheckpoints.add(Math.round(FLOOR_COUNT / 3));
+  if (FLOOR_COUNT >= 30) {
     midCheckpoints.add(Math.round((FLOOR_COUNT * 2) / 3));
   }
 

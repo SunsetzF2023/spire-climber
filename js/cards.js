@@ -47,12 +47,6 @@ const CARDS = {
       ctx.combat.healPlayer(ctx.vars.heal);
     },
   },
-  flash_strike: {
-    id: 'flash_strike', name: '闪击', icon: '✨', type: 'attack', cost: 1, target: 'enemy', rarity: 'common', cls: 'neutral',
-    vars(up) { return { dmg: up ? 9 : 6 }; },
-    descTemplate(v) { return `造成 ${v.dmg} 点伤害`; },
-    effect(ctx) { ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '闪击' }); },
-  },
   iron_arm: {
     id: 'iron_arm', name: '铁臂', icon: '🦾', type: 'skill', cost: 2, target: 'self', rarity: 'uncommon', cls: 'neutral', exhaust: true,
     vars(up) { return { block: up ? 17 : 13 }; },
@@ -337,12 +331,6 @@ const CARDS = {
       ctx.combat.dealDamageToEnemy(ctx.target.id, ctx.vars.dmg, { source: '淬毒短镖' });
       ctx.combat.applyStatusEnemy(ctx.target.id, 'poison', ctx.vars.poison);
     },
-  },
-  evasive_roll: {
-    id: 'evasive_roll', name: '翻滚', icon: '🤸', type: 'skill', cost: 1, target: 'self', rarity: 'common', cls: 'huntress',
-    vars(up) { return { block: up ? 9 : 6, draw: 1 }; },
-    descTemplate(v) { return `获得 ${v.block} 点格挡，抽 ${v.draw} 张牌`; },
-    effect(ctx) { ctx.combat.gainBlockPlayer(ctx.vars.block); ctx.combat.drawCards(ctx.vars.draw); },
   },
   blinding_powder: {
     id: 'blinding_powder', name: '迷雾粉尘', icon: '💨', type: 'skill', cost: 1, target: 'enemy', rarity: 'common', cls: 'huntress',
@@ -1137,9 +1125,9 @@ const CARDS = {
 
 const REWARD_POOLS = {
   common: {
-    neutral: ['bandage_up', 'flash_strike', 'deflect'],
+    neutral: ['bandage_up', 'deflect'],
     warrior: ['cleave', 'iron_wave', 'twin_strike', 'pommel_strike', 'thunderclap', 'shrug_it_off', 'anger', 'battle_trance', 'disarm', 'body_slam', 'reckless_charge', 'armaments', 'clash', 'headbutt', 'heavy_blade', 'perfected_strike', 'intimidating_roar', 'sunder'],
-    huntress: ['quick_slash', 'venom_dart', 'evasive_roll', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll', 'corrosive_spit'],
+    huntress: ['quick_slash', 'venom_dart', 'blinding_powder', 'acrobatics', 'tools_of_the_trade', 'predator', 'caltrops', 'poison_gas', 'backflip', 'blade_dance', 'dodge_roll', 'corrosive_spit'],
     automaton: ['chain_lightning', 'emp', 'overclock'],
   },
   uncommon: {
