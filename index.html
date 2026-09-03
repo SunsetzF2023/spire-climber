@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗡️</text></svg>">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=41">
+<link rel="stylesheet" href="style.css?v=42">
 </head>
 <body>
 
@@ -30,6 +30,7 @@
     <button id="openProfileBtn" class="btn btn-ghost">🧑‍💼 个人中心</button>
     <button id="openHistoryBtn" class="btn btn-ghost">📜 冒险历史</button>
     <button id="openLeaderboardBtn" class="btn btn-ghost">🏆 冒险广场</button>
+    <button id="openPvpBtn" class="btn btn-ghost">⚔️ 卡牌对决</button>
   </div>
 </section>
 
@@ -223,6 +224,21 @@
   <button id="leaderboardBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
+<!-- ============ PVP SCREEN ============ -->
+<section id="pvpScreen" class="screen hidden">
+  <div class="panel">
+    <h2>⚔️ 卡牌对决 <span class="hint">· 通关后上传牌组，挑战其他玩家</span></h2>
+    <div id="pvpMyDeckStatus" class="hint"></div>
+    <div id="pvpRoster" class="pvp-roster"></div>
+  </div>
+  <div class="panel hidden" id="pvpBattlePanel">
+    <h2 id="pvpBattleTitle"></h2>
+    <div id="pvpBattleLog" class="combat-log"></div>
+    <button id="pvpBattleBackBtn" class="btn btn-primary">◀ 返回对决列表</button>
+  </div>
+  <button id="pvpBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
+</section>
+
 <div class="tooltip" id="tooltip"></div>
 
 <div id="infoModal" class="modal-overlay hidden">
@@ -251,6 +267,7 @@
 <script src="js/meta.js?v=33"></script>
 <script src="js/characters.js?v=32"></script>
 <script src="js/cloud-sync.js?v=37"></script>
-<script src="js/game.js?v=93"></script>
+<script src="js/pvp.js?v=1"></script>
+<script src="js/game.js?v=94"></script>
 </body>
 </html>

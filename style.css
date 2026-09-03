@@ -729,3 +729,62 @@ body{
   .map-node { width: 32px; height: 32px; font-size: 13px; }
   .map-row { gap: 10px; }
 }
+
+/* ============ PVP ============ */
+.pvp-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pvp-roster-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pvp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pvp-char {
+  font-weight: bold;
+  font-size: 14px;
+}
+.pvp-player {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pvp-card-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pvp-challenge-btn {
+  align-self: flex-start;
+  padding: 6px 18px;
+  font-size: 13px;
+}
+.pvp-roster-card .pvp-challenge-btn {
+  margin-top: 4px;
+}
+#pvpBattleLog {
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#pvpBattleLog .log-player { color: #6fcf97; }
+#pvpBattleLog .log-enemy { color: #eb5757; }
+#pvpBattleLog .log-info { color: var(--text-dim); }
+

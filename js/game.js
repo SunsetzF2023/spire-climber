@@ -99,7 +99,8 @@ function cacheEls() {
     'profileCardProgress', 'profileRelicProgress', 'profileEnemyProgress', 'profileBackBtn',
     'historyScreen', 'historyList', 'historyBackBtn',
     'leaderboardScreen', 'leaderboardList', 'leaderboardBackBtn', 'cloudSyncStatus2',
-    'openHistoryBtn', 'openLeaderboardBtn',
+    'openHistoryBtn', 'openLeaderboardBtn', 'openPvpBtn',
+    'pvpScreen', 'pvpMyDeckStatus', 'pvpRoster', 'pvpBattlePanel', 'pvpBattleTitle', 'pvpBattleLog', 'pvpBattleBackBtn', 'pvpBackBtn',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
     'pileModal', 'pileModalClose', 'pileModalTitle', 'pileModalGrid',
@@ -1864,6 +1865,18 @@ function finishRun(victory, desc) {
   if (meta.runHistory.length > 2) meta.runHistory = meta.runHistory.slice(0, 2);
   saveMeta(meta);
 
+  // Upload deck to PVP on victory
+  if (victory && typeof pvpUploadDeck === 'function') {
+    pvpUploadDeck({
+      characterId: run.characterId,
+      characterName: (CHARACTERS[run.characterId] || {}).name || run.characterId,
+      characterIcon: (CHARACTERS[run.characterId] || {}).icon || '❓',
+      maxHp: run.player.maxHp,
+      deckIds: run.deck.map(c => c.defId + (c.upgraded ? '+' : '')),
+      relicIds: run.relics.slice(),
+    });
+  }
+
   // Upload to cloud leaderboard if logged in
   if (typeof uploadRunToLeaderboard === 'function') uploadRunToLeaderboard(historyRecord);
 
@@ -2095,6 +2108,115 @@ function showHistoryScreen() {
   });
 }
 
+// ---------------- PVP Screen ----------------
+async function showPvpScreen() {
+  showScreen('pvpScreen');
+  el.pvpBattlePanel.classList.add('hidden');
+  el.pvpMyDeckStatus.textContent = '加载中…';
+  el.pvpRoster.innerHTML = '';
+
+  // Load my deck status
+  let myDeck = null;
+  if (cloudUser) {
+    myDeck = await pvpLoadMyDeck(cloudUser.id);
+  }
+  if (myDeck) {
+    const charIcon = myDeck.character_icon || '❓';
+    const charName = myDeck.character_name || '?';
+    const deckCount = (myDeck.deck_ids || []).length;
+    const relicCount = (myDeck.relic_ids || []).length;
+    el.pvpMyDeckStatus.innerHTML = `✅ 已上传牌组：${charIcon} ${charName} · ${deckCount} 张卡牌 · ${relicCount} 件遗物 · ${myDeck.max_hp} HP · 战绩 ${myDeck.wins || 0}胜 ${myDeck.losses || 0}负`;
+  } else {
+    el.pvpMyDeckStatus.textContent = '⚠️ 尚未上传牌组 — 通关游戏后自动上传最终牌组到对决服务器';
+  }
+
+  // Load roster
+  const excludeId = cloudUser ? cloudUser.id : 'unknown';
+  const roster = await pvpLoadRoster(excludeId);
+  if (roster.length === 0) {
+    el.pvpRoster.innerHTML = '<div class="hint" style="padding:1rem">暂无可挑战的玩家。通关游戏后上传牌组，即可参与对决！</div>';
+    return;
+  }
+
+  el.pvpRoster.innerHTML = '';
+  roster.forEach((entry) => {
+    const card = document.createElement('div');
+    card.className = 'pvp-roster-card';
+    const charIcon = entry.character_icon || '❓';
+    const charName = entry.character_name || '?';
+    const deckCount = (entry.deck_ids || []).length;
+    const relicCount = (entry.relic_ids || []).length;
+    const winRate = (entry.wins + entry.losses) > 0
+      ? Math.round(entry.wins / (entry.wins + entry.losses) * 100)
+      : 0;
+    card.innerHTML = `
+      <div class="pvp-card-header">
+        <span class="pvp-char">${charIcon} ${charName}</span>
+        <span class="pvp-player">${entry.player_name}</span>
+      </div>
+      <div class="pvp-card-stats">
+        <span>🃏 ${deckCount} 张</span>
+        <span>🔮 ${relicCount} 件</span>
+        <span>❤️ ${entry.max_hp} HP</span>
+        <span>📊 ${entry.wins || 0}胜 ${entry.losses || 0}负 (${winRate}%)</span>
+      </div>
+      <button class="btn btn-primary pvp-challenge-btn">⚔️ 挑战</button>
+    `;
+    card.querySelector('.pvp-challenge-btn').addEventListener('click', () => {
+      simulatePvpBattle(entry);
+    });
+    el.pvpRoster.appendChild(card);
+  });
+}
+
+async function simulatePvpBattle(defenderEntry) {
+  // Need my deck
+  if (!cloudUser) {
+    showInfoModal('<p>请先登录才能参与对决。</p>');
+    return;
+  }
+  const myDeck = await pvpLoadMyDeck(cloudUser.id);
+  if (!myDeck) {
+    showInfoModal('<p>你还没有上传牌组。通关游戏后自动上传！</p>');
+    return;
+  }
+
+  const attackerName = cloudUser.is_anonymous
+    ? `游客#${cloudUser.id.substring(0, 6)}`
+    : (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
+
+  const attacker = {
+    name: attackerName,
+    maxHp: myDeck.max_hp,
+    deckIds: myDeck.deck_ids,
+    relicIds: myDeck.relic_ids,
+  };
+  const defender = {
+    name: defenderEntry.player_name,
+    maxHp: defenderEntry.max_hp,
+    deckIds: defenderEntry.deck_ids,
+    relicIds: defenderEntry.relic_ids,
+  };
+
+  const engine = new PvpCombatEngine(attacker, defender);
+  const result = engine.simulate();
+
+  // Show battle panel
+  el.pvpBattlePanel.classList.remove('hidden');
+  el.pvpBattleTitle.textContent = result.winner === 'attacker'
+    ? `🎉 ${attackerName} 获胜！`
+    : `💀 ${defenderEntry.player_name} 获胜`;
+
+  el.pvpBattleLog.innerHTML = result.log.map(entry => {
+    const cls = entry.cls === 'player' ? 'log-player' : entry.cls === 'enemy' ? 'log-enemy' : 'log-info';
+    return `<div class="${cls}">${entry.text}</div>`;
+  }).join('');
+  el.pvpBattleLog.scrollTop = 0;
+
+  // Upload battle log
+  pvpUploadBattleLog(attackerName, defenderEntry.player_name, result.winnerName, result.log);
+}
+
 // ---------------- Leaderboard ----------------
 function showLeaderboardScreen() {
   showScreen('leaderboardScreen');
@@ -2248,6 +2370,9 @@ document.addEventListener('DOMContentLoaded', () => {
   el.historyBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.openLeaderboardBtn.addEventListener('click', () => showLeaderboardScreen());
   el.leaderboardBackBtn.addEventListener('click', () => showScreen('menuScreen'));
+  el.openPvpBtn.addEventListener('click', () => showPvpScreen());
+  el.pvpBackBtn.addEventListener('click', () => showScreen('menuScreen'));
+  el.pvpBattleBackBtn.addEventListener('click', () => { el.pvpBattlePanel.classList.add('hidden'); });
   el.endTurnBtn.addEventListener('click', () => {
     combat.endTurn();
     afterCombatAction();
