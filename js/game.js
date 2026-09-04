@@ -266,9 +266,9 @@ function addCardToDeck(run, defId, upgraded) {
 
 // ---------------- Screen switching ----------------
 function showScreen(name) {
-  ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen']
+  ['menuScreen', 'characterScreen', 'mapScreen', 'eventScreen', 'restScreen', 'shopScreen', 'rewardScreen', 'combatScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen', 'pvpScreen']
     .forEach(s => el[s].classList.toggle('hidden', s !== name));
-  const noAbandonScreens = ['menuScreen', 'characterScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen'];
+  const noAbandonScreens = ['menuScreen', 'characterScreen', 'endScreen', 'profileScreen', 'historyScreen', 'leaderboardScreen', 'pvpScreen'];
   if (el.abandonRunBtn) el.abandonRunBtn.classList.toggle('hidden', !run || noAbandonScreens.includes(name));
   if (name === 'menuScreen') checkResumeAvailable();
 }
