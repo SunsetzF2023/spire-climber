@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗡️</text></svg>">
 <title>🗡️ 爬塔者 — 卡牌爬塔 Demo</title>
-<link rel="stylesheet" href="style.css?v=42">
+<link rel="stylesheet" href="style.css?v=43">
 </head>
 <body>
 
@@ -226,16 +226,98 @@
 
 <!-- ============ PVP SCREEN ============ -->
 <section id="pvpScreen" class="screen hidden">
-  <div class="panel">
-    <h2>⚔️ 卡牌对决 <span class="hint">· 通关后上传牌组，挑战其他玩家</span></h2>
+  <!-- Mode selection -->
+  <div class="panel" id="pvpModePanel">
+    <h2>⚔️ 卡牌对决</h2>
+    <p class="hint">选择对战模式</p>
+    <div class="pvp-mode-buttons">
+      <button id="pvpAsyncBtn" class="btn btn-ghost">🤖 异步对决 — 挑战离线玩家牌组</button>
+      <button id="pvpOnlineBtn" class="btn btn-ghost">🌐 在线对决 — 开房间实时对战</button>
+    </div>
+  </div>
+
+  <!-- Async PVP (existing roster) -->
+  <div class="panel hidden" id="pvpAsyncPanel">
+    <h2>🤖 异步对决 <span class="hint">· 通关后上传牌组，挑战其他玩家</span></h2>
     <div id="pvpMyDeckStatus" class="hint"></div>
     <div id="pvpRoster" class="pvp-roster"></div>
+    <button id="pvpAsyncBackBtn" class="btn btn-ghost" style="margin-top:12px">◀ 返回模式选择</button>
   </div>
+
+  <!-- Async battle result -->
   <div class="panel hidden" id="pvpBattlePanel">
     <h2 id="pvpBattleTitle"></h2>
     <div id="pvpBattleLog" class="combat-log"></div>
     <button id="pvpBattleBackBtn" class="btn btn-primary">◀ 返回对决列表</button>
   </div>
+
+  <!-- Online PVP: lobby -->
+  <div class="panel hidden" id="pvpOnlineLobby">
+    <h2>🌐 在线对决</h2>
+    <div class="pvp-online-section">
+      <h3>选择你的牌组</h3>
+      <div id="pvpDeckSelect" class="pvp-deck-select"></div>
+    </div>
+    <div class="pvp-online-section">
+      <h3>创建房间</h3>
+      <p class="hint">选择牌组后点击创建，将生成房间号分享给好友</p>
+      <button id="pvpCreateRoomBtn" class="btn btn-primary">🏠 创建房间</button>
+    </div>
+    <div class="pvp-online-section">
+      <h3>加入房间</h3>
+      <div class="pvp-join-row">
+        <input type="text" id="pvpRoomCodeInput" placeholder="输入6位房间号" maxlength="6" class="pvp-room-input" autocomplete="off">
+        <button id="pvpJoinRoomBtn" class="btn btn-primary">加入</button>
+      </div>
+    </div>
+    <button id="pvpOnlineBackBtn" class="btn btn-ghost" style="margin-top:12px">◀ 返回模式选择</button>
+  </div>
+
+  <!-- Online PVP: waiting room -->
+  <div class="panel hidden" id="pvpWaitingRoom">
+    <h2>⏳ 等待对手加入…</h2>
+    <div class="pvp-room-code-display">
+      <span class="hint">房间号</span>
+      <div id="pvpRoomCodeDisplay" class="pvp-room-code"></div>
+      <button id="pvpCopyCodeBtn" class="btn btn-ghost">📋 复制</button>
+    </div>
+    <p class="hint">将房间号分享给好友，等待对方加入</p>
+    <button id="pvpCancelRoomBtn" class="btn btn-ghost" style="margin-top:12px">❌ 取消</button>
+  </div>
+
+  <!-- Online PVP: battle screen -->
+  <div class="panel hidden" id="pvpOnlineBattle">
+    <div class="pvp-battle-header">
+      <div class="pvp-fighter-info" id="pvpOpponentInfo">
+        <span id="pvpOpponentName"></span>
+        <span class="pvp-hp-bar"><span id="pvpOpponentHpFill"></span></span>
+        <span id="pvpOpponentHpText"></span>
+        <span id="pvpOpponentBlock"></span>
+        <span id="pvpOpponentStatuses"></span>
+        <span class="hint" id="pvpOpponentHandCount"></span>
+      </div>
+      <div class="pvp-vs">⚔️</div>
+      <div class="pvp-fighter-info" id="pvpMyInfo">
+        <span id="pvpMyName"></span>
+        <span class="pvp-hp-bar"><span id="pvpMyHpFill"></span></span>
+        <span id="pvpMyHpText"></span>
+        <span id="pvpMyBlock"></span>
+        <span id="pvpMyStatuses"></span>
+      </div>
+    </div>
+    <div class="pvp-turn-info" id="pvpTurnInfo"></div>
+    <div class="pvp-energy-row">
+      <span id="pvpEnergyBadge" class="energy-badge">⚡ 3</span>
+      <span class="hint" id="pvpDrawDiscardInfo"></span>
+    </div>
+    <div id="pvpMyHand" class="hand-row pvp-hand"></div>
+    <div class="pvp-action-row">
+      <button id="pvpEndTurnBtn" class="btn btn-primary">结束回合 ⏭️</button>
+      <button id="pvpLeaveBattleBtn" class="btn btn-ghost">🏳️ 离开</button>
+    </div>
+    <div id="pvpOnlineLog" class="combat-log pvp-online-log"></div>
+  </div>
+
   <button id="pvpBackBtn" class="btn btn-primary">◀ 返回主菜单</button>
 </section>
 
@@ -267,7 +349,8 @@
 <script src="js/meta.js?v=33"></script>
 <script src="js/characters.js?v=32"></script>
 <script src="js/cloud-sync.js?v=37"></script>
-<script src="js/pvp.js?v=1"></script>
-<script src="js/game.js?v=94"></script>
+<script src="js/pvp.js?v=2"></script>
+<script src="js/pvpOnline.js?v=1"></script>
+<script src="js/game.js?v=95"></script>
 </body>
 </html>

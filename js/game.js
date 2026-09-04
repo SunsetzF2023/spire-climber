@@ -101,6 +101,12 @@ function cacheEls() {
     'leaderboardScreen', 'leaderboardList', 'leaderboardBackBtn', 'cloudSyncStatus2',
     'openHistoryBtn', 'openLeaderboardBtn', 'openPvpBtn',
     'pvpScreen', 'pvpMyDeckStatus', 'pvpRoster', 'pvpBattlePanel', 'pvpBattleTitle', 'pvpBattleLog', 'pvpBattleBackBtn', 'pvpBackBtn',
+    'pvpModePanel', 'pvpAsyncBtn', 'pvpOnlineBtn', 'pvpAsyncPanel', 'pvpAsyncBackBtn',
+    'pvpOnlineLobby', 'pvpDeckSelect', 'pvpCreateRoomBtn', 'pvpRoomCodeInput', 'pvpJoinRoomBtn', 'pvpOnlineBackBtn',
+    'pvpWaitingRoom', 'pvpRoomCodeDisplay', 'pvpCopyCodeBtn', 'pvpCancelRoomBtn',
+    'pvpOnlineBattle', 'pvpOpponentName', 'pvpOpponentHpFill', 'pvpOpponentHpText', 'pvpOpponentBlock', 'pvpOpponentStatuses', 'pvpOpponentHandCount',
+    'pvpMyName', 'pvpMyHpFill', 'pvpMyHpText', 'pvpMyBlock', 'pvpMyStatuses',
+    'pvpTurnInfo', 'pvpEnergyBadge', 'pvpDrawDiscardInfo', 'pvpMyHand', 'pvpEndTurnBtn', 'pvpLeaveBattleBtn', 'pvpOnlineLog',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
     'pileModal', 'pileModalClose', 'pileModalTitle', 'pileModalGrid',
@@ -2109,13 +2115,30 @@ function showHistoryScreen() {
 }
 
 // ---------------- PVP Screen ----------------
-async function showPvpScreen() {
+let pvpRoomController = null;
+let pvpSelectedDeckIdx = -1;
+
+function showPvpScreen() {
   showScreen('pvpScreen');
+  showPvpModeSelect();
+}
+
+function showPvpModeSelect() {
+  el.pvpModePanel.classList.remove('hidden');
+  el.pvpAsyncPanel.classList.add('hidden');
+  el.pvpBattlePanel.classList.add('hidden');
+  el.pvpOnlineLobby.classList.add('hidden');
+  el.pvpWaitingRoom.classList.add('hidden');
+  el.pvpOnlineBattle.classList.add('hidden');
+}
+
+async function showPvpAsync() {
+  el.pvpModePanel.classList.add('hidden');
+  el.pvpAsyncPanel.classList.remove('hidden');
   el.pvpBattlePanel.classList.add('hidden');
   el.pvpMyDeckStatus.textContent = '加载中…';
   el.pvpRoster.innerHTML = '';
 
-  // Load my deck status
   let myDeck = null;
   if (cloudUser) {
     myDeck = await pvpLoadMyDeck(cloudUser.id);
@@ -2130,7 +2153,6 @@ async function showPvpScreen() {
     el.pvpMyDeckStatus.textContent = '⚠️ 尚未上传牌组 — 通关游戏后自动上传最终牌组到对决服务器';
   }
 
-  // Load roster
   const excludeId = cloudUser ? cloudUser.id : 'unknown';
   const roster = await pvpLoadRoster(excludeId);
   if (roster.length === 0) {
@@ -2170,7 +2192,6 @@ async function showPvpScreen() {
 }
 
 async function simulatePvpBattle(defenderEntry) {
-  // Need my deck
   if (!cloudUser) {
     showInfoModal('<p>请先登录才能参与对决。</p>');
     return;
@@ -2181,10 +2202,7 @@ async function simulatePvpBattle(defenderEntry) {
     return;
   }
 
-  const attackerName = cloudUser.is_anonymous
-    ? `游客#${cloudUser.id.substring(0, 6)}`
-    : (cloudUser.user_metadata && (cloudUser.user_metadata.user_name || cloudUser.user_metadata.full_name)) || '匿名玩家';
-
+  const attackerName = pvpGetPlayerName();
   const attacker = {
     name: attackerName,
     maxHp: myDeck.max_hp,
@@ -2201,7 +2219,6 @@ async function simulatePvpBattle(defenderEntry) {
   const engine = new PvpCombatEngine(attacker, defender);
   const result = engine.simulate();
 
-  // Show battle panel
   el.pvpBattlePanel.classList.remove('hidden');
   el.pvpBattleTitle.textContent = result.winner === 'attacker'
     ? `🎉 ${attackerName} 获胜！`
@@ -2213,8 +2230,279 @@ async function simulatePvpBattle(defenderEntry) {
   }).join('');
   el.pvpBattleLog.scrollTop = 0;
 
-  // Upload battle log
   pvpUploadBattleLog(attackerName, defenderEntry.player_name, result.winnerName, result.log);
+}
+
+// ---------------- Online PVP ----------------
+function showPvpOnlineLobby() {
+  el.pvpModePanel.classList.add('hidden');
+  el.pvpOnlineLobby.classList.remove('hidden');
+  renderPvpDeckSelect();
+}
+
+function renderPvpDeckSelect() {
+  const history = meta.runHistory || [];
+  el.pvpDeckSelect.innerHTML = '';
+  if (history.length === 0) {
+    el.pvpDeckSelect.innerHTML = '<div class="hint" style="padding:0.5rem">暂无冒险历史。完成一局游戏后即可选择牌组。</div>';
+    return;
+  }
+  pvpSelectedDeckIdx = -1;
+  history.forEach((run, idx) => {
+    const card = document.createElement('div');
+    card.className = 'pvp-deck-card';
+    const icon = run.characterIcon || '❓';
+    const name = run.characterName || '?';
+    const deckSize = (run.deckIds || []).length;
+    const relicCount = (run.relicIds || []).length;
+    card.innerHTML = `
+      <div class="pvp-deck-card-header">
+        <span>${icon} ${name}</span>
+        <span class="hint">${run.victory ? '🏆 通关' : '💀 阵亡'}</span>
+      </div>
+      <div class="pvp-card-stats">
+        <span>🃏 ${deckSize} 张</span>
+        <span>🔮 ${relicCount} 件</span>
+        <span>❤️ ${run.maxHp} HP</span>
+        <span>📊 得分 ${run.score}</span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.pvp-deck-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      pvpSelectedDeckIdx = idx;
+    });
+    el.pvpDeckSelect.appendChild(card);
+  });
+}
+
+function pvpGetSelectedDeck() {
+  if (pvpSelectedDeckIdx < 0) return null;
+  const run = (meta.runHistory || [])[pvpSelectedDeckIdx];
+  if (!run) return null;
+  return {
+    name: pvpGetPlayerName(),
+    maxHp: run.maxHp,
+    deckIds: run.deckIds,
+    relicIds: run.relicIds,
+    characterId: run.characterId,
+    characterName: run.characterName,
+    characterIcon: run.characterIcon,
+  };
+}
+
+async function pvpOnlineCreateRoom() {
+  const deck = pvpGetSelectedDeck();
+  if (!deck) {
+    showInfoModal('<p>请先选择一个牌组！</p>');
+    return;
+  }
+  const roomCode = await pvpCreateRoom(deck);
+  if (!roomCode) {
+    showInfoModal('<p>创建房间失败，请重试。</p>');
+    return;
+  }
+
+  // Show waiting room
+  el.pvpOnlineLobby.classList.add('hidden');
+  el.pvpWaitingRoom.classList.remove('hidden');
+  el.pvpRoomCodeDisplay.textContent = roomCode;
+
+  // Poll for guest joining
+  const pollInterval = setInterval(async () => {
+    const { data } = await supabaseClient
+      .from('pvp_rooms')
+      .select('status, guest_name, guest_deck')
+      .eq('room_code', roomCode)
+      .maybeSingle();
+    if (data && data.status === 'battling' && data.guest_deck) {
+      clearInterval(pollInterval);
+      // Guest joined! Start the game as host.
+      const guestDeck = data.guest_deck;
+      guestDeck.name = data.guest_name || '对手';
+      await pvpStartOnlineBattle(roomCode, deck, guestDeck, true);
+    }
+    if (data && data.status === 'finished') {
+      clearInterval(pollInterval);
+    }
+  }, 2000);
+
+  // Store poll interval for cleanup
+  pvpRoomController = { _pollInterval: pollInterval, roomCode };
+}
+
+async function pvpOnlineJoinRoom() {
+  const code = (el.pvpRoomCodeInput.value || '').toUpperCase().trim();
+  if (code.length !== 6) {
+    showInfoModal('<p>请输入6位房间号。</p>');
+    return;
+  }
+  const deck = pvpGetSelectedDeck();
+  if (!deck) {
+    showInfoModal('<p>请先选择一个牌组！</p>');
+    return;
+  }
+
+  const result = await pvpJoinRoom(code, deck);
+  if (!result) {
+    showInfoModal('<p>加入房间失败，请检查房间号是否正确。</p>');
+    return;
+  }
+  if (result.error) {
+    showInfoModal(`<p>${result.error}</p>`);
+    return;
+  }
+
+  // We joined successfully. The host deck is in result.host_deck
+  const hostDeck = result.host_deck;
+  hostDeck.name = result.host_name || '主机';
+  await pvpStartOnlineBattle(code, hostDeck, deck, false);
+}
+
+async function pvpStartOnlineBattle(roomCode, hostDeck, guestDeck, isHost) {
+  // Hide lobby/waiting panels
+  el.pvpOnlineLobby.classList.add('hidden');
+  el.pvpWaitingRoom.classList.add('hidden');
+  el.pvpOnlineBattle.classList.remove('hidden');
+
+  // Clean up any existing controller
+  if (pvpRoomController && pvpRoomController._pollInterval) {
+    clearInterval(pvpRoomController._pollInterval);
+  }
+
+  // Create room controller
+  pvpRoomController = new PvpRoomController();
+  pvpRoomController.roomCode = roomCode;
+  pvpRoomController.isHost = isHost;
+  pvpRoomController.mySide = isHost ? 'host' : 'guest';
+
+  // Set up callbacks
+  pvpRoomController.onStateUpdate = (state) => renderPvpBattleState(state, isHost ? 'host' : 'guest');
+  pvpRoomController.onGameEnd = (winnerName) => {
+    pvpFinishRoom(roomCode, winnerName);
+  };
+
+  if (isHost) {
+    // Host: create engine and connect
+    await pvpRoomController.hostRoom(roomCode, hostDeck, guestDeck);
+    // Start the game
+    pvpRoomController.startGame();
+  } else {
+    // Guest: connect to channel
+    await pvpRoomController.joinRoom(roomCode, hostDeck, guestDeck);
+  }
+}
+
+function renderPvpBattleState(state, mySide) {
+  if (!state) return;
+
+  const myFighter = mySide === 'host' ? state.host : state.guest;
+  const oppFighter = mySide === 'host' ? state.guest : state.host;
+
+  // My info
+  el.pvpMyName.textContent = myFighter.name;
+  el.pvpMyHpText.textContent = `❤️ ${myFighter.hp}/${myFighter.maxHp}`;
+  el.pvpMyHpFill.style.width = `${Math.max(0, (myFighter.hp / myFighter.maxHp) * 100)}%`;
+  el.pvpMyBlock.textContent = myFighter.block > 0 ? `🛡️ ${myFighter.block}` : '';
+  el.pvpMyStatuses.innerHTML = renderPvpStatuses(myFighter.statuses);
+
+  // Opponent info
+  el.pvpOpponentName.textContent = oppFighter.name;
+  el.pvpOpponentHpText.textContent = `❤️ ${oppFighter.hp}/${oppFighter.maxHp}`;
+  el.pvpOpponentHpFill.style.width = `${Math.max(0, (oppFighter.hp / oppFighter.maxHp) * 100)}%`;
+  el.pvpOpponentBlock.textContent = oppFighter.block > 0 ? `🛡️ ${oppFighter.block}` : '';
+  el.pvpOpponentStatuses.innerHTML = renderPvpStatuses(oppFighter.statuses);
+  el.pvpOpponentHandCount.textContent = `🃏 手牌: ${oppFighter.handCount}`;
+
+  // Turn info
+  const myTurn = state.activeSide === mySide;
+  el.pvpTurnInfo.textContent = state.finished
+    ? (state.winner === mySide ? '🎉 你赢了！' : '💀 你输了')
+    : (myTurn ? '🔔 你的回合' : '⏳ 对手回合中…');
+
+  // Energy
+  el.pvpEnergyBadge.textContent = `⚡ ${myFighter.energy}`;
+  el.pvpDrawDiscardInfo.textContent = `抽牌堆 ${myFighter.drawCount} · 弃牌堆 ${myFighter.discardCount}`;
+
+  // Hand
+  el.pvpMyHand.innerHTML = '';
+  if (Array.isArray(myFighter.hand)) {
+    myFighter.hand.forEach(card => {
+      const def = CARDS[card.defId];
+      if (!def) return;
+      const cardEl = document.createElement('div');
+      cardEl.className = 'game-card pvp-game-card';
+      const cost = card.upgraded && def.upgradedCost !== undefined ? def.upgradedCost : def.cost;
+      const vars = def.vars(card.upgraded);
+      cardEl.innerHTML = `
+        <div class="card-cost">${cost}</div>
+        <div class="card-icon">${def.icon}</div>
+        <div class="card-name">${def.name}${card.upgraded ? '+' : ''}</div>
+        <div class="card-desc">${def.descTemplate(vars)}</div>
+      `;
+      const canPlay = myTurn && !state.finished && myFighter.energy >= cost;
+      if (canPlay) {
+        cardEl.classList.add('playable');
+        cardEl.addEventListener('click', () => pvpOnlinePlayCard(card.uid));
+      } else {
+        cardEl.classList.add('unplayable');
+      }
+      el.pvpMyHand.appendChild(cardEl);
+    });
+  }
+
+  // End turn button
+  el.pvpEndTurnBtn.disabled = !myTurn || state.finished;
+  el.pvpEndTurnBtn.classList.toggle('disabled', !myTurn || state.finished);
+
+  // Log
+  if (state.log) {
+    el.pvpOnlineLog.innerHTML = state.log.map(entry => {
+      const cls = entry.cls === 'host' ? 'log-player' : entry.cls === 'guest' ? 'log-enemy' : 'log-info';
+      return `<div class="${cls}">${entry.text}</div>`;
+    }).join('');
+    el.pvpOnlineLog.scrollTop = el.pvpOnlineLog.scrollHeight;
+  }
+}
+
+function renderPvpStatuses(statuses) {
+  if (!statuses) return '';
+  const parts = [];
+  if (statuses.strength > 0) parts.push(`💪${statuses.strength}`);
+  if (statuses.dexterity > 0) parts.push(`🤸${statuses.dexterity}`);
+  if (statuses.weak > 0) parts.push(`😵${statuses.weak}`);
+  if (statuses.vulnerable > 0) parts.push(`🎯${statuses.vulnerable}`);
+  if (statuses.frail > 0) parts.push(`🍂${statuses.frail}`);
+  if (statuses.poison > 0) parts.push(`☠️${statuses.poison}`);
+  if (statuses.metallicize > 0) parts.push(`🔩${statuses.metallicize}`);
+  if (statuses.venom > 0) parts.push(`🐍${statuses.venom}`);
+  return parts.length > 0 ? `<span class="pvp-status-icons">${parts.join(' ')}</span>` : '';
+}
+
+function pvpOnlinePlayCard(cardUid) {
+  if (!pvpRoomController) return;
+  if (pvpRoomController.isHost) {
+    pvpRoomController.hostPlayCard(cardUid);
+  } else {
+    pvpRoomController.sendAction({ type: 'play_card', cardUid });
+  }
+}
+
+function pvpOnlineEndTurn() {
+  if (!pvpRoomController) return;
+  if (pvpRoomController.isHost) {
+    pvpRoomController.hostEndTurn();
+  } else {
+    pvpRoomController.sendAction({ type: 'end_turn' });
+  }
+}
+
+async function pvpOnlineCleanup() {
+  if (pvpRoomController) {
+    if (pvpRoomController._pollInterval) clearInterval(pvpRoomController._pollInterval);
+    if (pvpRoomController.leave) await pvpRoomController.leave();
+    pvpRoomController = null;
+  }
 }
 
 // ---------------- Leaderboard ----------------
@@ -2371,8 +2659,22 @@ document.addEventListener('DOMContentLoaded', () => {
   el.openLeaderboardBtn.addEventListener('click', () => showLeaderboardScreen());
   el.leaderboardBackBtn.addEventListener('click', () => showScreen('menuScreen'));
   el.openPvpBtn.addEventListener('click', () => showPvpScreen());
-  el.pvpBackBtn.addEventListener('click', () => showScreen('menuScreen'));
+  el.pvpBackBtn.addEventListener('click', () => { pvpOnlineCleanup(); showScreen('menuScreen'); });
   el.pvpBattleBackBtn.addEventListener('click', () => { el.pvpBattlePanel.classList.add('hidden'); });
+  el.pvpAsyncBtn.addEventListener('click', () => showPvpAsync());
+  el.pvpAsyncBackBtn.addEventListener('click', () => showPvpModeSelect());
+  el.pvpOnlineBtn.addEventListener('click', () => showPvpOnlineLobby());
+  el.pvpOnlineBackBtn.addEventListener('click', () => showPvpModeSelect());
+  el.pvpCreateRoomBtn.addEventListener('click', () => pvpOnlineCreateRoom());
+  el.pvpJoinRoomBtn.addEventListener('click', () => pvpOnlineJoinRoom());
+  el.pvpCopyCodeBtn.addEventListener('click', () => {
+    const code = el.pvpRoomCodeDisplay.textContent;
+    navigator.clipboard?.writeText(code).then(() => { el.pvpCopyCodeBtn.textContent = '✅ 已复制'; setTimeout(() => { el.pvpCopyCodeBtn.textContent = '📋 复制'; }, 2000); });
+  });
+  el.pvpCancelRoomBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
+  el.pvpEndTurnBtn.addEventListener('click', () => pvpOnlineEndTurn());
+  el.pvpLeaveBattleBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
+  el.pvpRoomCodeInput.addEventListener('input', () => { el.pvpRoomCodeInput.value = el.pvpRoomCodeInput.value.toUpperCase(); });
   el.endTurnBtn.addEventListener('click', () => {
     combat.endTurn();
     afterCombatAction();

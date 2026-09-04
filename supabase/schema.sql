@@ -181,3 +181,57 @@ create policy "Users can insert their own pvp battles"
 create policy "Anonymous can insert pvp battles"
   on public.pvp_battle_logs for insert
   with check (true);
+
+-- ================= PVP ROOMS (real-time) =================
+create table if not exists public.pvp_rooms (
+  room_code text primary key,
+  host_id uuid references auth.users(id) on delete cascade,
+  host_name text not null default '',
+  host_deck jsonb not null default '{}'::jsonb,
+  guest_id uuid references auth.users(id) on delete set null,
+  guest_name text,
+  guest_deck jsonb,
+  status text not null default 'waiting',  -- waiting | battling | finished
+  winner text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.pvp_rooms enable row level security;
+
+-- Anyone can view rooms (to join by code).
+create policy "Anyone can view pvp rooms"
+  on public.pvp_rooms for select
+  using (true);
+
+-- Authenticated users can create rooms.
+create policy "Users can create pvp rooms"
+  on public.pvp_rooms for insert
+  with check (auth.uid() = host_id);
+
+-- Host can update their room.
+create policy "Host can update pvp rooms"
+  on public.pvp_rooms for update
+  using (auth.uid() = host_id);
+
+-- Anyone can update (guest joining sets guest_id).
+create policy "Guest can join pvp rooms"
+  on public.pvp_rooms for update
+  using (true);
+
+-- Host can delete their room.
+create policy "Host can delete pvp rooms"
+  on public.pvp_rooms for delete
+  using (auth.uid() = host_id);
+
+-- Allow anonymous to insert and update.
+create policy "Anonymous can create pvp rooms"
+  on public.pvp_rooms for insert
+  with check (true);
+
+create policy "Anonymous can update pvp rooms"
+  on public.pvp_rooms for update
+  using (true);
+
+create policy "Anonymous can delete pvp rooms"
+  on public.pvp_rooms for delete
+  using (true);

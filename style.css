@@ -788,3 +788,184 @@ body{
 #pvpBattleLog .log-enemy { color: #eb5757; }
 #pvpBattleLog .log-info { color: var(--text-dim); }
 
+/* ============ ONLINE PVP ============ */
+.pvp-mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pvp-online-section {
+  margin-top: 16px;
+}
+.pvp-online-section h3 {
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.pvp-deck-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pvp-deck-card {
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pvp-deck-card:hover {
+  border-color: var(--text-dim);
+}
+.pvp-deck-card.selected {
+  border-color: #6fcf97;
+  background: rgba(111, 207, 151, 0.1);
+}
+.pvp-deck-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.pvp-join-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pvp-room-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+.pvp-room-input:focus {
+  outline: none;
+  border-color: var(--text-dim);
+}
+.pvp-room-code-display {
+  text-align: center;
+  margin: 16px 0;
+}
+.pvp-room-code {
+  font-size: 36px;
+  font-weight: bold;
+  letter-spacing: 8px;
+  color: #6fcf97;
+  padding: 12px 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: inline-block;
+  margin: 8px 0;
+}
+
+/* PVP Battle Screen */
+.pvp-battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.pvp-fighter-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  font-size: 13px;
+}
+.pvp-fighter-info span {
+  display: inline-block;
+}
+.pvp-vs {
+  font-size: 24px;
+  align-self: center;
+}
+.pvp-hp-bar {
+  display: block;
+  width: 100%;
+  height: 14px;
+  background: var(--bg);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.pvp-hp-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #e74c3c, #e74c3c);
+  transition: width 0.3s;
+}
+.pvp-status-icons {
+  font-size: 11px;
+}
+.pvp-turn-info {
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 8px;
+  margin: 8px 0;
+  background: var(--bg2);
+  border-radius: 8px;
+}
+.pvp-energy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+.pvp-energy-row .energy-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+}
+.pvp-hand {
+  min-height: 130px;
+  padding: 8px 0;
+  margin: 8px 0;
+}
+.pvp-game-card {
+  width: 90px;
+  min-height: 120px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.pvp-game-card.playable:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 4px 12px rgba(111, 207, 151, 0.3);
+}
+.pvp-game-card.unplayable {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+.pvp-action-row {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+.pvp-online-log {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+#pvpOnlineLog .log-player { color: #6fcf97; }
+#pvpOnlineLog .log-enemy { color: #eb5757; }
+#pvpOnlineLog .log-info { color: var(--text-dim); }
