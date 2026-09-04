@@ -2247,10 +2247,10 @@ function renderPvpDeckSelect() {
     el.pvpDeckSelect.innerHTML = '<div class="hint" style="padding:0.5rem">暂无冒险历史。完成一局游戏后即可选择牌组。</div>';
     return;
   }
-  pvpSelectedDeckIdx = -1;
   history.forEach((run, idx) => {
     const card = document.createElement('div');
     card.className = 'pvp-deck-card';
+    if (idx === pvpSelectedDeckIdx) card.classList.add('selected');
     const icon = run.characterIcon || '❓';
     const name = run.characterName || '?';
     const deckSize = (run.deckIds || []).length;
