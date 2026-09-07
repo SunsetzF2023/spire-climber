@@ -27,8 +27,22 @@ function mergeMeta(a, b) {
     discoveredCards: Array.from(new Set([...(a.discoveredCards || []), ...(b.discoveredCards || [])])),
     discoveredRelics: Array.from(new Set([...(a.discoveredRelics || []), ...(b.discoveredRelics || [])])),
     discoveredEnemies: Array.from(new Set([...(a.discoveredEnemies || []), ...(b.discoveredEnemies || [])])),
+    runHistory: mergeRunHistory(a.runHistory || [], b.runHistory || []),
   };
   return merged;
+}
+
+function mergeRunHistory(a, b) {
+  const all = [...a, ...b];
+  const seen = new Set();
+  const deduped = all.filter(r => {
+    const key = r.timestamp + '_' + (r.characterId || '');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  deduped.sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
+  return deduped.slice(0, 2);
 }
 
 async function pullCloudMeta(userId) {
