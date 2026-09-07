@@ -106,7 +106,7 @@ function cacheEls() {
     'pvpWaitingRoom', 'pvpRoomCodeDisplay', 'pvpCopyCodeBtn', 'pvpCancelRoomBtn',
     'pvpOnlineBattle', 'pvpOpponentName', 'pvpOpponentHpFill', 'pvpOpponentHpText', 'pvpOpponentBlock', 'pvpOpponentStatuses', 'pvpOpponentHandCount',
     'pvpMyName', 'pvpMyHpFill', 'pvpMyHpText', 'pvpMyBlock', 'pvpMyStatuses',
-    'pvpTurnInfo', 'pvpEnergyBadge', 'pvpDrawDiscardInfo', 'pvpMyHand', 'pvpEndTurnBtn', 'pvpLeaveBattleBtn', 'pvpOnlineLog',
+    'pvpTurnInfo', 'pvpEnergyBadge', 'pvpDrawDiscardInfo', 'pvpMyHand', 'pvpEndTurnBtn', 'pvpRematchBtn', 'pvpLeaveBattleBtn', 'pvpOnlineLog',
     'hudHp', 'hudGold', 'hudFloor', 'hudRelics', 'tooltip',
     'infoModal', 'infoModalContent', 'infoModalClose',
     'pileModal', 'pileModalClose', 'pileModalTitle', 'pileModalGrid',
@@ -2451,9 +2451,10 @@ function renderPvpBattleState(state, mySide) {
     });
   }
 
-  // End turn button
+  // End turn / rematch buttons
   el.pvpEndTurnBtn.disabled = !myTurn || state.finished;
   el.pvpEndTurnBtn.classList.toggle('disabled', !myTurn || state.finished);
+  el.pvpRematchBtn.classList.toggle('hidden', !state.finished);
 
   // Log
   if (state.log) {
@@ -2503,6 +2504,17 @@ async function pvpOnlineCleanup() {
     if (pvpRoomController.leave) await pvpRoomController.leave();
     pvpRoomController = null;
   }
+}
+
+async function pvpOnlineRematch() {
+  if (!pvpRoomController) return;
+  const roomCode = pvpRoomController.roomCode;
+  const isHost = pvpRoomController.isHost;
+  const myDeck = pvpRoomController.isHost ? pvpRoomController.engine.hostDeck : pvpRoomController.guestDeckData;
+  const oppDeck = pvpRoomController.isHost ? pvpRoomController.engine.guestDeck : pvpRoomController.hostDeckData;
+  if (!myDeck || !oppDeck) { showInfoModal('<p>无法再战，请重新创建房间。</p>'); return; }
+  await pvpOnlineCleanup();
+  await pvpStartOnlineBattle(roomCode, isHost ? myDeck : oppDeck, isHost ? oppDeck : myDeck, isHost);
 }
 
 // ---------------- Leaderboard ----------------
@@ -2673,6 +2685,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   el.pvpCancelRoomBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
   el.pvpEndTurnBtn.addEventListener('click', () => pvpOnlineEndTurn());
+  el.pvpRematchBtn.addEventListener('click', () => pvpOnlineRematch());
   el.pvpLeaveBattleBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
   el.pvpRoomCodeInput.addEventListener('input', () => { el.pvpRoomCodeInput.value = el.pvpRoomCodeInput.value.toUpperCase(); });
   el.endTurnBtn.addEventListener('click', () => {
