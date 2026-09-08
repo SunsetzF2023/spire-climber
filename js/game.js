@@ -2686,7 +2686,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el.pvpCancelRoomBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
   el.pvpEndTurnBtn.addEventListener('click', () => pvpOnlineEndTurn());
   el.pvpRematchBtn.addEventListener('click', () => pvpOnlineRematch());
-  el.pvpLeaveBattleBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpModeSelect(); });
+  el.pvpLeaveBattleBtn.addEventListener('click', () => { pvpOnlineCleanup(); showPvpOnlineLobby(); });
   el.pvpRoomCodeInput.addEventListener('input', () => { el.pvpRoomCodeInput.value = el.pvpRoomCodeInput.value.toUpperCase(); });
   el.endTurnBtn.addEventListener('click', () => {
     combat.endTurn();
